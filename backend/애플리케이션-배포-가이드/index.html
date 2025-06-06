@@ -1,10 +1,10 @@
 <!DOCTYPE html>
 <html lang="en" dir="auto">
 
-<head><script src="/livereload.js?mindelay=10&amp;v=2&amp;port=65390&amp;path=livereload" data-no-instant defer></script><meta charset="utf-8">
+<head><meta charset="utf-8">
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
 <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-<meta name="robots" content="noindex, nofollow">
+<meta name="robots" content="index, follow">
 <title>8dobibim Tech Blog</title>
 <meta name="keywords" content="">
 <meta name="description" content="🚀 애플리케이션 배포 가이드
@@ -642,16 +642,16 @@ spec:
 ⏭️ 다음 단계
 애플리케이션 배포가 완료되었다면:">
 <meta name="author" content="">
-<link rel="canonical" href="http://localhost:65390/backend/%EC%95%A0%ED%94%8C%EB%A6%AC%EC%BC%80%EC%9D%B4%EC%85%98-%EB%B0%B0%ED%8F%AC-%EA%B0%80%EC%9D%B4%EB%93%9C/">
+<link rel="canonical" href="https://8dobibim.github.io/backend/%EC%95%A0%ED%94%8C%EB%A6%AC%EC%BC%80%EC%9D%B4%EC%85%98-%EB%B0%B0%ED%8F%AC-%EA%B0%80%EC%9D%B4%EB%93%9C/">
 <link crossorigin="anonymous" href="/assets/css/stylesheet.36819bea596090d8b48cf10d9831382996197aa7e4fc86f792f7c08c9ca4d23b.css" integrity="sha256-NoGb6llgkNi0jPENmDE4KZYZeqfk/Ib3kvfAjJyk0js=" rel="preload stylesheet" as="style">
-<link rel="icon" href="http://localhost:65390/favicon.ico">
-<link rel="icon" type="image/png" sizes="16x16" href="http://localhost:65390/favicon-16x16.png">
-<link rel="icon" type="image/png" sizes="32x32" href="http://localhost:65390/favicon-32x32.png">
-<link rel="apple-touch-icon" href="http://localhost:65390/apple-touch-icon.png">
-<link rel="mask-icon" href="http://localhost:65390/safari-pinned-tab.svg">
+<link rel="icon" href="https://8dobibim.github.io/favicon.ico">
+<link rel="icon" type="image/png" sizes="16x16" href="https://8dobibim.github.io/favicon-16x16.png">
+<link rel="icon" type="image/png" sizes="32x32" href="https://8dobibim.github.io/favicon-32x32.png">
+<link rel="apple-touch-icon" href="https://8dobibim.github.io/apple-touch-icon.png">
+<link rel="mask-icon" href="https://8dobibim.github.io/safari-pinned-tab.svg">
 <meta name="theme-color" content="#2e2e33">
 <meta name="msapplication-TileColor" content="#2e2e33">
-<link rel="alternate" hreflang="en" href="http://localhost:65390/backend/%EC%95%A0%ED%94%8C%EB%A6%AC%EC%BC%80%EC%9D%B4%EC%85%98-%EB%B0%B0%ED%8F%AC-%EA%B0%80%EC%9D%B4%EB%93%9C/">
+<link rel="alternate" hreflang="en" href="https://8dobibim.github.io/backend/%EC%95%A0%ED%94%8C%EB%A6%AC%EC%BC%80%EC%9D%B4%EC%85%98-%EB%B0%B0%ED%8F%AC-%EA%B0%80%EC%9D%B4%EB%93%9C/">
 <noscript>
     <style>
         #theme-toggle,
@@ -688,7 +688,703 @@ spec:
         }
 
     </style>
-</noscript>
+</noscript><meta property="og:url" content="https://8dobibim.github.io/backend/%EC%95%A0%ED%94%8C%EB%A6%AC%EC%BC%80%EC%9D%B4%EC%85%98-%EB%B0%B0%ED%8F%AC-%EA%B0%80%EC%9D%B4%EB%93%9C/">
+  <meta property="og:site_name" content="8dobibim Tech Blog">
+  <meta property="og:title" content="8dobibim Tech Blog">
+  <meta property="og:description" content="🚀 애플리케이션 배포 가이드 ⏱️ 예상 소요시간: 45-60분
+💡 난이도: 중급
+📋 목표: EKS 클러스터에 OpenWebUI와 LiteLLM을 배포합니다.
+📋 배포 완료 체크리스트 ConfigMap 및 Secret 생성 PostgreSQL 데이터베이스 배포 LiteLLM 서비스 배포 OpenWebUI 애플리케이션 배포 Ingress/LoadBalancer 설정 SSL 인증서 설정 모니터링 설정 📁 배포 파일 구조 kubernetes/├── base/│ ├── configmaps/│ ├── secrets/│ ├── postgres/│ ├── litellm/│ ├── openwebui/│ └── ingress/└── overlays/├── dev/└── prod/ 🗂️ 1단계: ConfigMap 및 Secret 생성 ConfigMap 생성 # kubernetes/base/configmaps/app-config.yaml apiVersion: v1 kind: ConfigMap metadata: name: app-config namespace: openwebui data: # PostgreSQL 설정 POSTGRES_HOST: &#34;postgres-service.openwebui.svc.cluster.local&#34; POSTGRES_PORT: &#34;5432&#34; POSTGRES_DB: &#34;openwebui&#34; # LiteLLM 설정 LITELLM_HOST: &#34;litellm-service.litellm.svc.cluster.local&#34; LITELLM_PORT: &#34;4000&#34; # OpenWebUI 설정 WEBUI_SECRET_KEY: &#34;your-secret-key-here&#34; WEBUI_JWT_SECRET_KEY: &#34;your-jwt-secret-here&#34; DEFAULT_LOCALE: &#34;ko-KR&#34; # 기본 설정 LOG_LEVEL: &#34;INFO&#34; ENVIRONMENT: &#34;development&#34; --- apiVersion: v1 kind: ConfigMap metadata: name: litellm-config namespace: litellm data: config.yaml: | model_list: - model_name: gpt-3.5-turbo litellm_params: model: gpt-3.5-turbo api_key: os.environ/OPENAI_API_KEY - model_name: gpt-4 litellm_params: model: gpt-4 api_key: os.environ/OPENAI_API_KEY - model_name: claude-3-sonnet litellm_params: model: anthropic/claude-3-sonnet-20240229 api_key: os.environ/ANTHROPIC_API_KEY general_settings: master_key: os.environ/LITELLM_MASTER_KEY database_url: os.environ/DATABASE_URL Secret 생성 # kubernetes/base/secrets/app-secrets.yaml apiVersion: v1 kind: Secret metadata: name: app-secrets namespace: openwebui type: Opaque data: # Base64로 인코딩된 값들 POSTGRES_USER: b3BlbndlYnVp # openwebui POSTGRES_PASSWORD: cGFzc3dvcmQxMjM= # password123 --- apiVersion: v1 kind: Secret metadata: name: api-keys namespace: litellm type: Opaque data: OPENAI_API_KEY: eW91ci1vcGVuYWktYXBpLWtleQ== # your-openai-api-key ANTHROPIC_API_KEY: eW91ci1hbnRocm9waWMtYXBpLWtleQ== # your-anthropic-api-key LITELLM_MASTER_KEY: bGl0ZWxsbS1tYXN0ZXIta2V5 # litellm-master-key 실제 Secret 생성 (명령어) # PostgreSQL 인증 정보 kubectl create secret generic app-secrets \ --from-literal=POSTGRES_USER=openwebui \ --from-literal=POSTGRES_PASSWORD=password123 \ -n openwebui # API 키들 kubectl create secret generic api-keys \ --from-literal=OPENAI_API_KEY=your-actual-openai-key \ --from-literal=ANTHROPIC_API_KEY=your-actual-anthropic-key \ --from-literal=LITELLM_MASTER_KEY=your-master-key \ -n litellm 🗃️ 2단계: PostgreSQL 데이터베이스 배포 PVC 생성 # kubernetes/base/postgres/pvc.yaml apiVersion: v1 kind: PersistentVolumeClaim metadata: name: postgres-pvc namespace: openwebui spec: accessModes: - ReadWriteOnce storageClassName: gp3-encrypted resources: requests: storage: 10Gi PostgreSQL Deployment # kubernetes/base/postgres/deployment.yaml apiVersion: apps/v1 kind: Deployment metadata: name: postgres namespace: openwebui spec: replicas: 1 selector: matchLabels: app: postgres template: metadata: labels: app: postgres spec: containers: - name: postgres image: postgres:15 ports: - containerPort: 5432 env: - name: POSTGRES_DB valueFrom: configMapKeyRef: name: app-config key: POSTGRES_DB - name: POSTGRES_USER valueFrom: secretKeyRef: name: app-secrets key: POSTGRES_USER - name: POSTGRES_PASSWORD valueFrom: secretKeyRef: name: app-secrets key: POSTGRES_PASSWORD - name: PGDATA value: /var/lib/postgresql/data/pgdata volumeMounts: - name: postgres-storage mountPath: /var/lib/postgresql/data resources: requests: memory: &#34;256Mi&#34; cpu: &#34;250m&#34; limits: memory: &#34;512Mi&#34; cpu: &#34;500m&#34; volumes: - name: postgres-storage persistentVolumeClaim: claimName: postgres-pvc PostgreSQL Service # kubernetes/base/postgres/service.yaml apiVersion: v1 kind: Service metadata: name: postgres-service namespace: openwebui spec: selector: app: postgres ports: - port: 5432 targetPort: 5432 type: ClusterIP 🤖 3단계: LiteLLM 서비스 배포 LiteLLM Deployment # kubernetes/base/litellm/deployment.yaml apiVersion: apps/v1 kind: Deployment metadata: name: litellm namespace: litellm spec: replicas: 2 selector: matchLabels: app: litellm template: metadata: labels: app: litellm spec: containers: - name: litellm image: ghcr.io/berriai/litellm:main-latest ports: - containerPort: 4000 env: - name: OPENAI_API_KEY valueFrom: secretKeyRef: name: api-keys key: OPENAI_API_KEY - name: ANTHROPIC_API_KEY valueFrom: secretKeyRef: name: api-keys key: ANTHROPIC_API_KEY - name: LITELLM_MASTER_KEY valueFrom: secretKeyRef: name: api-keys key: LITELLM_MASTER_KEY - name: DATABASE_URL value: &#34;postgresql://$(POSTGRES_USER):$(POSTGRES_PASSWORD)@postgres-service.openwebui.svc.cluster.local:5432/litellm&#34; envFrom: - secretRef: name: app-secrets volumeMounts: - name: config mountPath: /app/config.yaml subPath: config.yaml command: [&#34;litellm&#34;, &#34;--config&#34;, &#34;/app/config.yaml&#34;, &#34;--port&#34;, &#34;4000&#34;, &#34;--num_workers&#34;, &#34;8&#34;] resources: requests: memory: &#34;512Mi&#34; cpu: &#34;250m&#34; limits: memory: &#34;1Gi&#34; cpu: &#34;500m&#34; readinessProbe: httpGet: path: /health/readiness port: 4000 initialDelaySeconds: 30 periodSeconds: 10 livenessProbe: httpGet: path: /health/liveliness port: 4000 initialDelaySeconds: 60 periodSeconds: 30 volumes: - name: config configMap: name: litellm-config LiteLLM Service # kubernetes/base/litellm/service.yaml apiVersion: v1 kind: Service metadata: name: litellm-service namespace: litellm spec: selector: app: litellm ports: - port: 4000 targetPort: 4000 type: ClusterIP 🌐 4단계: OpenWebUI 애플리케이션 배포 OpenWebUI Deployment # kubernetes/base/openwebui/deployment.yaml apiVersion: apps/v1 kind: Deployment metadata: name: openwebui namespace: openwebui spec: replicas: 2 selector: matchLabels: app: openwebui template: metadata: labels: app: openwebui spec: containers: - name: openwebui image: ghcr.io/open-webui/open-webui:main ports: - containerPort: 8080 env: - name: OLLAMA_BASE_URL value: &#34;http://litellm-service.litellm.svc.cluster.local:4000&#34; - name: WEBUI_SECRET_KEY valueFrom: configMapKeyRef: name: app-config key: WEBUI_SECRET_KEY - name: DATABASE_URL value: &#34;postgresql://$(POSTGRES_USER):$(POSTGRES_PASSWORD)@postgres-service:5432/openwebui&#34; - name: DEFAULT_LOCALE valueFrom: configMapKeyRef: name: app-config key: DEFAULT_LOCALE envFrom: - secretRef: name: app-secrets - configMapRef: name: app-config volumeMounts: - name: data mountPath: /app/backend/data resources: requests: memory: &#34;512Mi&#34; cpu: &#34;250m&#34; limits: memory: &#34;1Gi&#34; cpu: &#34;500m&#34; readinessProbe: httpGet: path: /health port: 8080 initialDelaySeconds: 30 periodSeconds: 10 livenessProbe: httpGet: path: /health port: 8080 initialDelaySeconds: 60 periodSeconds: 30 volumes: - name: data persistentVolumeClaim: claimName: openwebui-pvc OpenWebUI PVC # kubernetes/base/openwebui/pvc.yaml apiVersion: v1 kind: PersistentVolumeClaim metadata: name: openwebui-pvc namespace: openwebui spec: accessModes: - ReadWriteOnce storageClassName: gp3-encrypted resources: requests: storage: 5Gi OpenWebUI Service # kubernetes/base/openwebui/service.yaml apiVersion: v1 kind: Service metadata: name: openwebui-service namespace: openwebui spec: selector: app: openwebui ports: - port: 8080 targetPort: 8080 type: ClusterIP 🌍 5단계: Ingress 및 LoadBalancer 설정 Application Load Balancer (ALB) 설정 # kubernetes/base/ingress/ingress.yaml apiVersion: networking.k8s.io/v1 kind: Ingress metadata: name: openwebui-ingress namespace: openwebui annotations: # ALB 설정 kubernetes.io/ingress.class: alb alb.ingress.kubernetes.io/scheme: internet-facing alb.ingress.kubernetes.io/target-type: ip # SSL 설정 alb.ingress.kubernetes.io/listen-ports: &#39;[{&#34;HTTP&#34;: 80}, {&#34;HTTPS&#34;: 443}]&#39; alb.ingress.kubernetes.io/ssl-redirect: &#39;443&#39; alb.ingress.kubernetes.io/certificate-arn: arn:aws:acm:ap-northeast-2:ACCOUNT_ID:certificate/CERT_ID # 헬스체크 설정 alb.ingress.kubernetes.io/healthcheck-path: /health alb.ingress.kubernetes.io/healthcheck-interval-seconds: &#39;30&#39; alb.ingress.kubernetes.io/healthcheck-timeout-seconds: &#39;5&#39; alb.ingress.kubernetes.io/healthy-threshold-count: &#39;2&#39; alb.ingress.kubernetes.io/unhealthy-threshold-count: &#39;3&#39; # 기타 설정 alb.ingress.kubernetes.io/load-balancer-name: openwebui-alb alb.ingress.kubernetes.io/tags: Environment=dev,Project=openwebui spec: rules: - host: openwebui.yourdomain.com http: paths: - path: / pathType: Prefix backend: service: name: openwebui-service port: number: 8080 LoadBalancer Service (대안) # kubernetes/base/ingress/loadbalancer.yaml apiVersion: v1 kind: Service metadata: name: openwebui-loadbalancer namespace: openwebui annotations: service.beta.kubernetes.io/aws-load-balancer-type: &#34;nlb&#34; service.beta.kubernetes.io/aws-load-balancer-scheme: &#34;internet-facing&#34; service.beta.kubernetes.io/aws-load-balancer-name: &#34;openwebui-nlb&#34; spec: type: LoadBalancer selector: app: openwebui ports: - port: 80 targetPort: 8080 protocol: TCP 📊 6단계: 모니터링 설정 Prometheus ServiceMonitor # kubernetes/base/monitoring/servicemonitor.yaml apiVersion: monitoring.coreos.com/v1 kind: ServiceMonitor metadata: name: openwebui-monitor namespace: monitoring spec: selector: matchLabels: app: openwebui endpoints: - port: http path: /metrics interval: 30s --- apiVersion: monitoring.coreos.com/v1 kind: ServiceMonitor metadata: name: litellm-monitor namespace: monitoring spec: selector: matchLabels: app: litellm endpoints: - port: http path: /metrics interval: 30s 🚀 7단계: 배포 실행 배포 순서 # 1. 네임스페이스 생성 (이미 완료됨) kubectl get namespaces # 2. ConfigMap 및 Secret 적용 kubectl apply -f kubernetes/base/configmaps/ kubectl apply -f kubernetes/base/secrets/ # 3. PostgreSQL 배포 kubectl apply -f kubernetes/base/postgres/ # PostgreSQL 준비 완료 대기 kubectl wait --for=condition=ready pod -l app=postgres -n openwebui --timeout=300s # 4. LiteLLM 배포 kubectl apply -f kubernetes/base/litellm/ # LiteLLM 준비 완료 대기 kubectl wait --for=condition=ready pod -l app=litellm -n litellm --timeout=300s # 5. OpenWebUI 배포 kubectl apply -f kubernetes/base/openwebui/ # OpenWebUI 준비 완료 대기 kubectl wait --for=condition=ready pod -l app=openwebui -n openwebui --timeout=300s # 6. Ingress 설정 kubectl apply -f kubernetes/base/ingress/ # 7. 모니터링 설정 (선택사항) kubectl apply -f kubernetes/base/monitoring/ 배포 스크립트 #!/bin/bash # deploy.sh set -e echo &#34;🚀 OpenWebUI 애플리케이션 배포 시작...&#34; # 환경 확인 if ! kubectl get nodes &gt; /dev/null 2&gt;&amp;1; then echo &#34;❌ kubectl이 클러스터에 연결되지 않았습니다.&#34; exit 1 fi echo &#34;📁 1. ConfigMap 및 Secret 적용...&#34; kubectl apply -f kubernetes/base/configmaps/ kubectl apply -f kubernetes/base/secrets/ echo &#34;🗃️ 2. PostgreSQL 배포...&#34; kubectl apply -f kubernetes/base/postgres/ echo &#34;⏳ PostgreSQL 준비 대기...&#34; kubectl wait --for=condition=ready pod -l app=postgres -n openwebui --timeout=300s echo &#34;🤖 3. LiteLLM 배포...&#34; kubectl apply -f kubernetes/base/litellm/ echo &#34;⏳ LiteLLM 준비 대기...&#34; kubectl wait --for=condition=ready pod -l app=litellm -n litellm --timeout=300s echo &#34;🌐 4. OpenWebUI 배포...&#34; kubectl apply -f kubernetes/base/openwebui/ echo &#34;⏳ OpenWebUI 준비 대기...&#34; kubectl wait --for=condition=ready pod -l app=openwebui -n openwebui --timeout=300s echo &#34;🌍 5. Ingress 설정...&#34; kubectl apply -f kubernetes/base/ingress/ echo &#34;📊 6. 모니터링 설정...&#34; kubectl apply -f kubernetes/base/monitoring/ || echo &#34;⚠️ 모니터링 설정 실패 (선택사항)&#34; echo &#34;✅ 배포 완료!&#34; echo &#34;🔗 LoadBalancer URL 확인:&#34; kubectl get ingress -n openwebui kubectl get svc -n openwebui echo &#34;📋 파드 상태 확인:&#34; kubectl get pods -n openwebui kubectl get pods -n litellm chmod &#43;x deploy.sh ./deploy.sh 🔍 상태 확인 배포 상태 확인 # 전체 파드 상태 kubectl get pods -A # 서비스 상태 kubectl get svc -A # Ingress 상태 kubectl get ingress -A # 로그 확인 kubectl logs -f deployment/openwebui -n openwebui kubectl logs -f deployment/litellm -n litellm kubectl logs -f deployment/postgres -n openwebui 서비스 접근 테스트 # 포트 포워딩으로 로컬 테스트 kubectl port-forward svc/openwebui-service 8080:8080 -n openwebui # 브라우저에서 http://localhost:8080 접속 🔧 설정 업데이트 ConfigMap 업데이트 # ConfigMap 수정 후 파드 재시작 kubectl apply -f kubernetes/base/configmaps/ kubectl rollout restart deployment/openwebui -n openwebui kubectl rollout restart deployment/litellm -n litellm Secret 업데이트 # 새 API 키 추가 kubectl create secret generic api-keys \ --from-literal=OPENAI_API_KEY=new-key \ --from-literal=ANTHROPIC_API_KEY=new-key \ --dry-run=client -o yaml | kubectl apply -f - kubectl rollout restart deployment/litellm -n litellm 📈 스케일링 수동 스케일링 # OpenWebUI 파드 개수 조정 kubectl scale deployment openwebui --replicas=3 -n openwebui # LiteLLM 파드 개수 조정 kubectl scale deployment litellm --replicas=4 -n litellm HPA (Horizontal Pod Autoscaler) 설정 # kubernetes/base/openwebui/hpa.yaml apiVersion: autoscaling/v2 kind: HorizontalPodAutoscaler metadata: name: openwebui-hpa namespace: openwebui spec: scaleTargetRef: apiVersion: apps/v1 kind: Deployment name: openwebui minReplicas: 2 maxReplicas: 10 metrics: - type: Resource resource: name: cpu target: type: Utilization averageUtilization: 70 - type: Resource resource: name: memory target: type: Utilization averageUtilization: 80 ⏭️ 다음 단계 애플리케이션 배포가 완료되었다면:">
+  <meta property="og:locale" content="ko">
+  <meta property="og:type" content="article">
+    <meta property="article:section" content="backend">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="">
+<meta name="twitter:description" content="🚀 애플리케이션 배포 가이드
+
+⏱️ 예상 소요시간: 45-60분
+💡 난이도: 중급
+📋 목표: EKS 클러스터에 OpenWebUI와 LiteLLM을 배포합니다.
+
+📋 배포 완료 체크리스트
+
+ ConfigMap 및 Secret 생성
+ PostgreSQL 데이터베이스 배포
+ LiteLLM 서비스 배포
+ OpenWebUI 애플리케이션 배포
+ Ingress/LoadBalancer 설정
+ SSL 인증서 설정
+ 모니터링 설정
+
+
+📁 배포 파일 구조
+kubernetes/
+├── base/
+│   ├── configmaps/
+│   ├── secrets/
+│   ├── postgres/
+│   ├── litellm/
+│   ├── openwebui/
+│   └── ingress/
+└── overlays/
+    ├── dev/
+    └── prod/
+
+🗂️ 1단계: ConfigMap 및 Secret 생성
+ConfigMap 생성
+# kubernetes/base/configmaps/app-config.yaml
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: app-config
+  namespace: openwebui
+data:
+  # PostgreSQL 설정
+  POSTGRES_HOST: &#34;postgres-service.openwebui.svc.cluster.local&#34;
+  POSTGRES_PORT: &#34;5432&#34;
+  POSTGRES_DB: &#34;openwebui&#34;
+  
+  # LiteLLM 설정
+  LITELLM_HOST: &#34;litellm-service.litellm.svc.cluster.local&#34;
+  LITELLM_PORT: &#34;4000&#34;
+  
+  # OpenWebUI 설정
+  WEBUI_SECRET_KEY: &#34;your-secret-key-here&#34;
+  WEBUI_JWT_SECRET_KEY: &#34;your-jwt-secret-here&#34;
+  DEFAULT_LOCALE: &#34;ko-KR&#34;
+  
+  # 기본 설정
+  LOG_LEVEL: &#34;INFO&#34;
+  ENVIRONMENT: &#34;development&#34;
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: litellm-config
+  namespace: litellm
+data:
+  config.yaml: |
+    model_list:
+      - model_name: gpt-3.5-turbo
+        litellm_params:
+          model: gpt-3.5-turbo
+          api_key: os.environ/OPENAI_API_KEY
+      - model_name: gpt-4
+        litellm_params:
+          model: gpt-4
+          api_key: os.environ/OPENAI_API_KEY
+      - model_name: claude-3-sonnet
+        litellm_params:
+          model: anthropic/claude-3-sonnet-20240229
+          api_key: os.environ/ANTHROPIC_API_KEY
+    
+    general_settings:
+      master_key: os.environ/LITELLM_MASTER_KEY
+      database_url: os.environ/DATABASE_URL
+Secret 생성
+# kubernetes/base/secrets/app-secrets.yaml
+apiVersion: v1
+kind: Secret
+metadata:
+  name: app-secrets
+  namespace: openwebui
+type: Opaque
+data:
+  # Base64로 인코딩된 값들
+  POSTGRES_USER: b3BlbndlYnVp  # openwebui
+  POSTGRES_PASSWORD: cGFzc3dvcmQxMjM=  # password123
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: api-keys
+  namespace: litellm
+type: Opaque
+data:
+  OPENAI_API_KEY: eW91ci1vcGVuYWktYXBpLWtleQ==  # your-openai-api-key
+  ANTHROPIC_API_KEY: eW91ci1hbnRocm9waWMtYXBpLWtleQ==  # your-anthropic-api-key
+  LITELLM_MASTER_KEY: bGl0ZWxsbS1tYXN0ZXIta2V5  # litellm-master-key
+실제 Secret 생성 (명령어)
+# PostgreSQL 인증 정보
+kubectl create secret generic app-secrets \
+  --from-literal=POSTGRES_USER=openwebui \
+  --from-literal=POSTGRES_PASSWORD=password123 \
+  -n openwebui
+
+# API 키들
+kubectl create secret generic api-keys \
+  --from-literal=OPENAI_API_KEY=your-actual-openai-key \
+  --from-literal=ANTHROPIC_API_KEY=your-actual-anthropic-key \
+  --from-literal=LITELLM_MASTER_KEY=your-master-key \
+  -n litellm
+
+🗃️ 2단계: PostgreSQL 데이터베이스 배포
+PVC 생성
+# kubernetes/base/postgres/pvc.yaml
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: postgres-pvc
+  namespace: openwebui
+spec:
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: gp3-encrypted
+  resources:
+    requests:
+      storage: 10Gi
+PostgreSQL Deployment
+# kubernetes/base/postgres/deployment.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: postgres
+  namespace: openwebui
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: postgres
+  template:
+    metadata:
+      labels:
+        app: postgres
+    spec:
+      containers:
+      - name: postgres
+        image: postgres:15
+        ports:
+        - containerPort: 5432
+        env:
+        - name: POSTGRES_DB
+          valueFrom:
+            configMapKeyRef:
+              name: app-config
+              key: POSTGRES_DB
+        - name: POSTGRES_USER
+          valueFrom:
+            secretKeyRef:
+              name: app-secrets
+              key: POSTGRES_USER
+        - name: POSTGRES_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: app-secrets
+              key: POSTGRES_PASSWORD
+        - name: PGDATA
+          value: /var/lib/postgresql/data/pgdata
+        volumeMounts:
+        - name: postgres-storage
+          mountPath: /var/lib/postgresql/data
+        resources:
+          requests:
+            memory: &#34;256Mi&#34;
+            cpu: &#34;250m&#34;
+          limits:
+            memory: &#34;512Mi&#34;
+            cpu: &#34;500m&#34;
+      volumes:
+      - name: postgres-storage
+        persistentVolumeClaim:
+          claimName: postgres-pvc
+PostgreSQL Service
+# kubernetes/base/postgres/service.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: postgres-service
+  namespace: openwebui
+spec:
+  selector:
+    app: postgres
+  ports:
+  - port: 5432
+    targetPort: 5432
+  type: ClusterIP
+
+🤖 3단계: LiteLLM 서비스 배포
+LiteLLM Deployment
+# kubernetes/base/litellm/deployment.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: litellm
+  namespace: litellm
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: litellm
+  template:
+    metadata:
+      labels:
+        app: litellm
+    spec:
+      containers:
+      - name: litellm
+        image: ghcr.io/berriai/litellm:main-latest
+        ports:
+        - containerPort: 4000
+        env:
+        - name: OPENAI_API_KEY
+          valueFrom:
+            secretKeyRef:
+              name: api-keys
+              key: OPENAI_API_KEY
+        - name: ANTHROPIC_API_KEY
+          valueFrom:
+            secretKeyRef:
+              name: api-keys
+              key: ANTHROPIC_API_KEY
+        - name: LITELLM_MASTER_KEY
+          valueFrom:
+            secretKeyRef:
+              name: api-keys
+              key: LITELLM_MASTER_KEY
+        - name: DATABASE_URL
+          value: &#34;postgresql://$(POSTGRES_USER):$(POSTGRES_PASSWORD)@postgres-service.openwebui.svc.cluster.local:5432/litellm&#34;
+        envFrom:
+        - secretRef:
+            name: app-secrets
+        volumeMounts:
+        - name: config
+          mountPath: /app/config.yaml
+          subPath: config.yaml
+        command: [&#34;litellm&#34;, &#34;--config&#34;, &#34;/app/config.yaml&#34;, &#34;--port&#34;, &#34;4000&#34;, &#34;--num_workers&#34;, &#34;8&#34;]
+        resources:
+          requests:
+            memory: &#34;512Mi&#34;
+            cpu: &#34;250m&#34;
+          limits:
+            memory: &#34;1Gi&#34;
+            cpu: &#34;500m&#34;
+        readinessProbe:
+          httpGet:
+            path: /health/readiness
+            port: 4000
+          initialDelaySeconds: 30
+          periodSeconds: 10
+        livenessProbe:
+          httpGet:
+            path: /health/liveliness
+            port: 4000
+          initialDelaySeconds: 60
+          periodSeconds: 30
+      volumes:
+      - name: config
+        configMap:
+          name: litellm-config
+LiteLLM Service
+# kubernetes/base/litellm/service.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: litellm-service
+  namespace: litellm
+spec:
+  selector:
+    app: litellm
+  ports:
+  - port: 4000
+    targetPort: 4000
+  type: ClusterIP
+
+🌐 4단계: OpenWebUI 애플리케이션 배포
+OpenWebUI Deployment
+# kubernetes/base/openwebui/deployment.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: openwebui
+  namespace: openwebui
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: openwebui
+  template:
+    metadata:
+      labels:
+        app: openwebui
+    spec:
+      containers:
+      - name: openwebui
+        image: ghcr.io/open-webui/open-webui:main
+        ports:
+        - containerPort: 8080
+        env:
+        - name: OLLAMA_BASE_URL
+          value: &#34;http://litellm-service.litellm.svc.cluster.local:4000&#34;
+        - name: WEBUI_SECRET_KEY
+          valueFrom:
+            configMapKeyRef:
+              name: app-config
+              key: WEBUI_SECRET_KEY
+        - name: DATABASE_URL
+          value: &#34;postgresql://$(POSTGRES_USER):$(POSTGRES_PASSWORD)@postgres-service:5432/openwebui&#34;
+        - name: DEFAULT_LOCALE
+          valueFrom:
+            configMapKeyRef:
+              name: app-config
+              key: DEFAULT_LOCALE
+        envFrom:
+        - secretRef:
+            name: app-secrets
+        - configMapRef:
+            name: app-config
+        volumeMounts:
+        - name: data
+          mountPath: /app/backend/data
+        resources:
+          requests:
+            memory: &#34;512Mi&#34;
+            cpu: &#34;250m&#34;
+          limits:
+            memory: &#34;1Gi&#34;
+            cpu: &#34;500m&#34;
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: 8080
+          initialDelaySeconds: 30
+          periodSeconds: 10
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 8080
+          initialDelaySeconds: 60
+          periodSeconds: 30
+      volumes:
+      - name: data
+        persistentVolumeClaim:
+          claimName: openwebui-pvc
+OpenWebUI PVC
+# kubernetes/base/openwebui/pvc.yaml
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: openwebui-pvc
+  namespace: openwebui
+spec:
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: gp3-encrypted
+  resources:
+    requests:
+      storage: 5Gi
+OpenWebUI Service
+# kubernetes/base/openwebui/service.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: openwebui-service
+  namespace: openwebui
+spec:
+  selector:
+    app: openwebui
+  ports:
+  - port: 8080
+    targetPort: 8080
+  type: ClusterIP
+
+🌍 5단계: Ingress 및 LoadBalancer 설정
+Application Load Balancer (ALB) 설정
+# kubernetes/base/ingress/ingress.yaml
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: openwebui-ingress
+  namespace: openwebui
+  annotations:
+    # ALB 설정
+    kubernetes.io/ingress.class: alb
+    alb.ingress.kubernetes.io/scheme: internet-facing
+    alb.ingress.kubernetes.io/target-type: ip
+    
+    # SSL 설정
+    alb.ingress.kubernetes.io/listen-ports: &#39;[{&#34;HTTP&#34;: 80}, {&#34;HTTPS&#34;: 443}]&#39;
+    alb.ingress.kubernetes.io/ssl-redirect: &#39;443&#39;
+    alb.ingress.kubernetes.io/certificate-arn: arn:aws:acm:ap-northeast-2:ACCOUNT_ID:certificate/CERT_ID
+    
+    # 헬스체크 설정
+    alb.ingress.kubernetes.io/healthcheck-path: /health
+    alb.ingress.kubernetes.io/healthcheck-interval-seconds: &#39;30&#39;
+    alb.ingress.kubernetes.io/healthcheck-timeout-seconds: &#39;5&#39;
+    alb.ingress.kubernetes.io/healthy-threshold-count: &#39;2&#39;
+    alb.ingress.kubernetes.io/unhealthy-threshold-count: &#39;3&#39;
+    
+    # 기타 설정
+    alb.ingress.kubernetes.io/load-balancer-name: openwebui-alb
+    alb.ingress.kubernetes.io/tags: Environment=dev,Project=openwebui
+spec:
+  rules:
+  - host: openwebui.yourdomain.com
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: openwebui-service
+            port:
+              number: 8080
+LoadBalancer Service (대안)
+# kubernetes/base/ingress/loadbalancer.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: openwebui-loadbalancer
+  namespace: openwebui
+  annotations:
+    service.beta.kubernetes.io/aws-load-balancer-type: &#34;nlb&#34;
+    service.beta.kubernetes.io/aws-load-balancer-scheme: &#34;internet-facing&#34;
+    service.beta.kubernetes.io/aws-load-balancer-name: &#34;openwebui-nlb&#34;
+spec:
+  type: LoadBalancer
+  selector:
+    app: openwebui
+  ports:
+  - port: 80
+    targetPort: 8080
+    protocol: TCP
+
+📊 6단계: 모니터링 설정
+Prometheus ServiceMonitor
+# kubernetes/base/monitoring/servicemonitor.yaml
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: openwebui-monitor
+  namespace: monitoring
+spec:
+  selector:
+    matchLabels:
+      app: openwebui
+  endpoints:
+  - port: http
+    path: /metrics
+    interval: 30s
+---
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: litellm-monitor
+  namespace: monitoring
+spec:
+  selector:
+    matchLabels:
+      app: litellm
+  endpoints:
+  - port: http
+    path: /metrics
+    interval: 30s
+
+🚀 7단계: 배포 실행
+배포 순서
+# 1. 네임스페이스 생성 (이미 완료됨)
+kubectl get namespaces
+
+# 2. ConfigMap 및 Secret 적용
+kubectl apply -f kubernetes/base/configmaps/
+kubectl apply -f kubernetes/base/secrets/
+
+# 3. PostgreSQL 배포
+kubectl apply -f kubernetes/base/postgres/
+
+# PostgreSQL 준비 완료 대기
+kubectl wait --for=condition=ready pod -l app=postgres -n openwebui --timeout=300s
+
+# 4. LiteLLM 배포
+kubectl apply -f kubernetes/base/litellm/
+
+# LiteLLM 준비 완료 대기
+kubectl wait --for=condition=ready pod -l app=litellm -n litellm --timeout=300s
+
+# 5. OpenWebUI 배포
+kubectl apply -f kubernetes/base/openwebui/
+
+# OpenWebUI 준비 완료 대기
+kubectl wait --for=condition=ready pod -l app=openwebui -n openwebui --timeout=300s
+
+# 6. Ingress 설정
+kubectl apply -f kubernetes/base/ingress/
+
+# 7. 모니터링 설정 (선택사항)
+kubectl apply -f kubernetes/base/monitoring/
+배포 스크립트
+#!/bin/bash
+# deploy.sh
+
+set -e
+
+echo &#34;🚀 OpenWebUI 애플리케이션 배포 시작...&#34;
+
+# 환경 확인
+if ! kubectl get nodes &gt; /dev/null 2&gt;&amp;1; then
+    echo &#34;❌ kubectl이 클러스터에 연결되지 않았습니다.&#34;
+    exit 1
+fi
+
+echo &#34;📁 1. ConfigMap 및 Secret 적용...&#34;
+kubectl apply -f kubernetes/base/configmaps/
+kubectl apply -f kubernetes/base/secrets/
+
+echo &#34;🗃️ 2. PostgreSQL 배포...&#34;
+kubectl apply -f kubernetes/base/postgres/
+echo &#34;⏳ PostgreSQL 준비 대기...&#34;
+kubectl wait --for=condition=ready pod -l app=postgres -n openwebui --timeout=300s
+
+echo &#34;🤖 3. LiteLLM 배포...&#34;
+kubectl apply -f kubernetes/base/litellm/
+echo &#34;⏳ LiteLLM 준비 대기...&#34;
+kubectl wait --for=condition=ready pod -l app=litellm -n litellm --timeout=300s
+
+echo &#34;🌐 4. OpenWebUI 배포...&#34;
+kubectl apply -f kubernetes/base/openwebui/
+echo &#34;⏳ OpenWebUI 준비 대기...&#34;
+kubectl wait --for=condition=ready pod -l app=openwebui -n openwebui --timeout=300s
+
+echo &#34;🌍 5. Ingress 설정...&#34;
+kubectl apply -f kubernetes/base/ingress/
+
+echo &#34;📊 6. 모니터링 설정...&#34;
+kubectl apply -f kubernetes/base/monitoring/ || echo &#34;⚠️ 모니터링 설정 실패 (선택사항)&#34;
+
+echo &#34;✅ 배포 완료!&#34;
+echo &#34;🔗 LoadBalancer URL 확인:&#34;
+kubectl get ingress -n openwebui
+kubectl get svc -n openwebui
+
+echo &#34;📋 파드 상태 확인:&#34;
+kubectl get pods -n openwebui
+kubectl get pods -n litellm
+chmod &#43;x deploy.sh
+./deploy.sh
+
+🔍 상태 확인
+배포 상태 확인
+# 전체 파드 상태
+kubectl get pods -A
+
+# 서비스 상태
+kubectl get svc -A
+
+# Ingress 상태
+kubectl get ingress -A
+
+# 로그 확인
+kubectl logs -f deployment/openwebui -n openwebui
+kubectl logs -f deployment/litellm -n litellm
+kubectl logs -f deployment/postgres -n openwebui
+서비스 접근 테스트
+# 포트 포워딩으로 로컬 테스트
+kubectl port-forward svc/openwebui-service 8080:8080 -n openwebui
+
+# 브라우저에서 http://localhost:8080 접속
+
+🔧 설정 업데이트
+ConfigMap 업데이트
+# ConfigMap 수정 후 파드 재시작
+kubectl apply -f kubernetes/base/configmaps/
+kubectl rollout restart deployment/openwebui -n openwebui
+kubectl rollout restart deployment/litellm -n litellm
+Secret 업데이트
+# 새 API 키 추가
+kubectl create secret generic api-keys \
+  --from-literal=OPENAI_API_KEY=new-key \
+  --from-literal=ANTHROPIC_API_KEY=new-key \
+  --dry-run=client -o yaml | kubectl apply -f -
+
+kubectl rollout restart deployment/litellm -n litellm
+
+📈 스케일링
+수동 스케일링
+# OpenWebUI 파드 개수 조정
+kubectl scale deployment openwebui --replicas=3 -n openwebui
+
+# LiteLLM 파드 개수 조정
+kubectl scale deployment litellm --replicas=4 -n litellm
+HPA (Horizontal Pod Autoscaler) 설정
+# kubernetes/base/openwebui/hpa.yaml
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: openwebui-hpa
+  namespace: openwebui
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: openwebui
+  minReplicas: 2
+  maxReplicas: 10
+  metrics:
+  - type: Resource
+    resource:
+      name: cpu
+      target:
+        type: Utilization
+        averageUtilization: 70
+  - type: Resource
+    resource:
+      name: memory
+      target:
+        type: Utilization
+        averageUtilization: 80
+
+⏭️ 다음 단계
+애플리케이션 배포가 완료되었다면:">
+
+
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BreadcrumbList",
+  "itemListElement": [
+    {
+      "@type": "ListItem",
+      "position":  1 ,
+      "name": "Backend 문서",
+      "item": "https://8dobibim.github.io/backend/"
+    }, 
+    {
+      "@type": "ListItem",
+      "position":  2 ,
+      "name": "",
+      "item": "https://8dobibim.github.io/backend/%EC%95%A0%ED%94%8C%EB%A6%AC%EC%BC%80%EC%9D%B4%EC%85%98-%EB%B0%B0%ED%8F%AC-%EA%B0%80%EC%9D%B4%EB%93%9C/"
+    }
+  ]
+}
+</script>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BlogPosting",
+  "headline": "",
+  "name": "",
+  "description": "🚀 애플리케이션 배포 가이드 ⏱️ 예상 소요시간: 45-60분\n💡 난이도: 중급\n📋 목표: EKS 클러스터에 OpenWebUI와 LiteLLM을 배포합니다.\n📋 배포 완료 체크리스트 ConfigMap 및 Secret 생성 PostgreSQL 데이터베이스 배포 LiteLLM 서비스 배포 OpenWebUI 애플리케이션 배포 Ingress/LoadBalancer 설정 SSL 인증서 설정 모니터링 설정 📁 배포 파일 구조 kubernetes/\r├── base/\r│ ├── configmaps/\r│ ├── secrets/\r│ ├── postgres/\r│ ├── litellm/\r│ ├── openwebui/\r│ └── ingress/\r└── overlays/\r├── dev/\r└── prod/ 🗂️ 1단계: ConfigMap 및 Secret 생성 ConfigMap 생성 # kubernetes/base/configmaps/app-config.yaml apiVersion: v1 kind: ConfigMap metadata: name: app-config namespace: openwebui data: # PostgreSQL 설정 POSTGRES_HOST: \u0026#34;postgres-service.openwebui.svc.cluster.local\u0026#34; POSTGRES_PORT: \u0026#34;5432\u0026#34; POSTGRES_DB: \u0026#34;openwebui\u0026#34; # LiteLLM 설정 LITELLM_HOST: \u0026#34;litellm-service.litellm.svc.cluster.local\u0026#34; LITELLM_PORT: \u0026#34;4000\u0026#34; # OpenWebUI 설정 WEBUI_SECRET_KEY: \u0026#34;your-secret-key-here\u0026#34; WEBUI_JWT_SECRET_KEY: \u0026#34;your-jwt-secret-here\u0026#34; DEFAULT_LOCALE: \u0026#34;ko-KR\u0026#34; # 기본 설정 LOG_LEVEL: \u0026#34;INFO\u0026#34; ENVIRONMENT: \u0026#34;development\u0026#34; --- apiVersion: v1 kind: ConfigMap metadata: name: litellm-config namespace: litellm data: config.yaml: | model_list: - model_name: gpt-3.5-turbo litellm_params: model: gpt-3.5-turbo api_key: os.environ/OPENAI_API_KEY - model_name: gpt-4 litellm_params: model: gpt-4 api_key: os.environ/OPENAI_API_KEY - model_name: claude-3-sonnet litellm_params: model: anthropic/claude-3-sonnet-20240229 api_key: os.environ/ANTHROPIC_API_KEY general_settings: master_key: os.environ/LITELLM_MASTER_KEY database_url: os.environ/DATABASE_URL Secret 생성 # kubernetes/base/secrets/app-secrets.yaml apiVersion: v1 kind: Secret metadata: name: app-secrets namespace: openwebui type: Opaque data: # Base64로 인코딩된 값들 POSTGRES_USER: b3BlbndlYnVp # openwebui POSTGRES_PASSWORD: cGFzc3dvcmQxMjM= # password123 --- apiVersion: v1 kind: Secret metadata: name: api-keys namespace: litellm type: Opaque data: OPENAI_API_KEY: eW91ci1vcGVuYWktYXBpLWtleQ== # your-openai-api-key ANTHROPIC_API_KEY: eW91ci1hbnRocm9waWMtYXBpLWtleQ== # your-anthropic-api-key LITELLM_MASTER_KEY: bGl0ZWxsbS1tYXN0ZXIta2V5 # litellm-master-key 실제 Secret 생성 (명령어) # PostgreSQL 인증 정보 kubectl create secret generic app-secrets \\ --from-literal=POSTGRES_USER=openwebui \\ --from-literal=POSTGRES_PASSWORD=password123 \\ -n openwebui # API 키들 kubectl create secret generic api-keys \\ --from-literal=OPENAI_API_KEY=your-actual-openai-key \\ --from-literal=ANTHROPIC_API_KEY=your-actual-anthropic-key \\ --from-literal=LITELLM_MASTER_KEY=your-master-key \\ -n litellm 🗃️ 2단계: PostgreSQL 데이터베이스 배포 PVC 생성 # kubernetes/base/postgres/pvc.yaml apiVersion: v1 kind: PersistentVolumeClaim metadata: name: postgres-pvc namespace: openwebui spec: accessModes: - ReadWriteOnce storageClassName: gp3-encrypted resources: requests: storage: 10Gi PostgreSQL Deployment # kubernetes/base/postgres/deployment.yaml apiVersion: apps/v1 kind: Deployment metadata: name: postgres namespace: openwebui spec: replicas: 1 selector: matchLabels: app: postgres template: metadata: labels: app: postgres spec: containers: - name: postgres image: postgres:15 ports: - containerPort: 5432 env: - name: POSTGRES_DB valueFrom: configMapKeyRef: name: app-config key: POSTGRES_DB - name: POSTGRES_USER valueFrom: secretKeyRef: name: app-secrets key: POSTGRES_USER - name: POSTGRES_PASSWORD valueFrom: secretKeyRef: name: app-secrets key: POSTGRES_PASSWORD - name: PGDATA value: /var/lib/postgresql/data/pgdata volumeMounts: - name: postgres-storage mountPath: /var/lib/postgresql/data resources: requests: memory: \u0026#34;256Mi\u0026#34; cpu: \u0026#34;250m\u0026#34; limits: memory: \u0026#34;512Mi\u0026#34; cpu: \u0026#34;500m\u0026#34; volumes: - name: postgres-storage persistentVolumeClaim: claimName: postgres-pvc PostgreSQL Service # kubernetes/base/postgres/service.yaml apiVersion: v1 kind: Service metadata: name: postgres-service namespace: openwebui spec: selector: app: postgres ports: - port: 5432 targetPort: 5432 type: ClusterIP 🤖 3단계: LiteLLM 서비스 배포 LiteLLM Deployment # kubernetes/base/litellm/deployment.yaml apiVersion: apps/v1 kind: Deployment metadata: name: litellm namespace: litellm spec: replicas: 2 selector: matchLabels: app: litellm template: metadata: labels: app: litellm spec: containers: - name: litellm image: ghcr.io/berriai/litellm:main-latest ports: - containerPort: 4000 env: - name: OPENAI_API_KEY valueFrom: secretKeyRef: name: api-keys key: OPENAI_API_KEY - name: ANTHROPIC_API_KEY valueFrom: secretKeyRef: name: api-keys key: ANTHROPIC_API_KEY - name: LITELLM_MASTER_KEY valueFrom: secretKeyRef: name: api-keys key: LITELLM_MASTER_KEY - name: DATABASE_URL value: \u0026#34;postgresql://$(POSTGRES_USER):$(POSTGRES_PASSWORD)@postgres-service.openwebui.svc.cluster.local:5432/litellm\u0026#34; envFrom: - secretRef: name: app-secrets volumeMounts: - name: config mountPath: /app/config.yaml subPath: config.yaml command: [\u0026#34;litellm\u0026#34;, \u0026#34;--config\u0026#34;, \u0026#34;/app/config.yaml\u0026#34;, \u0026#34;--port\u0026#34;, \u0026#34;4000\u0026#34;, \u0026#34;--num_workers\u0026#34;, \u0026#34;8\u0026#34;] resources: requests: memory: \u0026#34;512Mi\u0026#34; cpu: \u0026#34;250m\u0026#34; limits: memory: \u0026#34;1Gi\u0026#34; cpu: \u0026#34;500m\u0026#34; readinessProbe: httpGet: path: /health/readiness port: 4000 initialDelaySeconds: 30 periodSeconds: 10 livenessProbe: httpGet: path: /health/liveliness port: 4000 initialDelaySeconds: 60 periodSeconds: 30 volumes: - name: config configMap: name: litellm-config LiteLLM Service # kubernetes/base/litellm/service.yaml apiVersion: v1 kind: Service metadata: name: litellm-service namespace: litellm spec: selector: app: litellm ports: - port: 4000 targetPort: 4000 type: ClusterIP 🌐 4단계: OpenWebUI 애플리케이션 배포 OpenWebUI Deployment # kubernetes/base/openwebui/deployment.yaml apiVersion: apps/v1 kind: Deployment metadata: name: openwebui namespace: openwebui spec: replicas: 2 selector: matchLabels: app: openwebui template: metadata: labels: app: openwebui spec: containers: - name: openwebui image: ghcr.io/open-webui/open-webui:main ports: - containerPort: 8080 env: - name: OLLAMA_BASE_URL value: \u0026#34;http://litellm-service.litellm.svc.cluster.local:4000\u0026#34; - name: WEBUI_SECRET_KEY valueFrom: configMapKeyRef: name: app-config key: WEBUI_SECRET_KEY - name: DATABASE_URL value: \u0026#34;postgresql://$(POSTGRES_USER):$(POSTGRES_PASSWORD)@postgres-service:5432/openwebui\u0026#34; - name: DEFAULT_LOCALE valueFrom: configMapKeyRef: name: app-config key: DEFAULT_LOCALE envFrom: - secretRef: name: app-secrets - configMapRef: name: app-config volumeMounts: - name: data mountPath: /app/backend/data resources: requests: memory: \u0026#34;512Mi\u0026#34; cpu: \u0026#34;250m\u0026#34; limits: memory: \u0026#34;1Gi\u0026#34; cpu: \u0026#34;500m\u0026#34; readinessProbe: httpGet: path: /health port: 8080 initialDelaySeconds: 30 periodSeconds: 10 livenessProbe: httpGet: path: /health port: 8080 initialDelaySeconds: 60 periodSeconds: 30 volumes: - name: data persistentVolumeClaim: claimName: openwebui-pvc OpenWebUI PVC # kubernetes/base/openwebui/pvc.yaml apiVersion: v1 kind: PersistentVolumeClaim metadata: name: openwebui-pvc namespace: openwebui spec: accessModes: - ReadWriteOnce storageClassName: gp3-encrypted resources: requests: storage: 5Gi OpenWebUI Service # kubernetes/base/openwebui/service.yaml apiVersion: v1 kind: Service metadata: name: openwebui-service namespace: openwebui spec: selector: app: openwebui ports: - port: 8080 targetPort: 8080 type: ClusterIP 🌍 5단계: Ingress 및 LoadBalancer 설정 Application Load Balancer (ALB) 설정 # kubernetes/base/ingress/ingress.yaml apiVersion: networking.k8s.io/v1 kind: Ingress metadata: name: openwebui-ingress namespace: openwebui annotations: # ALB 설정 kubernetes.io/ingress.class: alb alb.ingress.kubernetes.io/scheme: internet-facing alb.ingress.kubernetes.io/target-type: ip # SSL 설정 alb.ingress.kubernetes.io/listen-ports: \u0026#39;[{\u0026#34;HTTP\u0026#34;: 80}, {\u0026#34;HTTPS\u0026#34;: 443}]\u0026#39; alb.ingress.kubernetes.io/ssl-redirect: \u0026#39;443\u0026#39; alb.ingress.kubernetes.io/certificate-arn: arn:aws:acm:ap-northeast-2:ACCOUNT_ID:certificate/CERT_ID # 헬스체크 설정 alb.ingress.kubernetes.io/healthcheck-path: /health alb.ingress.kubernetes.io/healthcheck-interval-seconds: \u0026#39;30\u0026#39; alb.ingress.kubernetes.io/healthcheck-timeout-seconds: \u0026#39;5\u0026#39; alb.ingress.kubernetes.io/healthy-threshold-count: \u0026#39;2\u0026#39; alb.ingress.kubernetes.io/unhealthy-threshold-count: \u0026#39;3\u0026#39; # 기타 설정 alb.ingress.kubernetes.io/load-balancer-name: openwebui-alb alb.ingress.kubernetes.io/tags: Environment=dev,Project=openwebui spec: rules: - host: openwebui.yourdomain.com http: paths: - path: / pathType: Prefix backend: service: name: openwebui-service port: number: 8080 LoadBalancer Service (대안) # kubernetes/base/ingress/loadbalancer.yaml apiVersion: v1 kind: Service metadata: name: openwebui-loadbalancer namespace: openwebui annotations: service.beta.kubernetes.io/aws-load-balancer-type: \u0026#34;nlb\u0026#34; service.beta.kubernetes.io/aws-load-balancer-scheme: \u0026#34;internet-facing\u0026#34; service.beta.kubernetes.io/aws-load-balancer-name: \u0026#34;openwebui-nlb\u0026#34; spec: type: LoadBalancer selector: app: openwebui ports: - port: 80 targetPort: 8080 protocol: TCP 📊 6단계: 모니터링 설정 Prometheus ServiceMonitor # kubernetes/base/monitoring/servicemonitor.yaml apiVersion: monitoring.coreos.com/v1 kind: ServiceMonitor metadata: name: openwebui-monitor namespace: monitoring spec: selector: matchLabels: app: openwebui endpoints: - port: http path: /metrics interval: 30s --- apiVersion: monitoring.coreos.com/v1 kind: ServiceMonitor metadata: name: litellm-monitor namespace: monitoring spec: selector: matchLabels: app: litellm endpoints: - port: http path: /metrics interval: 30s 🚀 7단계: 배포 실행 배포 순서 # 1. 네임스페이스 생성 (이미 완료됨) kubectl get namespaces # 2. ConfigMap 및 Secret 적용 kubectl apply -f kubernetes/base/configmaps/ kubectl apply -f kubernetes/base/secrets/ # 3. PostgreSQL 배포 kubectl apply -f kubernetes/base/postgres/ # PostgreSQL 준비 완료 대기 kubectl wait --for=condition=ready pod -l app=postgres -n openwebui --timeout=300s # 4. LiteLLM 배포 kubectl apply -f kubernetes/base/litellm/ # LiteLLM 준비 완료 대기 kubectl wait --for=condition=ready pod -l app=litellm -n litellm --timeout=300s # 5. OpenWebUI 배포 kubectl apply -f kubernetes/base/openwebui/ # OpenWebUI 준비 완료 대기 kubectl wait --for=condition=ready pod -l app=openwebui -n openwebui --timeout=300s # 6. Ingress 설정 kubectl apply -f kubernetes/base/ingress/ # 7. 모니터링 설정 (선택사항) kubectl apply -f kubernetes/base/monitoring/ 배포 스크립트 #!/bin/bash # deploy.sh set -e echo \u0026#34;🚀 OpenWebUI 애플리케이션 배포 시작...\u0026#34; # 환경 확인 if ! kubectl get nodes \u0026gt; /dev/null 2\u0026gt;\u0026amp;1; then echo \u0026#34;❌ kubectl이 클러스터에 연결되지 않았습니다.\u0026#34; exit 1 fi echo \u0026#34;📁 1. ConfigMap 및 Secret 적용...\u0026#34; kubectl apply -f kubernetes/base/configmaps/ kubectl apply -f kubernetes/base/secrets/ echo \u0026#34;🗃️ 2. PostgreSQL 배포...\u0026#34; kubectl apply -f kubernetes/base/postgres/ echo \u0026#34;⏳ PostgreSQL 준비 대기...\u0026#34; kubectl wait --for=condition=ready pod -l app=postgres -n openwebui --timeout=300s echo \u0026#34;🤖 3. LiteLLM 배포...\u0026#34; kubectl apply -f kubernetes/base/litellm/ echo \u0026#34;⏳ LiteLLM 준비 대기...\u0026#34; kubectl wait --for=condition=ready pod -l app=litellm -n litellm --timeout=300s echo \u0026#34;🌐 4. OpenWebUI 배포...\u0026#34; kubectl apply -f kubernetes/base/openwebui/ echo \u0026#34;⏳ OpenWebUI 준비 대기...\u0026#34; kubectl wait --for=condition=ready pod -l app=openwebui -n openwebui --timeout=300s echo \u0026#34;🌍 5. Ingress 설정...\u0026#34; kubectl apply -f kubernetes/base/ingress/ echo \u0026#34;📊 6. 모니터링 설정...\u0026#34; kubectl apply -f kubernetes/base/monitoring/ || echo \u0026#34;⚠️ 모니터링 설정 실패 (선택사항)\u0026#34; echo \u0026#34;✅ 배포 완료!\u0026#34; echo \u0026#34;🔗 LoadBalancer URL 확인:\u0026#34; kubectl get ingress -n openwebui kubectl get svc -n openwebui echo \u0026#34;📋 파드 상태 확인:\u0026#34; kubectl get pods -n openwebui kubectl get pods -n litellm chmod +x deploy.sh ./deploy.sh 🔍 상태 확인 배포 상태 확인 # 전체 파드 상태 kubectl get pods -A # 서비스 상태 kubectl get svc -A # Ingress 상태 kubectl get ingress -A # 로그 확인 kubectl logs -f deployment/openwebui -n openwebui kubectl logs -f deployment/litellm -n litellm kubectl logs -f deployment/postgres -n openwebui 서비스 접근 테스트 # 포트 포워딩으로 로컬 테스트 kubectl port-forward svc/openwebui-service 8080:8080 -n openwebui # 브라우저에서 http://localhost:8080 접속 🔧 설정 업데이트 ConfigMap 업데이트 # ConfigMap 수정 후 파드 재시작 kubectl apply -f kubernetes/base/configmaps/ kubectl rollout restart deployment/openwebui -n openwebui kubectl rollout restart deployment/litellm -n litellm Secret 업데이트 # 새 API 키 추가 kubectl create secret generic api-keys \\ --from-literal=OPENAI_API_KEY=new-key \\ --from-literal=ANTHROPIC_API_KEY=new-key \\ --dry-run=client -o yaml | kubectl apply -f - kubectl rollout restart deployment/litellm -n litellm 📈 스케일링 수동 스케일링 # OpenWebUI 파드 개수 조정 kubectl scale deployment openwebui --replicas=3 -n openwebui # LiteLLM 파드 개수 조정 kubectl scale deployment litellm --replicas=4 -n litellm HPA (Horizontal Pod Autoscaler) 설정 # kubernetes/base/openwebui/hpa.yaml apiVersion: autoscaling/v2 kind: HorizontalPodAutoscaler metadata: name: openwebui-hpa namespace: openwebui spec: scaleTargetRef: apiVersion: apps/v1 kind: Deployment name: openwebui minReplicas: 2 maxReplicas: 10 metrics: - type: Resource resource: name: cpu target: type: Utilization averageUtilization: 70 - type: Resource resource: name: memory target: type: Utilization averageUtilization: 80 ⏭️ 다음 단계 애플리케이션 배포가 완료되었다면:\n",
+  "keywords": [
+    
+  ],
+  "articleBody": "🚀 애플리케이션 배포 가이드 ⏱️ 예상 소요시간: 45-60분\n💡 난이도: 중급\n📋 목표: EKS 클러스터에 OpenWebUI와 LiteLLM을 배포합니다.\n📋 배포 완료 체크리스트 ConfigMap 및 Secret 생성 PostgreSQL 데이터베이스 배포 LiteLLM 서비스 배포 OpenWebUI 애플리케이션 배포 Ingress/LoadBalancer 설정 SSL 인증서 설정 모니터링 설정 📁 배포 파일 구조 kubernetes/\r├── base/\r│ ├── configmaps/\r│ ├── secrets/\r│ ├── postgres/\r│ ├── litellm/\r│ ├── openwebui/\r│ └── ingress/\r└── overlays/\r├── dev/\r└── prod/ 🗂️ 1단계: ConfigMap 및 Secret 생성 ConfigMap 생성 # kubernetes/base/configmaps/app-config.yaml apiVersion: v1 kind: ConfigMap metadata: name: app-config namespace: openwebui data: # PostgreSQL 설정 POSTGRES_HOST: \"postgres-service.openwebui.svc.cluster.local\" POSTGRES_PORT: \"5432\" POSTGRES_DB: \"openwebui\" # LiteLLM 설정 LITELLM_HOST: \"litellm-service.litellm.svc.cluster.local\" LITELLM_PORT: \"4000\" # OpenWebUI 설정 WEBUI_SECRET_KEY: \"your-secret-key-here\" WEBUI_JWT_SECRET_KEY: \"your-jwt-secret-here\" DEFAULT_LOCALE: \"ko-KR\" # 기본 설정 LOG_LEVEL: \"INFO\" ENVIRONMENT: \"development\" --- apiVersion: v1 kind: ConfigMap metadata: name: litellm-config namespace: litellm data: config.yaml: | model_list: - model_name: gpt-3.5-turbo litellm_params: model: gpt-3.5-turbo api_key: os.environ/OPENAI_API_KEY - model_name: gpt-4 litellm_params: model: gpt-4 api_key: os.environ/OPENAI_API_KEY - model_name: claude-3-sonnet litellm_params: model: anthropic/claude-3-sonnet-20240229 api_key: os.environ/ANTHROPIC_API_KEY general_settings: master_key: os.environ/LITELLM_MASTER_KEY database_url: os.environ/DATABASE_URL Secret 생성 # kubernetes/base/secrets/app-secrets.yaml apiVersion: v1 kind: Secret metadata: name: app-secrets namespace: openwebui type: Opaque data: # Base64로 인코딩된 값들 POSTGRES_USER: b3BlbndlYnVp # openwebui POSTGRES_PASSWORD: cGFzc3dvcmQxMjM= # password123 --- apiVersion: v1 kind: Secret metadata: name: api-keys namespace: litellm type: Opaque data: OPENAI_API_KEY: eW91ci1vcGVuYWktYXBpLWtleQ== # your-openai-api-key ANTHROPIC_API_KEY: eW91ci1hbnRocm9waWMtYXBpLWtleQ== # your-anthropic-api-key LITELLM_MASTER_KEY: bGl0ZWxsbS1tYXN0ZXIta2V5 # litellm-master-key 실제 Secret 생성 (명령어) # PostgreSQL 인증 정보 kubectl create secret generic app-secrets \\ --from-literal=POSTGRES_USER=openwebui \\ --from-literal=POSTGRES_PASSWORD=password123 \\ -n openwebui # API 키들 kubectl create secret generic api-keys \\ --from-literal=OPENAI_API_KEY=your-actual-openai-key \\ --from-literal=ANTHROPIC_API_KEY=your-actual-anthropic-key \\ --from-literal=LITELLM_MASTER_KEY=your-master-key \\ -n litellm 🗃️ 2단계: PostgreSQL 데이터베이스 배포 PVC 생성 # kubernetes/base/postgres/pvc.yaml apiVersion: v1 kind: PersistentVolumeClaim metadata: name: postgres-pvc namespace: openwebui spec: accessModes: - ReadWriteOnce storageClassName: gp3-encrypted resources: requests: storage: 10Gi PostgreSQL Deployment # kubernetes/base/postgres/deployment.yaml apiVersion: apps/v1 kind: Deployment metadata: name: postgres namespace: openwebui spec: replicas: 1 selector: matchLabels: app: postgres template: metadata: labels: app: postgres spec: containers: - name: postgres image: postgres:15 ports: - containerPort: 5432 env: - name: POSTGRES_DB valueFrom: configMapKeyRef: name: app-config key: POSTGRES_DB - name: POSTGRES_USER valueFrom: secretKeyRef: name: app-secrets key: POSTGRES_USER - name: POSTGRES_PASSWORD valueFrom: secretKeyRef: name: app-secrets key: POSTGRES_PASSWORD - name: PGDATA value: /var/lib/postgresql/data/pgdata volumeMounts: - name: postgres-storage mountPath: /var/lib/postgresql/data resources: requests: memory: \"256Mi\" cpu: \"250m\" limits: memory: \"512Mi\" cpu: \"500m\" volumes: - name: postgres-storage persistentVolumeClaim: claimName: postgres-pvc PostgreSQL Service # kubernetes/base/postgres/service.yaml apiVersion: v1 kind: Service metadata: name: postgres-service namespace: openwebui spec: selector: app: postgres ports: - port: 5432 targetPort: 5432 type: ClusterIP 🤖 3단계: LiteLLM 서비스 배포 LiteLLM Deployment # kubernetes/base/litellm/deployment.yaml apiVersion: apps/v1 kind: Deployment metadata: name: litellm namespace: litellm spec: replicas: 2 selector: matchLabels: app: litellm template: metadata: labels: app: litellm spec: containers: - name: litellm image: ghcr.io/berriai/litellm:main-latest ports: - containerPort: 4000 env: - name: OPENAI_API_KEY valueFrom: secretKeyRef: name: api-keys key: OPENAI_API_KEY - name: ANTHROPIC_API_KEY valueFrom: secretKeyRef: name: api-keys key: ANTHROPIC_API_KEY - name: LITELLM_MASTER_KEY valueFrom: secretKeyRef: name: api-keys key: LITELLM_MASTER_KEY - name: DATABASE_URL value: \"postgresql://$(POSTGRES_USER):$(POSTGRES_PASSWORD)@postgres-service.openwebui.svc.cluster.local:5432/litellm\" envFrom: - secretRef: name: app-secrets volumeMounts: - name: config mountPath: /app/config.yaml subPath: config.yaml command: [\"litellm\", \"--config\", \"/app/config.yaml\", \"--port\", \"4000\", \"--num_workers\", \"8\"] resources: requests: memory: \"512Mi\" cpu: \"250m\" limits: memory: \"1Gi\" cpu: \"500m\" readinessProbe: httpGet: path: /health/readiness port: 4000 initialDelaySeconds: 30 periodSeconds: 10 livenessProbe: httpGet: path: /health/liveliness port: 4000 initialDelaySeconds: 60 periodSeconds: 30 volumes: - name: config configMap: name: litellm-config LiteLLM Service # kubernetes/base/litellm/service.yaml apiVersion: v1 kind: Service metadata: name: litellm-service namespace: litellm spec: selector: app: litellm ports: - port: 4000 targetPort: 4000 type: ClusterIP 🌐 4단계: OpenWebUI 애플리케이션 배포 OpenWebUI Deployment # kubernetes/base/openwebui/deployment.yaml apiVersion: apps/v1 kind: Deployment metadata: name: openwebui namespace: openwebui spec: replicas: 2 selector: matchLabels: app: openwebui template: metadata: labels: app: openwebui spec: containers: - name: openwebui image: ghcr.io/open-webui/open-webui:main ports: - containerPort: 8080 env: - name: OLLAMA_BASE_URL value: \"http://litellm-service.litellm.svc.cluster.local:4000\" - name: WEBUI_SECRET_KEY valueFrom: configMapKeyRef: name: app-config key: WEBUI_SECRET_KEY - name: DATABASE_URL value: \"postgresql://$(POSTGRES_USER):$(POSTGRES_PASSWORD)@postgres-service:5432/openwebui\" - name: DEFAULT_LOCALE valueFrom: configMapKeyRef: name: app-config key: DEFAULT_LOCALE envFrom: - secretRef: name: app-secrets - configMapRef: name: app-config volumeMounts: - name: data mountPath: /app/backend/data resources: requests: memory: \"512Mi\" cpu: \"250m\" limits: memory: \"1Gi\" cpu: \"500m\" readinessProbe: httpGet: path: /health port: 8080 initialDelaySeconds: 30 periodSeconds: 10 livenessProbe: httpGet: path: /health port: 8080 initialDelaySeconds: 60 periodSeconds: 30 volumes: - name: data persistentVolumeClaim: claimName: openwebui-pvc OpenWebUI PVC # kubernetes/base/openwebui/pvc.yaml apiVersion: v1 kind: PersistentVolumeClaim metadata: name: openwebui-pvc namespace: openwebui spec: accessModes: - ReadWriteOnce storageClassName: gp3-encrypted resources: requests: storage: 5Gi OpenWebUI Service # kubernetes/base/openwebui/service.yaml apiVersion: v1 kind: Service metadata: name: openwebui-service namespace: openwebui spec: selector: app: openwebui ports: - port: 8080 targetPort: 8080 type: ClusterIP 🌍 5단계: Ingress 및 LoadBalancer 설정 Application Load Balancer (ALB) 설정 # kubernetes/base/ingress/ingress.yaml apiVersion: networking.k8s.io/v1 kind: Ingress metadata: name: openwebui-ingress namespace: openwebui annotations: # ALB 설정 kubernetes.io/ingress.class: alb alb.ingress.kubernetes.io/scheme: internet-facing alb.ingress.kubernetes.io/target-type: ip # SSL 설정 alb.ingress.kubernetes.io/listen-ports: '[{\"HTTP\": 80}, {\"HTTPS\": 443}]' alb.ingress.kubernetes.io/ssl-redirect: '443' alb.ingress.kubernetes.io/certificate-arn: arn:aws:acm:ap-northeast-2:ACCOUNT_ID:certificate/CERT_ID # 헬스체크 설정 alb.ingress.kubernetes.io/healthcheck-path: /health alb.ingress.kubernetes.io/healthcheck-interval-seconds: '30' alb.ingress.kubernetes.io/healthcheck-timeout-seconds: '5' alb.ingress.kubernetes.io/healthy-threshold-count: '2' alb.ingress.kubernetes.io/unhealthy-threshold-count: '3' # 기타 설정 alb.ingress.kubernetes.io/load-balancer-name: openwebui-alb alb.ingress.kubernetes.io/tags: Environment=dev,Project=openwebui spec: rules: - host: openwebui.yourdomain.com http: paths: - path: / pathType: Prefix backend: service: name: openwebui-service port: number: 8080 LoadBalancer Service (대안) # kubernetes/base/ingress/loadbalancer.yaml apiVersion: v1 kind: Service metadata: name: openwebui-loadbalancer namespace: openwebui annotations: service.beta.kubernetes.io/aws-load-balancer-type: \"nlb\" service.beta.kubernetes.io/aws-load-balancer-scheme: \"internet-facing\" service.beta.kubernetes.io/aws-load-balancer-name: \"openwebui-nlb\" spec: type: LoadBalancer selector: app: openwebui ports: - port: 80 targetPort: 8080 protocol: TCP 📊 6단계: 모니터링 설정 Prometheus ServiceMonitor # kubernetes/base/monitoring/servicemonitor.yaml apiVersion: monitoring.coreos.com/v1 kind: ServiceMonitor metadata: name: openwebui-monitor namespace: monitoring spec: selector: matchLabels: app: openwebui endpoints: - port: http path: /metrics interval: 30s --- apiVersion: monitoring.coreos.com/v1 kind: ServiceMonitor metadata: name: litellm-monitor namespace: monitoring spec: selector: matchLabels: app: litellm endpoints: - port: http path: /metrics interval: 30s 🚀 7단계: 배포 실행 배포 순서 # 1. 네임스페이스 생성 (이미 완료됨) kubectl get namespaces # 2. ConfigMap 및 Secret 적용 kubectl apply -f kubernetes/base/configmaps/ kubectl apply -f kubernetes/base/secrets/ # 3. PostgreSQL 배포 kubectl apply -f kubernetes/base/postgres/ # PostgreSQL 준비 완료 대기 kubectl wait --for=condition=ready pod -l app=postgres -n openwebui --timeout=300s # 4. LiteLLM 배포 kubectl apply -f kubernetes/base/litellm/ # LiteLLM 준비 완료 대기 kubectl wait --for=condition=ready pod -l app=litellm -n litellm --timeout=300s # 5. OpenWebUI 배포 kubectl apply -f kubernetes/base/openwebui/ # OpenWebUI 준비 완료 대기 kubectl wait --for=condition=ready pod -l app=openwebui -n openwebui --timeout=300s # 6. Ingress 설정 kubectl apply -f kubernetes/base/ingress/ # 7. 모니터링 설정 (선택사항) kubectl apply -f kubernetes/base/monitoring/ 배포 스크립트 #!/bin/bash # deploy.sh set -e echo \"🚀 OpenWebUI 애플리케이션 배포 시작...\" # 환경 확인 if ! kubectl get nodes \u003e /dev/null 2\u003e\u00261; then echo \"❌ kubectl이 클러스터에 연결되지 않았습니다.\" exit 1 fi echo \"📁 1. ConfigMap 및 Secret 적용...\" kubectl apply -f kubernetes/base/configmaps/ kubectl apply -f kubernetes/base/secrets/ echo \"🗃️ 2. PostgreSQL 배포...\" kubectl apply -f kubernetes/base/postgres/ echo \"⏳ PostgreSQL 준비 대기...\" kubectl wait --for=condition=ready pod -l app=postgres -n openwebui --timeout=300s echo \"🤖 3. LiteLLM 배포...\" kubectl apply -f kubernetes/base/litellm/ echo \"⏳ LiteLLM 준비 대기...\" kubectl wait --for=condition=ready pod -l app=litellm -n litellm --timeout=300s echo \"🌐 4. OpenWebUI 배포...\" kubectl apply -f kubernetes/base/openwebui/ echo \"⏳ OpenWebUI 준비 대기...\" kubectl wait --for=condition=ready pod -l app=openwebui -n openwebui --timeout=300s echo \"🌍 5. Ingress 설정...\" kubectl apply -f kubernetes/base/ingress/ echo \"📊 6. 모니터링 설정...\" kubectl apply -f kubernetes/base/monitoring/ || echo \"⚠️ 모니터링 설정 실패 (선택사항)\" echo \"✅ 배포 완료!\" echo \"🔗 LoadBalancer URL 확인:\" kubectl get ingress -n openwebui kubectl get svc -n openwebui echo \"📋 파드 상태 확인:\" kubectl get pods -n openwebui kubectl get pods -n litellm chmod +x deploy.sh ./deploy.sh 🔍 상태 확인 배포 상태 확인 # 전체 파드 상태 kubectl get pods -A # 서비스 상태 kubectl get svc -A # Ingress 상태 kubectl get ingress -A # 로그 확인 kubectl logs -f deployment/openwebui -n openwebui kubectl logs -f deployment/litellm -n litellm kubectl logs -f deployment/postgres -n openwebui 서비스 접근 테스트 # 포트 포워딩으로 로컬 테스트 kubectl port-forward svc/openwebui-service 8080:8080 -n openwebui # 브라우저에서 http://localhost:8080 접속 🔧 설정 업데이트 ConfigMap 업데이트 # ConfigMap 수정 후 파드 재시작 kubectl apply -f kubernetes/base/configmaps/ kubectl rollout restart deployment/openwebui -n openwebui kubectl rollout restart deployment/litellm -n litellm Secret 업데이트 # 새 API 키 추가 kubectl create secret generic api-keys \\ --from-literal=OPENAI_API_KEY=new-key \\ --from-literal=ANTHROPIC_API_KEY=new-key \\ --dry-run=client -o yaml | kubectl apply -f - kubectl rollout restart deployment/litellm -n litellm 📈 스케일링 수동 스케일링 # OpenWebUI 파드 개수 조정 kubectl scale deployment openwebui --replicas=3 -n openwebui # LiteLLM 파드 개수 조정 kubectl scale deployment litellm --replicas=4 -n litellm HPA (Horizontal Pod Autoscaler) 설정 # kubernetes/base/openwebui/hpa.yaml apiVersion: autoscaling/v2 kind: HorizontalPodAutoscaler metadata: name: openwebui-hpa namespace: openwebui spec: scaleTargetRef: apiVersion: apps/v1 kind: Deployment name: openwebui minReplicas: 2 maxReplicas: 10 metrics: - type: Resource resource: name: cpu target: type: Utilization averageUtilization: 70 - type: Resource resource: name: memory target: type: Utilization averageUtilization: 80 ⏭️ 다음 단계 애플리케이션 배포가 완료되었다면:\n[06-verification.md] - 배포 검증 및 테스트 ",
+  "wordCount" : "1413",
+  "inLanguage": "en",
+  "datePublished": "0001-01-01T00:00:00Z",
+  "dateModified": "0001-01-01T00:00:00Z",
+  "mainEntityOfPage": {
+    "@type": "WebPage",
+    "@id": "https://8dobibim.github.io/backend/%EC%95%A0%ED%94%8C%EB%A6%AC%EC%BC%80%EC%9D%B4%EC%85%98-%EB%B0%B0%ED%8F%AC-%EA%B0%80%EC%9D%B4%EB%93%9C/"
+  },
+  "publisher": {
+    "@type": "Organization",
+    "name": "8dobibim Tech Blog",
+    "logo": {
+      "@type": "ImageObject",
+      "url": "https://8dobibim.github.io/favicon.ico"
+    }
+  }
+}
+</script>
 </head>
 
 <body class="" id="top">
@@ -706,7 +1402,7 @@ spec:
 <header class="header">
     <nav class="nav">
         <div class="logo">
-            <a href="http://localhost:65390/" accesskey="h" title="8dobibim Tech Blog (Alt + H)">8dobibim Tech Blog</a>
+            <a href="https://8dobibim.github.io/" accesskey="h" title="8dobibim Tech Blog (Alt + H)">8dobibim Tech Blog</a>
             <div class="logo-switches">
                 <button id="theme-toggle" accesskey="t" title="(Alt + T)" aria-label="Toggle theme">
                     <svg id="moon" xmlns="http://www.w3.org/2000/svg" width="24" height="18" viewBox="0 0 24 24"
@@ -732,12 +1428,12 @@ spec:
         </div>
         <ul id="menu">
             <li>
-                <a href="http://localhost:65390/frontend/" title="🖥 프론트엔드">
+                <a href="https://8dobibim.github.io/frontend/" title="🖥 프론트엔드">
                     <span>🖥 프론트엔드</span>
                 </a>
             </li>
             <li>
-                <a href="http://localhost:65390/backend/" title="💾 백엔드">
+                <a href="https://8dobibim.github.io/backend/" title="💾 백엔드">
                     <span>💾 백엔드</span>
                 </a>
             </li>
@@ -748,7 +1444,7 @@ spec:
 
 <article class="post-single">
   <header class="post-header">
-    <div class="breadcrumbs"><a href="http://localhost:65390/">Home</a>&nbsp;»&nbsp;<a href="http://localhost:65390/backend/">Backend 문서</a></div>
+    <div class="breadcrumbs"><a href="https://8dobibim.github.io/">Home</a>&nbsp;»&nbsp;<a href="https://8dobibim.github.io/backend/">Backend 문서</a></div>
     <h1 class="post-title entry-hint-parent">
       
     </h1>
@@ -1508,12 +2204,12 @@ spec:
     <ul class="post-tags">
     </ul>
 <nav class="paginav">
-  <a class="prev" href="http://localhost:65390/backend/%EC%82%AC%EC%A0%84%EC%A4%80%EB%B9%84%EC%82%AC%ED%95%AD/">
+  <a class="prev" href="https://8dobibim.github.io/backend/%EC%82%AC%EC%A0%84%EC%A4%80%EB%B9%84%EC%82%AC%ED%95%AD/">
     <span class="title">« Prev</span>
     <br>
     <span></span>
   </a>
-  <a class="next" href="http://localhost:65390/backend/%EC%9A%B4%EC%98%81-%EB%A9%94%EB%89%B4%EC%96%BC/">
+  <a class="next" href="https://8dobibim.github.io/backend/%EC%9A%B4%EC%98%81-%EB%A9%94%EB%89%B4%EC%96%BC/">
     <span class="title">Next »</span>
     <br>
     <span></span>
@@ -1525,7 +2221,7 @@ spec:
     </main>
     
 <footer class="footer">
-        <span>&copy; 2025 <a href="http://localhost:65390/">8dobibim Tech Blog</a></span> · 
+        <span>&copy; 2025 <a href="https://8dobibim.github.io/">8dobibim Tech Blog</a></span> · 
 
     <span>
         Powered by

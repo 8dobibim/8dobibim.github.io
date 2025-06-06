@@ -1,10 +1,10 @@
 <!DOCTYPE html>
 <html lang="en" dir="auto">
 
-<head><script src="/livereload.js?mindelay=10&amp;v=2&amp;port=65390&amp;path=livereload" data-no-instant defer></script><meta charset="utf-8">
+<head><meta charset="utf-8">
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
 <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-<meta name="robots" content="noindex, nofollow">
+<meta name="robots" content="index, follow">
 <title>8dobibim Tech Blog</title>
 <meta name="keywords" content="">
 <meta name="description" content="✅ 배포 검증 가이드
@@ -574,16 +574,16 @@ Alert Manager 설정
 ⏭️ 다음 단계
 배포 검증이 완료되었다면:">
 <meta name="author" content="">
-<link rel="canonical" href="http://localhost:65390/backend/%EB%B0%B0%ED%8F%AC-%EA%B2%80%EC%A6%9D-%EA%B0%80%EC%9D%B4%EB%93%9C/">
+<link rel="canonical" href="https://8dobibim.github.io/backend/%EB%B0%B0%ED%8F%AC-%EA%B2%80%EC%A6%9D-%EA%B0%80%EC%9D%B4%EB%93%9C/">
 <link crossorigin="anonymous" href="/assets/css/stylesheet.36819bea596090d8b48cf10d9831382996197aa7e4fc86f792f7c08c9ca4d23b.css" integrity="sha256-NoGb6llgkNi0jPENmDE4KZYZeqfk/Ib3kvfAjJyk0js=" rel="preload stylesheet" as="style">
-<link rel="icon" href="http://localhost:65390/favicon.ico">
-<link rel="icon" type="image/png" sizes="16x16" href="http://localhost:65390/favicon-16x16.png">
-<link rel="icon" type="image/png" sizes="32x32" href="http://localhost:65390/favicon-32x32.png">
-<link rel="apple-touch-icon" href="http://localhost:65390/apple-touch-icon.png">
-<link rel="mask-icon" href="http://localhost:65390/safari-pinned-tab.svg">
+<link rel="icon" href="https://8dobibim.github.io/favicon.ico">
+<link rel="icon" type="image/png" sizes="16x16" href="https://8dobibim.github.io/favicon-16x16.png">
+<link rel="icon" type="image/png" sizes="32x32" href="https://8dobibim.github.io/favicon-32x32.png">
+<link rel="apple-touch-icon" href="https://8dobibim.github.io/apple-touch-icon.png">
+<link rel="mask-icon" href="https://8dobibim.github.io/safari-pinned-tab.svg">
 <meta name="theme-color" content="#2e2e33">
 <meta name="msapplication-TileColor" content="#2e2e33">
-<link rel="alternate" hreflang="en" href="http://localhost:65390/backend/%EB%B0%B0%ED%8F%AC-%EA%B2%80%EC%A6%9D-%EA%B0%80%EC%9D%B4%EB%93%9C/">
+<link rel="alternate" hreflang="en" href="https://8dobibim.github.io/backend/%EB%B0%B0%ED%8F%AC-%EA%B2%80%EC%A6%9D-%EA%B0%80%EC%9D%B4%EB%93%9C/">
 <noscript>
     <style>
         #theme-toggle,
@@ -620,7 +620,635 @@ Alert Manager 설정
         }
 
     </style>
-</noscript>
+</noscript><meta property="og:url" content="https://8dobibim.github.io/backend/%EB%B0%B0%ED%8F%AC-%EA%B2%80%EC%A6%9D-%EA%B0%80%EC%9D%B4%EB%93%9C/">
+  <meta property="og:site_name" content="8dobibim Tech Blog">
+  <meta property="og:title" content="8dobibim Tech Blog">
+  <meta property="og:description" content="✅ 배포 검증 가이드 ⏱️ 예상 소요시간: 30-45분
+💡 난이도: 초급-중급
+📋 목표: 배포된 OpenWebUI 시스템의 정상 작동을 검증하고 테스트합니다.
+📋 검증 완료 체크리스트 인프라 상태 확인 데이터베이스 연결 테스트 LiteLLM API 테스트 OpenWebUI 웹 인터페이스 테스트 로드밸런서 및 네트워킹 테스트 로그 및 모니터링 확인 부하 테스트 실행 장애 복구 테스트 🏗️ 1단계: 인프라 상태 확인 클러스터 전체 상태 #!/bin/bash # infrastructure-check.sh echo &#34;🔍 인프라 상태 검증 시작...&#34; echo &#34;📋 1. 클러스터 노드 상태&#34; kubectl get nodes -o wide echo &#34;📋 2. 네임스페이스 확인&#34; kubectl get namespaces echo &#34;📋 3. 전체 파드 상태&#34; kubectl get pods -A -o wide echo &#34;📋 4. 서비스 상태&#34; kubectl get svc -A echo &#34;📋 5. Ingress 상태&#34; kubectl get ingress -A echo &#34;📋 6. PVC 상태&#34; kubectl get pvc -A echo &#34;📋 7. 시크릿 확인&#34; kubectl get secrets -A echo &#34;✅ 인프라 상태 확인 완료&#34; 리소스 사용량 확인 # 노드 리소스 사용량 kubectl top nodes # 파드 리소스 사용량 kubectl top pods -A # 네임스페이스별 리소스 사용량 kubectl top pods -n openwebui kubectl top pods -n litellm 🗃️ 2단계: 데이터베이스 연결 테스트 PostgreSQL 연결 테스트 # PostgreSQL 파드에 직접 접속 kubectl exec -it deployment/postgres -n openwebui -- psql -U openwebui -d openwebui # SQL 명령어로 테스트 \l # 데이터베이스 목록 \dt # 테이블 목록 SELECT version(); # PostgreSQL 버전 확인 SELECT now(); # 현재 시간 \q # 종료 데이터베이스 연결 스크립트 #!/bin/bash # db-connection-test.sh echo &#34;🗃️ 데이터베이스 연결 테스트...&#34; # PostgreSQL 파드 상태 확인 if ! kubectl get pod -l app=postgres -n openwebui | grep -q &#34;Running&#34;; then echo &#34;❌ PostgreSQL 파드가 실행 중이 아닙니다.&#34; exit 1 fi # 연결 테스트 echo &#34;📡 데이터베이스 연결 테스트 중...&#34; kubectl exec deployment/postgres -n openwebui -- pg_isready -U openwebui if [ $? -eq 0 ]; then echo &#34;✅ PostgreSQL 연결 성공&#34; else echo &#34;❌ PostgreSQL 연결 실패&#34; exit 1 fi # 데이터베이스 쿼리 테스트 echo &#34;🔍 기본 쿼리 테스트...&#34; kubectl exec deployment/postgres -n openwebui -- psql -U openwebui -d openwebui -c &#34;SELECT 1 as test;&#34; echo &#34;✅ 데이터베이스 테스트 완료&#34; 🤖 3단계: LiteLLM API 테스트 LiteLLM 서비스 상태 확인 # LiteLLM 파드 상태 kubectl get pods -l app=litellm -n litellm # LiteLLM 서비스 엔드포인트 확인 kubectl get endpoints -n litellm # LiteLLM 로그 확인 kubectl logs deployment/litellm -n litellm --tail=50 API 엔드포인트 테스트 #!/bin/bash # litellm-api-test.sh echo &#34;🤖 LiteLLM API 테스트...&#34; # 포트 포워딩 설정 kubectl port-forward svc/litellm-service 4000:4000 -n litellm &amp; PORT_FORWARD_PID=$! sleep 5 # Health check echo &#34;📡 헬스체크 테스트...&#34; curl -s http://localhost:4000/health # 모델 목록 확인 echo &#34;📝 모델 목록 확인...&#34; curl -s http://localhost:4000/v1/models | jq &#39;.&#39; # 간단한 채팅 완료 테스트 echo &#34;💬 채팅 완료 API 테스트...&#34; curl -X POST http://localhost:4000/v1/chat/completions \ -H &#34;Content-Type: application/json&#34; \ -H &#34;Authorization: Bearer your-master-key&#34; \ -d &#39;{ &#34;model&#34;: &#34;gpt-3.5-turbo&#34;, &#34;messages&#34;: [{&#34;role&#34;: &#34;user&#34;, &#34;content&#34;: &#34;Hello, this is a test.&#34;}], &#34;max_tokens&#34;: 50 }&#39; | jq &#39;.&#39; # 포트 포워딩 종료 kill $PORT_FORWARD_PID echo &#34;✅ LiteLLM API 테스트 완료&#34; 🌐 4단계: OpenWebUI 웹 인터페이스 테스트 웹 인터페이스 접근 테스트 #!/bin/bash # webui-access-test.sh echo &#34;🌐 OpenWebUI 접근 테스트...&#34; # OpenWebUI 파드 상태 확인 kubectl get pods -l app=openwebui -n openwebui # 포트 포워딩으로 로컬 접근 테스트 kubectl port-forward svc/openwebui-service 8080:8080 -n openwebui &amp; PORT_FORWARD_PID=$! sleep 10 # HTTP 상태 코드 확인 echo &#34;📡 HTTP 상태 확인...&#34; HTTP_STATUS=$(curl -s -o /dev/null -w &#34;%{http_code}&#34; http://localhost:8080) if [ &#34;$HTTP_STATUS&#34; = &#34;200&#34; ]; then echo &#34;✅ OpenWebUI 접근 성공 (HTTP $HTTP_STATUS)&#34; else echo &#34;❌ OpenWebUI 접근 실패 (HTTP $HTTP_STATUS)&#34; fi # HTML 응답 확인 echo &#34;📄 HTML 응답 확인...&#34; curl -s http://localhost:8080 | head -20 # 포트 포워딩 종료 kill $PORT_FORWARD_PID echo &#34;✅ OpenWebUI 접근 테스트 완료&#34; 브라우저 테스트 체크리스트 수동 테스트 항목:□ 메인 페이지 로딩□ 회원가입 페이지□ 로그인 기능□ 채팅 인터페이스□ 모델 선택 기능□ 파일 업로드 기능□ 설정 페이지 접근 🌍 5단계: 로드밸런서 및 네트워킹 테스트 Ingress/LoadBalancer 상태 확인 #!/bin/bash # networking-test.sh echo &#34;🌍 네트워킹 테스트...&#34; # Ingress 상태 확인 echo &#34;📡 Ingress 상태:&#34; kubectl get ingress -n openwebui -o wide # LoadBalancer 상태 확인 echo &#34;⚖️ LoadBalancer 상태:&#34; kubectl get svc -n openwebui -o wide # DNS 해상도 테스트 echo &#34;🔍 DNS 해상도 테스트:&#34; INGRESS_HOST=$(kubectl get ingress openwebui-ingress -n openwebui -o jsonpath=&#39;{.status.loadBalancer.ingress[0].hostname}&#39;) if [ -n &#34;$INGRESS_HOST&#34; ]; then echo &#34;Ingress 호스트: $INGRESS_HOST&#34; nslookup $INGRESS_HOST # HTTP 테스트 echo &#34;🔗 외부 접근 테스트:&#34; curl -I http://$INGRESS_HOST --connect-timeout 10 else echo &#34;⚠️ Ingress 호스트를 찾을 수 없습니다.&#34; fi echo &#34;✅ 네트워킹 테스트 완료&#34; 서비스 간 통신 테스트 #!/bin/bash # service-communication-test.sh echo &#34;🔄 서비스 간 통신 테스트...&#34; # OpenWebUI에서 LiteLLM 연결 테스트 echo &#34;📡 OpenWebUI → LiteLLM 연결 테스트:&#34; kubectl exec deployment/openwebui -n openwebui -- \ curl -s http://litellm-service.litellm.svc.cluster.local:4000/health # OpenWebUI에서 PostgreSQL 연결 테스트 echo &#34;🗃️ OpenWebUI → PostgreSQL 연결 테스트:&#34; kubectl exec deployment/openwebui -n openwebui -- \ nc -zv postgres-service 5432 # LiteLLM에서 PostgreSQL 연결 테스트 echo &#34;🗃️ LiteLLM → PostgreSQL 연결 테스트:&#34; kubectl exec deployment/litellm -n litellm -- \ nc -zv postgres-service.openwebui.svc.cluster.local 5432 echo &#34;✅ 서비스 간 통신 테스트 완료&#34; 📊 6단계: 로그 및 모니터링 확인 애플리케이션 로그 확인 #!/bin/bash # log-check.sh echo &#34;📊 로그 확인...&#34; echo &#34;🗃️ PostgreSQL 로그:&#34; kubectl logs deployment/postgres -n openwebui --tail=20 echo &#34;🤖 LiteLLM 로그:&#34; kubectl logs deployment/litellm -n litellm --tail=20 echo &#34;🌐 OpenWebUI 로그:&#34; kubectl logs deployment/openwebui -n openwebui --tail=20 # 에러 로그 검색 echo &#34;❌ 에러 로그 검색:&#34; kubectl logs deployment/openwebui -n openwebui | grep -i error | tail -10 kubectl logs deployment/litellm -n litellm | grep -i error | tail -10 echo &#34;✅ 로그 확인 완료&#34; 이벤트 확인 # 클러스터 이벤트 확인 kubectl get events -A --sort-by=&#39;.lastTimestamp&#39; | tail -20 # 네임스페이스별 이벤트 kubectl get events -n openwebui --sort-by=&#39;.lastTimestamp&#39; kubectl get events -n litellm --sort-by=&#39;.lastTimestamp&#39; 메트릭 확인 # 리소스 사용량 모니터링 kubectl top pods -n openwebui --containers kubectl top pods -n litellm --containers # 파드별 상세 메트릭 kubectl describe pod -l app=openwebui -n openwebui kubectl describe pod -l app=litellm -n litellm 🚀 7단계: 부하 테스트 간단한 부하 테스트 #!/bin/bash # load-test.sh echo &#34;🚀 부하 테스트 시작...&#34; # 포트 포워딩 설정 kubectl port-forward svc/openwebui-service 8080:8080 -n openwebui &amp; PORT_FORWARD_PID=$! sleep 5 # Apache Bench를 사용한 부하 테스트 echo &#34;⚡ HTTP 부하 테스트 (100 요청, 동시접속 10):&#34; ab -n 100 -c 10 http://localhost:8080/ # curl을 사용한 반복 테스트 echo &#34;🔄 반복 접속 테스트:&#34; for i in {1..10}; do echo &#34;요청 $i:&#34; curl -s -o /dev/null -w &#34;HTTP Status: %{http_code}, Time: %{time_total}s\n&#34; http://localhost:8080/ sleep 1 done # 포트 포워딩 종료 kill $PORT_FORWARD_PID echo &#34;✅ 부하 테스트 완료&#34; K6를 사용한 고급 부하 테스트 // k6-load-test.js import http from &#39;k6/http&#39;; import { check, sleep } from &#39;k6&#39;; export let options = { stages: [ { duration: &#39;2m&#39;, target: 10 }, // 2분간 10명 사용자로 증가 { duration: &#39;5m&#39;, target: 10 }, // 5분간 10명 사용자 유지 { duration: &#39;2m&#39;, target: 20 }, // 2분간 20명 사용자로 증가 { duration: &#39;5m&#39;, target: 20 }, // 5분간 20명 사용자 유지 { duration: &#39;2m&#39;, target: 0 }, // 2분간 0명으로 감소 ], }; export default function () { let response = http.get(&#39;http://localhost:8080&#39;); check(response, { &#39;status is 200&#39;: (r) =&gt; r.status === 200, &#39;response time &lt; 500ms&#39;: (r) =&gt; r.timings.duration &lt; 500, }); sleep(1); } # K6 설치 및 실행 # 1. K6 설치 (macOS) brew install k6 # 2. 부하 테스트 실행 kubectl port-forward svc/openwebui-service 8080:8080 -n openwebui &amp; k6 run k6-load-test.js 🔧 8단계: 장애 복구 테스트 파드 장애 시뮬레이션 #!/bin/bash # failure-recovery-test.sh echo &#34;🔧 장애 복구 테스트...&#34; echo &#34;💥 OpenWebUI 파드 삭제 (장애 시뮬레이션):&#34; kubectl delete pod -l app=openwebui -n openwebui echo &#34;⏳ 파드 재생성 대기 (30초):&#34; sleep 30 echo &#34;✅ 파드 복구 상태 확인:&#34; kubectl get pods -l app=openwebui -n openwebui echo &#34;🔍 서비스 가용성 테스트:&#34; kubectl port-forward svc/openwebui-service 8080:8080 -n openwebui &amp; PORT_FORWARD_PID=$! sleep 10 HTTP_STATUS=$(curl -s -o /dev/null -w &#34;%{http_code}&#34; http://localhost:8080) echo &#34;HTTP 상태: $HTTP_STATUS&#34; kill $PORT_FORWARD_PID if [ &#34;$HTTP_STATUS&#34; = &#34;200&#34; ]; then echo &#34;✅ 장애 복구 성공&#34; else echo &#34;❌ 장애 복구 실패&#34; fi echo &#34;✅ 장애 복구 테스트 완료&#34; 데이터베이스 장애 테스트 #!/bin/bash # db-failure-test.sh echo &#34;🗃️ 데이터베이스 장애 테스트...&#34; echo &#34;💥 PostgreSQL 파드 삭제:&#34; kubectl delete pod -l app=postgres -n openwebui echo &#34;⏳ 파드 재생성 및 데이터 복구 대기 (60초):&#34; sleep 60 echo &#34;✅ PostgreSQL 복구 확인:&#34; kubectl wait --for=condition=ready pod -l app=postgres -n openwebui --timeout=300s echo &#34;🔍 데이터 무결성 확인:&#34; kubectl exec deployment/postgres -n openwebui -- psql -U openwebui -d openwebui -c &#34;SELECT 1 as test;&#34; echo &#34;✅ 데이터베이스 장애 테스트 완료&#34; 📈 9단계: 성능 벤치마크 애플리케이션 성능 측정 #!/bin/bash # performance-benchmark.sh echo &#34;📈 성능 벤치마크 시작...&#34; # 포트 포워딩 설정 kubectl port-forward svc/openwebui-service 8080:8080 -n openwebui &amp; PORT_FORWARD_PID=$! sleep 5 echo &#34;⏱️ 응답 시간 측정 (10회):&#34; for i in {1..10}; do curl -s -o /dev/null -w &#34;응답시간 $i: %{time_total}s\n&#34; http://localhost:8080/ done echo &#34;📊 동시 접속 테스트:&#34; ab -n 50 -c 5 http://localhost:8080/ | grep -E &#34;(Requests per second|Time per request)&#34; # 포트 포워딩 종료 kill $PORT_FORWARD_PID echo &#34;💾 리소스 사용량 기록:&#34; kubectl top pods -n openwebui --containers kubectl top pods -n litellm --containers echo &#34;✅ 성능 벤치마크 완료&#34; 🔍 10단계: 종합 검증 리포트 자동 검증 스크립트 #!/bin/bash # comprehensive-verification.sh set -e REPORT_FILE=&#34;verification-report-$(date &#43;%Y%m%d-%H%M%S).txt&#34; echo &#34;📋 OpenWebUI 종합 검증 리포트&#34; | tee $REPORT_FILE echo &#34;생성 시간: $(date)&#34; | tee -a $REPORT_FILE echo &#34;======================================&#34; | tee -a $REPORT_FILE # 1. 인프라 상태 echo &#34;🏗️ 1. 인프라 상태&#34; | tee -a $REPORT_FILE kubectl get nodes --no-headers | wc -l | xargs echo &#34;- 활성 노드 수:&#34; | tee -a $REPORT_FILE kubectl get pods -A --field-selector=status.phase=Running --no-headers | wc -l | xargs echo &#34;- 실행 중인 파드:&#34; | tee -a $REPORT_FILE # 2. 애플리케이션 상태 echo &#34;🌐 2. 애플리케이션 상태&#34; | tee -a $REPORT_FILE kubectl get pods -n openwebui -l app=openwebui --no-headers | grep Running | wc -l | xargs echo &#34;- OpenWebUI 파드:&#34; | tee -a $REPORT_FILE kubectl get pods -n litellm -l app=litellm --no-headers | grep Running | wc -l | xargs echo &#34;- LiteLLM 파드:&#34; | tee -a $REPORT_FILE kubectl get pods -n openwebui -l app=postgres --no-headers | grep Running | wc -l | xargs echo &#34;- PostgreSQL 파드:&#34; | tee -a $REPORT_FILE # 3. 서비스 연결성 echo &#34;🔗 3. 서비스 연결성&#34; | tee -a $REPORT_FILE if kubectl exec deployment/openwebui -n openwebui -- curl -s http://litellm-service.litellm.svc.cluster.local:4000/health &gt; /dev/null; then echo &#34;- OpenWebUI → LiteLLM: ✅&#34; | tee -a $REPORT_FILE else echo &#34;- OpenWebUI → LiteLLM: ❌&#34; | tee -a $REPORT_FILE fi if kubectl exec deployment/postgres -n openwebui -- pg_isready &gt; /dev/null; then echo &#34;- PostgreSQL 연결: ✅&#34; | tee -a $REPORT_FILE else echo &#34;- PostgreSQL 연결: ❌&#34; | tee -a $REPORT_FILE fi # 4. 외부 접근성 echo &#34;🌍 4. 외부 접근성&#34; | tee -a $REPORT_FILE kubectl port-forward svc/openwebui-service 8080:8080 -n openwebui &amp; PORT_FORWARD_PID=$! sleep 5 HTTP_STATUS=$(curl -s -o /dev/null -w &#34;%{http_code}&#34; http://localhost:8080 || echo &#34;000&#34;) if [ &#34;$HTTP_STATUS&#34; = &#34;200&#34; ]; then echo &#34;- HTTP 접근: ✅ ($HTTP_STATUS)&#34; | tee -a $REPORT_FILE else echo &#34;- HTTP 접근: ❌ ($HTTP_STATUS)&#34; | tee -a $REPORT_FILE fi kill $PORT_FORWARD_PID # 5. 리소스 사용량 echo &#34;📊 5. 리소스 사용량&#34; | tee -a $REPORT_FILE kubectl top nodes --no-headers | awk &#39;{print &#34;- 노드 &#34; $1 &#34;: CPU &#34; $3 &#34;, Memory &#34; $5}&#39; | tee -a $REPORT_FILE # 6. 최근 에러 로그 echo &#34;❌ 6. 최근 에러 (최근 10분)&#34; | tee -a $REPORT_FILE ERROR_COUNT=$(kubectl logs --since=10m -l app=openwebui -n openwebui | grep -i error | wc -l) echo &#34;- OpenWebUI 에러: $ERROR_COUNT 건&#34; | tee -a $REPORT_FILE echo &#34;======================================&#34; | tee -a $REPORT_FILE echo &#34;✅ 검증 완료 - 리포트 파일: $REPORT_FILE&#34; | tee -a $REPORT_FILE 검증 체크리스트 확인 #!/bin/bash # final-checklist.sh echo &#34;📋 최종 배포 검증 체크리스트&#34; echo &#34;===============================&#34; checks=( &#34;모든 파드가 Running 상태인가?&#34; &#34;데이터베이스 연결이 정상인가?&#34; &#34;LiteLLM API가 응답하는가?&#34; &#34;OpenWebUI 웹 페이지가 로드되는가?&#34; &#34;외부에서 접근 가능한가?&#34; &#34;파드 간 통신이 정상인가?&#34; &#34;로그에 심각한 에러가 없는가?&#34; &#34;리소스 사용량이 적정한가?&#34; &#34;장애 복구가 정상 작동하는가?&#34; &#34;성능이 요구사항을 만족하는가?&#34; ) for check in &#34;${checks[@]}&#34;; do echo &#34;□ $check&#34; done echo &#34;&#34; echo &#34;모든 항목이 체크되면 배포가 성공적으로 완료된 것입니다! 🎉&#34; 🚨 문제 해결 가이드 일반적인 문제들 1. 파드가 Pending 상태 # 원인 확인 kubectl describe pod &lt;pod-name&gt; -n &lt;namespace&gt; # 일반적인 해결책 # - 노드 리소스 부족: 스케일링 또는 리소스 조정 # - PVC 마운트 실패: StorageClass 확인 # - 이미지 Pull 실패: 이미지 레지스트리 접근 권한 확인 2. 서비스 연결 실패 # 서비스 엔드포인트 확인 kubectl get endpoints -n &lt;namespace&gt; # DNS 해상도 테스트 kubectl exec -it &lt;pod-name&gt; -n &lt;namespace&gt; -- nslookup &lt;service-name&gt; # 네트워크 정책 확인 kubectl get networkpolicy -A 3. 로드밸런서 접근 불가 # ALB 상태 확인 kubectl describe ingress &lt;ingress-name&gt; -n &lt;namespace&gt; # AWS 콘솔에서 로드밸런서 상태 확인 aws elbv2 describe-load-balancers # 보안 그룹 규칙 확인 aws ec2 describe-security-groups 📚 성능 최적화 권장사항 리소스 최적화 # 권장 리소스 설정 resources: requests: memory: &#34;256Mi&#34; cpu: &#34;250m&#34; limits: memory: &#34;512Mi&#34; cpu: &#34;500m&#34; 캐싱 전략 Redis 캐시 추가 고려 CDN 설정 (정적 자원용) 데이터베이스 쿼리 최적화 모니터링 강화 Prometheus &#43; Grafana 설치 Alert Manager 설정 로그 집계 시스템 구축 ⏭️ 다음 단계 배포 검증이 완료되었다면:">
+  <meta property="og:locale" content="ko">
+  <meta property="og:type" content="article">
+    <meta property="article:section" content="backend">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="">
+<meta name="twitter:description" content="✅ 배포 검증 가이드
+
+⏱️ 예상 소요시간: 30-45분
+💡 난이도: 초급-중급
+📋 목표: 배포된 OpenWebUI 시스템의 정상 작동을 검증하고 테스트합니다.
+
+📋 검증 완료 체크리스트
+
+ 인프라 상태 확인
+ 데이터베이스 연결 테스트
+ LiteLLM API 테스트
+ OpenWebUI 웹 인터페이스 테스트
+ 로드밸런서 및 네트워킹 테스트
+ 로그 및 모니터링 확인
+ 부하 테스트 실행
+ 장애 복구 테스트
+
+
+🏗️ 1단계: 인프라 상태 확인
+클러스터 전체 상태
+#!/bin/bash
+# infrastructure-check.sh
+
+echo &#34;🔍 인프라 상태 검증 시작...&#34;
+
+echo &#34;📋 1. 클러스터 노드 상태&#34;
+kubectl get nodes -o wide
+
+echo &#34;📋 2. 네임스페이스 확인&#34;
+kubectl get namespaces
+
+echo &#34;📋 3. 전체 파드 상태&#34;
+kubectl get pods -A -o wide
+
+echo &#34;📋 4. 서비스 상태&#34;
+kubectl get svc -A
+
+echo &#34;📋 5. Ingress 상태&#34;
+kubectl get ingress -A
+
+echo &#34;📋 6. PVC 상태&#34;
+kubectl get pvc -A
+
+echo &#34;📋 7. 시크릿 확인&#34;
+kubectl get secrets -A
+
+echo &#34;✅ 인프라 상태 확인 완료&#34;
+리소스 사용량 확인
+# 노드 리소스 사용량
+kubectl top nodes
+
+# 파드 리소스 사용량
+kubectl top pods -A
+
+# 네임스페이스별 리소스 사용량
+kubectl top pods -n openwebui
+kubectl top pods -n litellm
+
+🗃️ 2단계: 데이터베이스 연결 테스트
+PostgreSQL 연결 테스트
+# PostgreSQL 파드에 직접 접속
+kubectl exec -it deployment/postgres -n openwebui -- psql -U openwebui -d openwebui
+
+# SQL 명령어로 테스트
+\l                          # 데이터베이스 목록
+\dt                         # 테이블 목록
+SELECT version();           # PostgreSQL 버전 확인
+SELECT now();               # 현재 시간
+\q                          # 종료
+데이터베이스 연결 스크립트
+#!/bin/bash
+# db-connection-test.sh
+
+echo &#34;🗃️ 데이터베이스 연결 테스트...&#34;
+
+# PostgreSQL 파드 상태 확인
+if ! kubectl get pod -l app=postgres -n openwebui | grep -q &#34;Running&#34;; then
+    echo &#34;❌ PostgreSQL 파드가 실행 중이 아닙니다.&#34;
+    exit 1
+fi
+
+# 연결 테스트
+echo &#34;📡 데이터베이스 연결 테스트 중...&#34;
+kubectl exec deployment/postgres -n openwebui -- pg_isready -U openwebui
+
+if [ $? -eq 0 ]; then
+    echo &#34;✅ PostgreSQL 연결 성공&#34;
+else
+    echo &#34;❌ PostgreSQL 연결 실패&#34;
+    exit 1
+fi
+
+# 데이터베이스 쿼리 테스트
+echo &#34;🔍 기본 쿼리 테스트...&#34;
+kubectl exec deployment/postgres -n openwebui -- psql -U openwebui -d openwebui -c &#34;SELECT 1 as test;&#34;
+
+echo &#34;✅ 데이터베이스 테스트 완료&#34;
+
+🤖 3단계: LiteLLM API 테스트
+LiteLLM 서비스 상태 확인
+# LiteLLM 파드 상태
+kubectl get pods -l app=litellm -n litellm
+
+# LiteLLM 서비스 엔드포인트 확인
+kubectl get endpoints -n litellm
+
+# LiteLLM 로그 확인
+kubectl logs deployment/litellm -n litellm --tail=50
+API 엔드포인트 테스트
+#!/bin/bash
+# litellm-api-test.sh
+
+echo &#34;🤖 LiteLLM API 테스트...&#34;
+
+# 포트 포워딩 설정
+kubectl port-forward svc/litellm-service 4000:4000 -n litellm &amp;
+PORT_FORWARD_PID=$!
+sleep 5
+
+# Health check
+echo &#34;📡 헬스체크 테스트...&#34;
+curl -s http://localhost:4000/health
+
+# 모델 목록 확인
+echo &#34;📝 모델 목록 확인...&#34;
+curl -s http://localhost:4000/v1/models | jq &#39;.&#39;
+
+# 간단한 채팅 완료 테스트
+echo &#34;💬 채팅 완료 API 테스트...&#34;
+curl -X POST http://localhost:4000/v1/chat/completions \
+  -H &#34;Content-Type: application/json&#34; \
+  -H &#34;Authorization: Bearer your-master-key&#34; \
+  -d &#39;{
+    &#34;model&#34;: &#34;gpt-3.5-turbo&#34;,
+    &#34;messages&#34;: [{&#34;role&#34;: &#34;user&#34;, &#34;content&#34;: &#34;Hello, this is a test.&#34;}],
+    &#34;max_tokens&#34;: 50
+  }&#39; | jq &#39;.&#39;
+
+# 포트 포워딩 종료
+kill $PORT_FORWARD_PID
+
+echo &#34;✅ LiteLLM API 테스트 완료&#34;
+
+🌐 4단계: OpenWebUI 웹 인터페이스 테스트
+웹 인터페이스 접근 테스트
+#!/bin/bash
+# webui-access-test.sh
+
+echo &#34;🌐 OpenWebUI 접근 테스트...&#34;
+
+# OpenWebUI 파드 상태 확인
+kubectl get pods -l app=openwebui -n openwebui
+
+# 포트 포워딩으로 로컬 접근 테스트
+kubectl port-forward svc/openwebui-service 8080:8080 -n openwebui &amp;
+PORT_FORWARD_PID=$!
+sleep 10
+
+# HTTP 상태 코드 확인
+echo &#34;📡 HTTP 상태 확인...&#34;
+HTTP_STATUS=$(curl -s -o /dev/null -w &#34;%{http_code}&#34; http://localhost:8080)
+
+if [ &#34;$HTTP_STATUS&#34; = &#34;200&#34; ]; then
+    echo &#34;✅ OpenWebUI 접근 성공 (HTTP $HTTP_STATUS)&#34;
+else
+    echo &#34;❌ OpenWebUI 접근 실패 (HTTP $HTTP_STATUS)&#34;
+fi
+
+# HTML 응답 확인
+echo &#34;📄 HTML 응답 확인...&#34;
+curl -s http://localhost:8080 | head -20
+
+# 포트 포워딩 종료
+kill $PORT_FORWARD_PID
+
+echo &#34;✅ OpenWebUI 접근 테스트 완료&#34;
+브라우저 테스트 체크리스트
+수동 테스트 항목:
+□ 메인 페이지 로딩
+□ 회원가입 페이지
+□ 로그인 기능
+□ 채팅 인터페이스
+□ 모델 선택 기능
+□ 파일 업로드 기능
+□ 설정 페이지 접근
+
+🌍 5단계: 로드밸런서 및 네트워킹 테스트
+Ingress/LoadBalancer 상태 확인
+#!/bin/bash
+# networking-test.sh
+
+echo &#34;🌍 네트워킹 테스트...&#34;
+
+# Ingress 상태 확인
+echo &#34;📡 Ingress 상태:&#34;
+kubectl get ingress -n openwebui -o wide
+
+# LoadBalancer 상태 확인
+echo &#34;⚖️ LoadBalancer 상태:&#34;
+kubectl get svc -n openwebui -o wide
+
+# DNS 해상도 테스트
+echo &#34;🔍 DNS 해상도 테스트:&#34;
+INGRESS_HOST=$(kubectl get ingress openwebui-ingress -n openwebui -o jsonpath=&#39;{.status.loadBalancer.ingress[0].hostname}&#39;)
+
+if [ -n &#34;$INGRESS_HOST&#34; ]; then
+    echo &#34;Ingress 호스트: $INGRESS_HOST&#34;
+    nslookup $INGRESS_HOST
+    
+    # HTTP 테스트
+    echo &#34;🔗 외부 접근 테스트:&#34;
+    curl -I http://$INGRESS_HOST --connect-timeout 10
+else
+    echo &#34;⚠️ Ingress 호스트를 찾을 수 없습니다.&#34;
+fi
+
+echo &#34;✅ 네트워킹 테스트 완료&#34;
+서비스 간 통신 테스트
+#!/bin/bash
+# service-communication-test.sh
+
+echo &#34;🔄 서비스 간 통신 테스트...&#34;
+
+# OpenWebUI에서 LiteLLM 연결 테스트
+echo &#34;📡 OpenWebUI → LiteLLM 연결 테스트:&#34;
+kubectl exec deployment/openwebui -n openwebui -- \
+  curl -s http://litellm-service.litellm.svc.cluster.local:4000/health
+
+# OpenWebUI에서 PostgreSQL 연결 테스트
+echo &#34;🗃️ OpenWebUI → PostgreSQL 연결 테스트:&#34;
+kubectl exec deployment/openwebui -n openwebui -- \
+  nc -zv postgres-service 5432
+
+# LiteLLM에서 PostgreSQL 연결 테스트
+echo &#34;🗃️ LiteLLM → PostgreSQL 연결 테스트:&#34;
+kubectl exec deployment/litellm -n litellm -- \
+  nc -zv postgres-service.openwebui.svc.cluster.local 5432
+
+echo &#34;✅ 서비스 간 통신 테스트 완료&#34;
+
+📊 6단계: 로그 및 모니터링 확인
+애플리케이션 로그 확인
+#!/bin/bash
+# log-check.sh
+
+echo &#34;📊 로그 확인...&#34;
+
+echo &#34;🗃️ PostgreSQL 로그:&#34;
+kubectl logs deployment/postgres -n openwebui --tail=20
+
+echo &#34;🤖 LiteLLM 로그:&#34;
+kubectl logs deployment/litellm -n litellm --tail=20
+
+echo &#34;🌐 OpenWebUI 로그:&#34;
+kubectl logs deployment/openwebui -n openwebui --tail=20
+
+# 에러 로그 검색
+echo &#34;❌ 에러 로그 검색:&#34;
+kubectl logs deployment/openwebui -n openwebui | grep -i error | tail -10
+kubectl logs deployment/litellm -n litellm | grep -i error | tail -10
+
+echo &#34;✅ 로그 확인 완료&#34;
+이벤트 확인
+# 클러스터 이벤트 확인
+kubectl get events -A --sort-by=&#39;.lastTimestamp&#39; | tail -20
+
+# 네임스페이스별 이벤트
+kubectl get events -n openwebui --sort-by=&#39;.lastTimestamp&#39;
+kubectl get events -n litellm --sort-by=&#39;.lastTimestamp&#39;
+메트릭 확인
+# 리소스 사용량 모니터링
+kubectl top pods -n openwebui --containers
+kubectl top pods -n litellm --containers
+
+# 파드별 상세 메트릭
+kubectl describe pod -l app=openwebui -n openwebui
+kubectl describe pod -l app=litellm -n litellm
+
+🚀 7단계: 부하 테스트
+간단한 부하 테스트
+#!/bin/bash
+# load-test.sh
+
+echo &#34;🚀 부하 테스트 시작...&#34;
+
+# 포트 포워딩 설정
+kubectl port-forward svc/openwebui-service 8080:8080 -n openwebui &amp;
+PORT_FORWARD_PID=$!
+sleep 5
+
+# Apache Bench를 사용한 부하 테스트
+echo &#34;⚡ HTTP 부하 테스트 (100 요청, 동시접속 10):&#34;
+ab -n 100 -c 10 http://localhost:8080/
+
+# curl을 사용한 반복 테스트
+echo &#34;🔄 반복 접속 테스트:&#34;
+for i in {1..10}; do
+    echo &#34;요청 $i:&#34;
+    curl -s -o /dev/null -w &#34;HTTP Status: %{http_code}, Time: %{time_total}s\n&#34; http://localhost:8080/
+    sleep 1
+done
+
+# 포트 포워딩 종료
+kill $PORT_FORWARD_PID
+
+echo &#34;✅ 부하 테스트 완료&#34;
+K6를 사용한 고급 부하 테스트
+// k6-load-test.js
+import http from &#39;k6/http&#39;;
+import { check, sleep } from &#39;k6&#39;;
+
+export let options = {
+  stages: [
+    { duration: &#39;2m&#39;, target: 10 }, // 2분간 10명 사용자로 증가
+    { duration: &#39;5m&#39;, target: 10 }, // 5분간 10명 사용자 유지
+    { duration: &#39;2m&#39;, target: 20 }, // 2분간 20명 사용자로 증가
+    { duration: &#39;5m&#39;, target: 20 }, // 5분간 20명 사용자 유지
+    { duration: &#39;2m&#39;, target: 0 },  // 2분간 0명으로 감소
+  ],
+};
+
+export default function () {
+  let response = http.get(&#39;http://localhost:8080&#39;);
+  
+  check(response, {
+    &#39;status is 200&#39;: (r) =&gt; r.status === 200,
+    &#39;response time &lt; 500ms&#39;: (r) =&gt; r.timings.duration &lt; 500,
+  });
+  
+  sleep(1);
+}
+# K6 설치 및 실행
+# 1. K6 설치 (macOS)
+brew install k6
+
+# 2. 부하 테스트 실행
+kubectl port-forward svc/openwebui-service 8080:8080 -n openwebui &amp;
+k6 run k6-load-test.js
+
+🔧 8단계: 장애 복구 테스트
+파드 장애 시뮬레이션
+#!/bin/bash
+# failure-recovery-test.sh
+
+echo &#34;🔧 장애 복구 테스트...&#34;
+
+echo &#34;💥 OpenWebUI 파드 삭제 (장애 시뮬레이션):&#34;
+kubectl delete pod -l app=openwebui -n openwebui
+
+echo &#34;⏳ 파드 재생성 대기 (30초):&#34;
+sleep 30
+
+echo &#34;✅ 파드 복구 상태 확인:&#34;
+kubectl get pods -l app=openwebui -n openwebui
+
+echo &#34;🔍 서비스 가용성 테스트:&#34;
+kubectl port-forward svc/openwebui-service 8080:8080 -n openwebui &amp;
+PORT_FORWARD_PID=$!
+sleep 10
+
+HTTP_STATUS=$(curl -s -o /dev/null -w &#34;%{http_code}&#34; http://localhost:8080)
+echo &#34;HTTP 상태: $HTTP_STATUS&#34;
+
+kill $PORT_FORWARD_PID
+
+if [ &#34;$HTTP_STATUS&#34; = &#34;200&#34; ]; then
+    echo &#34;✅ 장애 복구 성공&#34;
+else
+    echo &#34;❌ 장애 복구 실패&#34;
+fi
+
+echo &#34;✅ 장애 복구 테스트 완료&#34;
+데이터베이스 장애 테스트
+#!/bin/bash
+# db-failure-test.sh
+
+echo &#34;🗃️ 데이터베이스 장애 테스트...&#34;
+
+echo &#34;💥 PostgreSQL 파드 삭제:&#34;
+kubectl delete pod -l app=postgres -n openwebui
+
+echo &#34;⏳ 파드 재생성 및 데이터 복구 대기 (60초):&#34;
+sleep 60
+
+echo &#34;✅ PostgreSQL 복구 확인:&#34;
+kubectl wait --for=condition=ready pod -l app=postgres -n openwebui --timeout=300s
+
+echo &#34;🔍 데이터 무결성 확인:&#34;
+kubectl exec deployment/postgres -n openwebui -- psql -U openwebui -d openwebui -c &#34;SELECT 1 as test;&#34;
+
+echo &#34;✅ 데이터베이스 장애 테스트 완료&#34;
+
+📈 9단계: 성능 벤치마크
+애플리케이션 성능 측정
+#!/bin/bash
+# performance-benchmark.sh
+
+echo &#34;📈 성능 벤치마크 시작...&#34;
+
+# 포트 포워딩 설정
+kubectl port-forward svc/openwebui-service 8080:8080 -n openwebui &amp;
+PORT_FORWARD_PID=$!
+sleep 5
+
+echo &#34;⏱️ 응답 시간 측정 (10회):&#34;
+for i in {1..10}; do
+    curl -s -o /dev/null -w &#34;응답시간 $i: %{time_total}s\n&#34; http://localhost:8080/
+done
+
+echo &#34;📊 동시 접속 테스트:&#34;
+ab -n 50 -c 5 http://localhost:8080/ | grep -E &#34;(Requests per second|Time per request)&#34;
+
+# 포트 포워딩 종료
+kill $PORT_FORWARD_PID
+
+echo &#34;💾 리소스 사용량 기록:&#34;
+kubectl top pods -n openwebui --containers
+kubectl top pods -n litellm --containers
+
+echo &#34;✅ 성능 벤치마크 완료&#34;
+
+🔍 10단계: 종합 검증 리포트
+자동 검증 스크립트
+#!/bin/bash
+# comprehensive-verification.sh
+
+set -e
+
+REPORT_FILE=&#34;verification-report-$(date &#43;%Y%m%d-%H%M%S).txt&#34;
+
+echo &#34;📋 OpenWebUI 종합 검증 리포트&#34; | tee $REPORT_FILE
+echo &#34;생성 시간: $(date)&#34; | tee -a $REPORT_FILE
+echo &#34;======================================&#34; | tee -a $REPORT_FILE
+
+# 1. 인프라 상태
+echo &#34;🏗️ 1. 인프라 상태&#34; | tee -a $REPORT_FILE
+kubectl get nodes --no-headers | wc -l | xargs echo &#34;- 활성 노드 수:&#34; | tee -a $REPORT_FILE
+kubectl get pods -A --field-selector=status.phase=Running --no-headers | wc -l | xargs echo &#34;- 실행 중인 파드:&#34; | tee -a $REPORT_FILE
+
+# 2. 애플리케이션 상태
+echo &#34;🌐 2. 애플리케이션 상태&#34; | tee -a $REPORT_FILE
+kubectl get pods -n openwebui -l app=openwebui --no-headers | grep Running | wc -l | xargs echo &#34;- OpenWebUI 파드:&#34; | tee -a $REPORT_FILE
+kubectl get pods -n litellm -l app=litellm --no-headers | grep Running | wc -l | xargs echo &#34;- LiteLLM 파드:&#34; | tee -a $REPORT_FILE
+kubectl get pods -n openwebui -l app=postgres --no-headers | grep Running | wc -l | xargs echo &#34;- PostgreSQL 파드:&#34; | tee -a $REPORT_FILE
+
+# 3. 서비스 연결성
+echo &#34;🔗 3. 서비스 연결성&#34; | tee -a $REPORT_FILE
+if kubectl exec deployment/openwebui -n openwebui -- curl -s http://litellm-service.litellm.svc.cluster.local:4000/health &gt; /dev/null; then
+    echo &#34;- OpenWebUI → LiteLLM: ✅&#34; | tee -a $REPORT_FILE
+else
+    echo &#34;- OpenWebUI → LiteLLM: ❌&#34; | tee -a $REPORT_FILE
+fi
+
+if kubectl exec deployment/postgres -n openwebui -- pg_isready &gt; /dev/null; then
+    echo &#34;- PostgreSQL 연결: ✅&#34; | tee -a $REPORT_FILE
+else
+    echo &#34;- PostgreSQL 연결: ❌&#34; | tee -a $REPORT_FILE
+fi
+
+# 4. 외부 접근성
+echo &#34;🌍 4. 외부 접근성&#34; | tee -a $REPORT_FILE
+kubectl port-forward svc/openwebui-service 8080:8080 -n openwebui &amp;
+PORT_FORWARD_PID=$!
+sleep 5
+
+HTTP_STATUS=$(curl -s -o /dev/null -w &#34;%{http_code}&#34; http://localhost:8080 || echo &#34;000&#34;)
+if [ &#34;$HTTP_STATUS&#34; = &#34;200&#34; ]; then
+    echo &#34;- HTTP 접근: ✅ ($HTTP_STATUS)&#34; | tee -a $REPORT_FILE
+else
+    echo &#34;- HTTP 접근: ❌ ($HTTP_STATUS)&#34; | tee -a $REPORT_FILE
+fi
+
+kill $PORT_FORWARD_PID
+
+# 5. 리소스 사용량
+echo &#34;📊 5. 리소스 사용량&#34; | tee -a $REPORT_FILE
+kubectl top nodes --no-headers | awk &#39;{print &#34;- 노드 &#34; $1 &#34;: CPU &#34; $3 &#34;, Memory &#34; $5}&#39; | tee -a $REPORT_FILE
+
+# 6. 최근 에러 로그
+echo &#34;❌ 6. 최근 에러 (최근 10분)&#34; | tee -a $REPORT_FILE
+ERROR_COUNT=$(kubectl logs --since=10m -l app=openwebui -n openwebui | grep -i error | wc -l)
+echo &#34;- OpenWebUI 에러: $ERROR_COUNT 건&#34; | tee -a $REPORT_FILE
+
+echo &#34;======================================&#34; | tee -a $REPORT_FILE
+echo &#34;✅ 검증 완료 - 리포트 파일: $REPORT_FILE&#34; | tee -a $REPORT_FILE
+검증 체크리스트 확인
+#!/bin/bash
+# final-checklist.sh
+
+echo &#34;📋 최종 배포 검증 체크리스트&#34;
+echo &#34;===============================&#34;
+
+checks=(
+    &#34;모든 파드가 Running 상태인가?&#34;
+    &#34;데이터베이스 연결이 정상인가?&#34;
+    &#34;LiteLLM API가 응답하는가?&#34;
+    &#34;OpenWebUI 웹 페이지가 로드되는가?&#34;
+    &#34;외부에서 접근 가능한가?&#34;
+    &#34;파드 간 통신이 정상인가?&#34;
+    &#34;로그에 심각한 에러가 없는가?&#34;
+    &#34;리소스 사용량이 적정한가?&#34;
+    &#34;장애 복구가 정상 작동하는가?&#34;
+    &#34;성능이 요구사항을 만족하는가?&#34;
+)
+
+for check in &#34;${checks[@]}&#34;; do
+    echo &#34;□ $check&#34;
+done
+
+echo &#34;&#34;
+echo &#34;모든 항목이 체크되면 배포가 성공적으로 완료된 것입니다! 🎉&#34;
+
+🚨 문제 해결 가이드
+일반적인 문제들
+1. 파드가 Pending 상태
+# 원인 확인
+kubectl describe pod &lt;pod-name&gt; -n &lt;namespace&gt;
+
+# 일반적인 해결책
+# - 노드 리소스 부족: 스케일링 또는 리소스 조정
+# - PVC 마운트 실패: StorageClass 확인
+# - 이미지 Pull 실패: 이미지 레지스트리 접근 권한 확인
+2. 서비스 연결 실패
+# 서비스 엔드포인트 확인
+kubectl get endpoints -n &lt;namespace&gt;
+
+# DNS 해상도 테스트
+kubectl exec -it &lt;pod-name&gt; -n &lt;namespace&gt; -- nslookup &lt;service-name&gt;
+
+# 네트워크 정책 확인
+kubectl get networkpolicy -A
+3. 로드밸런서 접근 불가
+# ALB 상태 확인
+kubectl describe ingress &lt;ingress-name&gt; -n &lt;namespace&gt;
+
+# AWS 콘솔에서 로드밸런서 상태 확인
+aws elbv2 describe-load-balancers
+
+# 보안 그룹 규칙 확인
+aws ec2 describe-security-groups
+
+📚 성능 최적화 권장사항
+리소스 최적화
+# 권장 리소스 설정
+resources:
+  requests:
+    memory: &#34;256Mi&#34;
+    cpu: &#34;250m&#34;
+  limits:
+    memory: &#34;512Mi&#34;
+    cpu: &#34;500m&#34;
+캐싱 전략
+
+Redis 캐시 추가 고려
+CDN 설정 (정적 자원용)
+데이터베이스 쿼리 최적화
+
+모니터링 강화
+
+Prometheus &#43; Grafana 설치
+Alert Manager 설정
+로그 집계 시스템 구축
+
+
+⏭️ 다음 단계
+배포 검증이 완료되었다면:">
+
+
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BreadcrumbList",
+  "itemListElement": [
+    {
+      "@type": "ListItem",
+      "position":  1 ,
+      "name": "Backend 문서",
+      "item": "https://8dobibim.github.io/backend/"
+    }, 
+    {
+      "@type": "ListItem",
+      "position":  2 ,
+      "name": "",
+      "item": "https://8dobibim.github.io/backend/%EB%B0%B0%ED%8F%AC-%EA%B2%80%EC%A6%9D-%EA%B0%80%EC%9D%B4%EB%93%9C/"
+    }
+  ]
+}
+</script>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BlogPosting",
+  "headline": "",
+  "name": "",
+  "description": "✅ 배포 검증 가이드 ⏱️ 예상 소요시간: 30-45분\n💡 난이도: 초급-중급\n📋 목표: 배포된 OpenWebUI 시스템의 정상 작동을 검증하고 테스트합니다.\n📋 검증 완료 체크리스트 인프라 상태 확인 데이터베이스 연결 테스트 LiteLLM API 테스트 OpenWebUI 웹 인터페이스 테스트 로드밸런서 및 네트워킹 테스트 로그 및 모니터링 확인 부하 테스트 실행 장애 복구 테스트 🏗️ 1단계: 인프라 상태 확인 클러스터 전체 상태 #!/bin/bash # infrastructure-check.sh echo \u0026#34;🔍 인프라 상태 검증 시작...\u0026#34; echo \u0026#34;📋 1. 클러스터 노드 상태\u0026#34; kubectl get nodes -o wide echo \u0026#34;📋 2. 네임스페이스 확인\u0026#34; kubectl get namespaces echo \u0026#34;📋 3. 전체 파드 상태\u0026#34; kubectl get pods -A -o wide echo \u0026#34;📋 4. 서비스 상태\u0026#34; kubectl get svc -A echo \u0026#34;📋 5. Ingress 상태\u0026#34; kubectl get ingress -A echo \u0026#34;📋 6. PVC 상태\u0026#34; kubectl get pvc -A echo \u0026#34;📋 7. 시크릿 확인\u0026#34; kubectl get secrets -A echo \u0026#34;✅ 인프라 상태 확인 완료\u0026#34; 리소스 사용량 확인 # 노드 리소스 사용량 kubectl top nodes # 파드 리소스 사용량 kubectl top pods -A # 네임스페이스별 리소스 사용량 kubectl top pods -n openwebui kubectl top pods -n litellm 🗃️ 2단계: 데이터베이스 연결 테스트 PostgreSQL 연결 테스트 # PostgreSQL 파드에 직접 접속 kubectl exec -it deployment/postgres -n openwebui -- psql -U openwebui -d openwebui # SQL 명령어로 테스트 \\l # 데이터베이스 목록 \\dt # 테이블 목록 SELECT version(); # PostgreSQL 버전 확인 SELECT now(); # 현재 시간 \\q # 종료 데이터베이스 연결 스크립트 #!/bin/bash # db-connection-test.sh echo \u0026#34;🗃️ 데이터베이스 연결 테스트...\u0026#34; # PostgreSQL 파드 상태 확인 if ! kubectl get pod -l app=postgres -n openwebui | grep -q \u0026#34;Running\u0026#34;; then echo \u0026#34;❌ PostgreSQL 파드가 실행 중이 아닙니다.\u0026#34; exit 1 fi # 연결 테스트 echo \u0026#34;📡 데이터베이스 연결 테스트 중...\u0026#34; kubectl exec deployment/postgres -n openwebui -- pg_isready -U openwebui if [ $? -eq 0 ]; then echo \u0026#34;✅ PostgreSQL 연결 성공\u0026#34; else echo \u0026#34;❌ PostgreSQL 연결 실패\u0026#34; exit 1 fi # 데이터베이스 쿼리 테스트 echo \u0026#34;🔍 기본 쿼리 테스트...\u0026#34; kubectl exec deployment/postgres -n openwebui -- psql -U openwebui -d openwebui -c \u0026#34;SELECT 1 as test;\u0026#34; echo \u0026#34;✅ 데이터베이스 테스트 완료\u0026#34; 🤖 3단계: LiteLLM API 테스트 LiteLLM 서비스 상태 확인 # LiteLLM 파드 상태 kubectl get pods -l app=litellm -n litellm # LiteLLM 서비스 엔드포인트 확인 kubectl get endpoints -n litellm # LiteLLM 로그 확인 kubectl logs deployment/litellm -n litellm --tail=50 API 엔드포인트 테스트 #!/bin/bash # litellm-api-test.sh echo \u0026#34;🤖 LiteLLM API 테스트...\u0026#34; # 포트 포워딩 설정 kubectl port-forward svc/litellm-service 4000:4000 -n litellm \u0026amp; PORT_FORWARD_PID=$! sleep 5 # Health check echo \u0026#34;📡 헬스체크 테스트...\u0026#34; curl -s http://localhost:4000/health # 모델 목록 확인 echo \u0026#34;📝 모델 목록 확인...\u0026#34; curl -s http://localhost:4000/v1/models | jq \u0026#39;.\u0026#39; # 간단한 채팅 완료 테스트 echo \u0026#34;💬 채팅 완료 API 테스트...\u0026#34; curl -X POST http://localhost:4000/v1/chat/completions \\ -H \u0026#34;Content-Type: application/json\u0026#34; \\ -H \u0026#34;Authorization: Bearer your-master-key\u0026#34; \\ -d \u0026#39;{ \u0026#34;model\u0026#34;: \u0026#34;gpt-3.5-turbo\u0026#34;, \u0026#34;messages\u0026#34;: [{\u0026#34;role\u0026#34;: \u0026#34;user\u0026#34;, \u0026#34;content\u0026#34;: \u0026#34;Hello, this is a test.\u0026#34;}], \u0026#34;max_tokens\u0026#34;: 50 }\u0026#39; | jq \u0026#39;.\u0026#39; # 포트 포워딩 종료 kill $PORT_FORWARD_PID echo \u0026#34;✅ LiteLLM API 테스트 완료\u0026#34; 🌐 4단계: OpenWebUI 웹 인터페이스 테스트 웹 인터페이스 접근 테스트 #!/bin/bash # webui-access-test.sh echo \u0026#34;🌐 OpenWebUI 접근 테스트...\u0026#34; # OpenWebUI 파드 상태 확인 kubectl get pods -l app=openwebui -n openwebui # 포트 포워딩으로 로컬 접근 테스트 kubectl port-forward svc/openwebui-service 8080:8080 -n openwebui \u0026amp; PORT_FORWARD_PID=$! sleep 10 # HTTP 상태 코드 확인 echo \u0026#34;📡 HTTP 상태 확인...\u0026#34; HTTP_STATUS=$(curl -s -o /dev/null -w \u0026#34;%{http_code}\u0026#34; http://localhost:8080) if [ \u0026#34;$HTTP_STATUS\u0026#34; = \u0026#34;200\u0026#34; ]; then echo \u0026#34;✅ OpenWebUI 접근 성공 (HTTP $HTTP_STATUS)\u0026#34; else echo \u0026#34;❌ OpenWebUI 접근 실패 (HTTP $HTTP_STATUS)\u0026#34; fi # HTML 응답 확인 echo \u0026#34;📄 HTML 응답 확인...\u0026#34; curl -s http://localhost:8080 | head -20 # 포트 포워딩 종료 kill $PORT_FORWARD_PID echo \u0026#34;✅ OpenWebUI 접근 테스트 완료\u0026#34; 브라우저 테스트 체크리스트 수동 테스트 항목:\r□ 메인 페이지 로딩\r□ 회원가입 페이지\r□ 로그인 기능\r□ 채팅 인터페이스\r□ 모델 선택 기능\r□ 파일 업로드 기능\r□ 설정 페이지 접근 🌍 5단계: 로드밸런서 및 네트워킹 테스트 Ingress/LoadBalancer 상태 확인 #!/bin/bash # networking-test.sh echo \u0026#34;🌍 네트워킹 테스트...\u0026#34; # Ingress 상태 확인 echo \u0026#34;📡 Ingress 상태:\u0026#34; kubectl get ingress -n openwebui -o wide # LoadBalancer 상태 확인 echo \u0026#34;⚖️ LoadBalancer 상태:\u0026#34; kubectl get svc -n openwebui -o wide # DNS 해상도 테스트 echo \u0026#34;🔍 DNS 해상도 테스트:\u0026#34; INGRESS_HOST=$(kubectl get ingress openwebui-ingress -n openwebui -o jsonpath=\u0026#39;{.status.loadBalancer.ingress[0].hostname}\u0026#39;) if [ -n \u0026#34;$INGRESS_HOST\u0026#34; ]; then echo \u0026#34;Ingress 호스트: $INGRESS_HOST\u0026#34; nslookup $INGRESS_HOST # HTTP 테스트 echo \u0026#34;🔗 외부 접근 테스트:\u0026#34; curl -I http://$INGRESS_HOST --connect-timeout 10 else echo \u0026#34;⚠️ Ingress 호스트를 찾을 수 없습니다.\u0026#34; fi echo \u0026#34;✅ 네트워킹 테스트 완료\u0026#34; 서비스 간 통신 테스트 #!/bin/bash # service-communication-test.sh echo \u0026#34;🔄 서비스 간 통신 테스트...\u0026#34; # OpenWebUI에서 LiteLLM 연결 테스트 echo \u0026#34;📡 OpenWebUI → LiteLLM 연결 테스트:\u0026#34; kubectl exec deployment/openwebui -n openwebui -- \\ curl -s http://litellm-service.litellm.svc.cluster.local:4000/health # OpenWebUI에서 PostgreSQL 연결 테스트 echo \u0026#34;🗃️ OpenWebUI → PostgreSQL 연결 테스트:\u0026#34; kubectl exec deployment/openwebui -n openwebui -- \\ nc -zv postgres-service 5432 # LiteLLM에서 PostgreSQL 연결 테스트 echo \u0026#34;🗃️ LiteLLM → PostgreSQL 연결 테스트:\u0026#34; kubectl exec deployment/litellm -n litellm -- \\ nc -zv postgres-service.openwebui.svc.cluster.local 5432 echo \u0026#34;✅ 서비스 간 통신 테스트 완료\u0026#34; 📊 6단계: 로그 및 모니터링 확인 애플리케이션 로그 확인 #!/bin/bash # log-check.sh echo \u0026#34;📊 로그 확인...\u0026#34; echo \u0026#34;🗃️ PostgreSQL 로그:\u0026#34; kubectl logs deployment/postgres -n openwebui --tail=20 echo \u0026#34;🤖 LiteLLM 로그:\u0026#34; kubectl logs deployment/litellm -n litellm --tail=20 echo \u0026#34;🌐 OpenWebUI 로그:\u0026#34; kubectl logs deployment/openwebui -n openwebui --tail=20 # 에러 로그 검색 echo \u0026#34;❌ 에러 로그 검색:\u0026#34; kubectl logs deployment/openwebui -n openwebui | grep -i error | tail -10 kubectl logs deployment/litellm -n litellm | grep -i error | tail -10 echo \u0026#34;✅ 로그 확인 완료\u0026#34; 이벤트 확인 # 클러스터 이벤트 확인 kubectl get events -A --sort-by=\u0026#39;.lastTimestamp\u0026#39; | tail -20 # 네임스페이스별 이벤트 kubectl get events -n openwebui --sort-by=\u0026#39;.lastTimestamp\u0026#39; kubectl get events -n litellm --sort-by=\u0026#39;.lastTimestamp\u0026#39; 메트릭 확인 # 리소스 사용량 모니터링 kubectl top pods -n openwebui --containers kubectl top pods -n litellm --containers # 파드별 상세 메트릭 kubectl describe pod -l app=openwebui -n openwebui kubectl describe pod -l app=litellm -n litellm 🚀 7단계: 부하 테스트 간단한 부하 테스트 #!/bin/bash # load-test.sh echo \u0026#34;🚀 부하 테스트 시작...\u0026#34; # 포트 포워딩 설정 kubectl port-forward svc/openwebui-service 8080:8080 -n openwebui \u0026amp; PORT_FORWARD_PID=$! sleep 5 # Apache Bench를 사용한 부하 테스트 echo \u0026#34;⚡ HTTP 부하 테스트 (100 요청, 동시접속 10):\u0026#34; ab -n 100 -c 10 http://localhost:8080/ # curl을 사용한 반복 테스트 echo \u0026#34;🔄 반복 접속 테스트:\u0026#34; for i in {1..10}; do echo \u0026#34;요청 $i:\u0026#34; curl -s -o /dev/null -w \u0026#34;HTTP Status: %{http_code}, Time: %{time_total}s\\n\u0026#34; http://localhost:8080/ sleep 1 done # 포트 포워딩 종료 kill $PORT_FORWARD_PID echo \u0026#34;✅ 부하 테스트 완료\u0026#34; K6를 사용한 고급 부하 테스트 // k6-load-test.js import http from \u0026#39;k6/http\u0026#39;; import { check, sleep } from \u0026#39;k6\u0026#39;; export let options = { stages: [ { duration: \u0026#39;2m\u0026#39;, target: 10 }, // 2분간 10명 사용자로 증가 { duration: \u0026#39;5m\u0026#39;, target: 10 }, // 5분간 10명 사용자 유지 { duration: \u0026#39;2m\u0026#39;, target: 20 }, // 2분간 20명 사용자로 증가 { duration: \u0026#39;5m\u0026#39;, target: 20 }, // 5분간 20명 사용자 유지 { duration: \u0026#39;2m\u0026#39;, target: 0 }, // 2분간 0명으로 감소 ], }; export default function () { let response = http.get(\u0026#39;http://localhost:8080\u0026#39;); check(response, { \u0026#39;status is 200\u0026#39;: (r) =\u0026gt; r.status === 200, \u0026#39;response time \u0026lt; 500ms\u0026#39;: (r) =\u0026gt; r.timings.duration \u0026lt; 500, }); sleep(1); } # K6 설치 및 실행 # 1. K6 설치 (macOS) brew install k6 # 2. 부하 테스트 실행 kubectl port-forward svc/openwebui-service 8080:8080 -n openwebui \u0026amp; k6 run k6-load-test.js 🔧 8단계: 장애 복구 테스트 파드 장애 시뮬레이션 #!/bin/bash # failure-recovery-test.sh echo \u0026#34;🔧 장애 복구 테스트...\u0026#34; echo \u0026#34;💥 OpenWebUI 파드 삭제 (장애 시뮬레이션):\u0026#34; kubectl delete pod -l app=openwebui -n openwebui echo \u0026#34;⏳ 파드 재생성 대기 (30초):\u0026#34; sleep 30 echo \u0026#34;✅ 파드 복구 상태 확인:\u0026#34; kubectl get pods -l app=openwebui -n openwebui echo \u0026#34;🔍 서비스 가용성 테스트:\u0026#34; kubectl port-forward svc/openwebui-service 8080:8080 -n openwebui \u0026amp; PORT_FORWARD_PID=$! sleep 10 HTTP_STATUS=$(curl -s -o /dev/null -w \u0026#34;%{http_code}\u0026#34; http://localhost:8080) echo \u0026#34;HTTP 상태: $HTTP_STATUS\u0026#34; kill $PORT_FORWARD_PID if [ \u0026#34;$HTTP_STATUS\u0026#34; = \u0026#34;200\u0026#34; ]; then echo \u0026#34;✅ 장애 복구 성공\u0026#34; else echo \u0026#34;❌ 장애 복구 실패\u0026#34; fi echo \u0026#34;✅ 장애 복구 테스트 완료\u0026#34; 데이터베이스 장애 테스트 #!/bin/bash # db-failure-test.sh echo \u0026#34;🗃️ 데이터베이스 장애 테스트...\u0026#34; echo \u0026#34;💥 PostgreSQL 파드 삭제:\u0026#34; kubectl delete pod -l app=postgres -n openwebui echo \u0026#34;⏳ 파드 재생성 및 데이터 복구 대기 (60초):\u0026#34; sleep 60 echo \u0026#34;✅ PostgreSQL 복구 확인:\u0026#34; kubectl wait --for=condition=ready pod -l app=postgres -n openwebui --timeout=300s echo \u0026#34;🔍 데이터 무결성 확인:\u0026#34; kubectl exec deployment/postgres -n openwebui -- psql -U openwebui -d openwebui -c \u0026#34;SELECT 1 as test;\u0026#34; echo \u0026#34;✅ 데이터베이스 장애 테스트 완료\u0026#34; 📈 9단계: 성능 벤치마크 애플리케이션 성능 측정 #!/bin/bash # performance-benchmark.sh echo \u0026#34;📈 성능 벤치마크 시작...\u0026#34; # 포트 포워딩 설정 kubectl port-forward svc/openwebui-service 8080:8080 -n openwebui \u0026amp; PORT_FORWARD_PID=$! sleep 5 echo \u0026#34;⏱️ 응답 시간 측정 (10회):\u0026#34; for i in {1..10}; do curl -s -o /dev/null -w \u0026#34;응답시간 $i: %{time_total}s\\n\u0026#34; http://localhost:8080/ done echo \u0026#34;📊 동시 접속 테스트:\u0026#34; ab -n 50 -c 5 http://localhost:8080/ | grep -E \u0026#34;(Requests per second|Time per request)\u0026#34; # 포트 포워딩 종료 kill $PORT_FORWARD_PID echo \u0026#34;💾 리소스 사용량 기록:\u0026#34; kubectl top pods -n openwebui --containers kubectl top pods -n litellm --containers echo \u0026#34;✅ 성능 벤치마크 완료\u0026#34; 🔍 10단계: 종합 검증 리포트 자동 검증 스크립트 #!/bin/bash # comprehensive-verification.sh set -e REPORT_FILE=\u0026#34;verification-report-$(date +%Y%m%d-%H%M%S).txt\u0026#34; echo \u0026#34;📋 OpenWebUI 종합 검증 리포트\u0026#34; | tee $REPORT_FILE echo \u0026#34;생성 시간: $(date)\u0026#34; | tee -a $REPORT_FILE echo \u0026#34;======================================\u0026#34; | tee -a $REPORT_FILE # 1. 인프라 상태 echo \u0026#34;🏗️ 1. 인프라 상태\u0026#34; | tee -a $REPORT_FILE kubectl get nodes --no-headers | wc -l | xargs echo \u0026#34;- 활성 노드 수:\u0026#34; | tee -a $REPORT_FILE kubectl get pods -A --field-selector=status.phase=Running --no-headers | wc -l | xargs echo \u0026#34;- 실행 중인 파드:\u0026#34; | tee -a $REPORT_FILE # 2. 애플리케이션 상태 echo \u0026#34;🌐 2. 애플리케이션 상태\u0026#34; | tee -a $REPORT_FILE kubectl get pods -n openwebui -l app=openwebui --no-headers | grep Running | wc -l | xargs echo \u0026#34;- OpenWebUI 파드:\u0026#34; | tee -a $REPORT_FILE kubectl get pods -n litellm -l app=litellm --no-headers | grep Running | wc -l | xargs echo \u0026#34;- LiteLLM 파드:\u0026#34; | tee -a $REPORT_FILE kubectl get pods -n openwebui -l app=postgres --no-headers | grep Running | wc -l | xargs echo \u0026#34;- PostgreSQL 파드:\u0026#34; | tee -a $REPORT_FILE # 3. 서비스 연결성 echo \u0026#34;🔗 3. 서비스 연결성\u0026#34; | tee -a $REPORT_FILE if kubectl exec deployment/openwebui -n openwebui -- curl -s http://litellm-service.litellm.svc.cluster.local:4000/health \u0026gt; /dev/null; then echo \u0026#34;- OpenWebUI → LiteLLM: ✅\u0026#34; | tee -a $REPORT_FILE else echo \u0026#34;- OpenWebUI → LiteLLM: ❌\u0026#34; | tee -a $REPORT_FILE fi if kubectl exec deployment/postgres -n openwebui -- pg_isready \u0026gt; /dev/null; then echo \u0026#34;- PostgreSQL 연결: ✅\u0026#34; | tee -a $REPORT_FILE else echo \u0026#34;- PostgreSQL 연결: ❌\u0026#34; | tee -a $REPORT_FILE fi # 4. 외부 접근성 echo \u0026#34;🌍 4. 외부 접근성\u0026#34; | tee -a $REPORT_FILE kubectl port-forward svc/openwebui-service 8080:8080 -n openwebui \u0026amp; PORT_FORWARD_PID=$! sleep 5 HTTP_STATUS=$(curl -s -o /dev/null -w \u0026#34;%{http_code}\u0026#34; http://localhost:8080 || echo \u0026#34;000\u0026#34;) if [ \u0026#34;$HTTP_STATUS\u0026#34; = \u0026#34;200\u0026#34; ]; then echo \u0026#34;- HTTP 접근: ✅ ($HTTP_STATUS)\u0026#34; | tee -a $REPORT_FILE else echo \u0026#34;- HTTP 접근: ❌ ($HTTP_STATUS)\u0026#34; | tee -a $REPORT_FILE fi kill $PORT_FORWARD_PID # 5. 리소스 사용량 echo \u0026#34;📊 5. 리소스 사용량\u0026#34; | tee -a $REPORT_FILE kubectl top nodes --no-headers | awk \u0026#39;{print \u0026#34;- 노드 \u0026#34; $1 \u0026#34;: CPU \u0026#34; $3 \u0026#34;, Memory \u0026#34; $5}\u0026#39; | tee -a $REPORT_FILE # 6. 최근 에러 로그 echo \u0026#34;❌ 6. 최근 에러 (최근 10분)\u0026#34; | tee -a $REPORT_FILE ERROR_COUNT=$(kubectl logs --since=10m -l app=openwebui -n openwebui | grep -i error | wc -l) echo \u0026#34;- OpenWebUI 에러: $ERROR_COUNT 건\u0026#34; | tee -a $REPORT_FILE echo \u0026#34;======================================\u0026#34; | tee -a $REPORT_FILE echo \u0026#34;✅ 검증 완료 - 리포트 파일: $REPORT_FILE\u0026#34; | tee -a $REPORT_FILE 검증 체크리스트 확인 #!/bin/bash # final-checklist.sh echo \u0026#34;📋 최종 배포 검증 체크리스트\u0026#34; echo \u0026#34;===============================\u0026#34; checks=( \u0026#34;모든 파드가 Running 상태인가?\u0026#34; \u0026#34;데이터베이스 연결이 정상인가?\u0026#34; \u0026#34;LiteLLM API가 응답하는가?\u0026#34; \u0026#34;OpenWebUI 웹 페이지가 로드되는가?\u0026#34; \u0026#34;외부에서 접근 가능한가?\u0026#34; \u0026#34;파드 간 통신이 정상인가?\u0026#34; \u0026#34;로그에 심각한 에러가 없는가?\u0026#34; \u0026#34;리소스 사용량이 적정한가?\u0026#34; \u0026#34;장애 복구가 정상 작동하는가?\u0026#34; \u0026#34;성능이 요구사항을 만족하는가?\u0026#34; ) for check in \u0026#34;${checks[@]}\u0026#34;; do echo \u0026#34;□ $check\u0026#34; done echo \u0026#34;\u0026#34; echo \u0026#34;모든 항목이 체크되면 배포가 성공적으로 완료된 것입니다! 🎉\u0026#34; 🚨 문제 해결 가이드 일반적인 문제들 1. 파드가 Pending 상태 # 원인 확인 kubectl describe pod \u0026lt;pod-name\u0026gt; -n \u0026lt;namespace\u0026gt; # 일반적인 해결책 # - 노드 리소스 부족: 스케일링 또는 리소스 조정 # - PVC 마운트 실패: StorageClass 확인 # - 이미지 Pull 실패: 이미지 레지스트리 접근 권한 확인 2. 서비스 연결 실패 # 서비스 엔드포인트 확인 kubectl get endpoints -n \u0026lt;namespace\u0026gt; # DNS 해상도 테스트 kubectl exec -it \u0026lt;pod-name\u0026gt; -n \u0026lt;namespace\u0026gt; -- nslookup \u0026lt;service-name\u0026gt; # 네트워크 정책 확인 kubectl get networkpolicy -A 3. 로드밸런서 접근 불가 # ALB 상태 확인 kubectl describe ingress \u0026lt;ingress-name\u0026gt; -n \u0026lt;namespace\u0026gt; # AWS 콘솔에서 로드밸런서 상태 확인 aws elbv2 describe-load-balancers # 보안 그룹 규칙 확인 aws ec2 describe-security-groups 📚 성능 최적화 권장사항 리소스 최적화 # 권장 리소스 설정 resources: requests: memory: \u0026#34;256Mi\u0026#34; cpu: \u0026#34;250m\u0026#34; limits: memory: \u0026#34;512Mi\u0026#34; cpu: \u0026#34;500m\u0026#34; 캐싱 전략 Redis 캐시 추가 고려 CDN 설정 (정적 자원용) 데이터베이스 쿼리 최적화 모니터링 강화 Prometheus + Grafana 설치 Alert Manager 설정 로그 집계 시스템 구축 ⏭️ 다음 단계 배포 검증이 완료되었다면:\n",
+  "keywords": [
+    
+  ],
+  "articleBody": "✅ 배포 검증 가이드 ⏱️ 예상 소요시간: 30-45분\n💡 난이도: 초급-중급\n📋 목표: 배포된 OpenWebUI 시스템의 정상 작동을 검증하고 테스트합니다.\n📋 검증 완료 체크리스트 인프라 상태 확인 데이터베이스 연결 테스트 LiteLLM API 테스트 OpenWebUI 웹 인터페이스 테스트 로드밸런서 및 네트워킹 테스트 로그 및 모니터링 확인 부하 테스트 실행 장애 복구 테스트 🏗️ 1단계: 인프라 상태 확인 클러스터 전체 상태 #!/bin/bash # infrastructure-check.sh echo \"🔍 인프라 상태 검증 시작...\" echo \"📋 1. 클러스터 노드 상태\" kubectl get nodes -o wide echo \"📋 2. 네임스페이스 확인\" kubectl get namespaces echo \"📋 3. 전체 파드 상태\" kubectl get pods -A -o wide echo \"📋 4. 서비스 상태\" kubectl get svc -A echo \"📋 5. Ingress 상태\" kubectl get ingress -A echo \"📋 6. PVC 상태\" kubectl get pvc -A echo \"📋 7. 시크릿 확인\" kubectl get secrets -A echo \"✅ 인프라 상태 확인 완료\" 리소스 사용량 확인 # 노드 리소스 사용량 kubectl top nodes # 파드 리소스 사용량 kubectl top pods -A # 네임스페이스별 리소스 사용량 kubectl top pods -n openwebui kubectl top pods -n litellm 🗃️ 2단계: 데이터베이스 연결 테스트 PostgreSQL 연결 테스트 # PostgreSQL 파드에 직접 접속 kubectl exec -it deployment/postgres -n openwebui -- psql -U openwebui -d openwebui # SQL 명령어로 테스트 \\l # 데이터베이스 목록 \\dt # 테이블 목록 SELECT version(); # PostgreSQL 버전 확인 SELECT now(); # 현재 시간 \\q # 종료 데이터베이스 연결 스크립트 #!/bin/bash # db-connection-test.sh echo \"🗃️ 데이터베이스 연결 테스트...\" # PostgreSQL 파드 상태 확인 if ! kubectl get pod -l app=postgres -n openwebui | grep -q \"Running\"; then echo \"❌ PostgreSQL 파드가 실행 중이 아닙니다.\" exit 1 fi # 연결 테스트 echo \"📡 데이터베이스 연결 테스트 중...\" kubectl exec deployment/postgres -n openwebui -- pg_isready -U openwebui if [ $? -eq 0 ]; then echo \"✅ PostgreSQL 연결 성공\" else echo \"❌ PostgreSQL 연결 실패\" exit 1 fi # 데이터베이스 쿼리 테스트 echo \"🔍 기본 쿼리 테스트...\" kubectl exec deployment/postgres -n openwebui -- psql -U openwebui -d openwebui -c \"SELECT 1 as test;\" echo \"✅ 데이터베이스 테스트 완료\" 🤖 3단계: LiteLLM API 테스트 LiteLLM 서비스 상태 확인 # LiteLLM 파드 상태 kubectl get pods -l app=litellm -n litellm # LiteLLM 서비스 엔드포인트 확인 kubectl get endpoints -n litellm # LiteLLM 로그 확인 kubectl logs deployment/litellm -n litellm --tail=50 API 엔드포인트 테스트 #!/bin/bash # litellm-api-test.sh echo \"🤖 LiteLLM API 테스트...\" # 포트 포워딩 설정 kubectl port-forward svc/litellm-service 4000:4000 -n litellm \u0026 PORT_FORWARD_PID=$! sleep 5 # Health check echo \"📡 헬스체크 테스트...\" curl -s http://localhost:4000/health # 모델 목록 확인 echo \"📝 모델 목록 확인...\" curl -s http://localhost:4000/v1/models | jq '.' # 간단한 채팅 완료 테스트 echo \"💬 채팅 완료 API 테스트...\" curl -X POST http://localhost:4000/v1/chat/completions \\ -H \"Content-Type: application/json\" \\ -H \"Authorization: Bearer your-master-key\" \\ -d '{ \"model\": \"gpt-3.5-turbo\", \"messages\": [{\"role\": \"user\", \"content\": \"Hello, this is a test.\"}], \"max_tokens\": 50 }' | jq '.' # 포트 포워딩 종료 kill $PORT_FORWARD_PID echo \"✅ LiteLLM API 테스트 완료\" 🌐 4단계: OpenWebUI 웹 인터페이스 테스트 웹 인터페이스 접근 테스트 #!/bin/bash # webui-access-test.sh echo \"🌐 OpenWebUI 접근 테스트...\" # OpenWebUI 파드 상태 확인 kubectl get pods -l app=openwebui -n openwebui # 포트 포워딩으로 로컬 접근 테스트 kubectl port-forward svc/openwebui-service 8080:8080 -n openwebui \u0026 PORT_FORWARD_PID=$! sleep 10 # HTTP 상태 코드 확인 echo \"📡 HTTP 상태 확인...\" HTTP_STATUS=$(curl -s -o /dev/null -w \"%{http_code}\" http://localhost:8080) if [ \"$HTTP_STATUS\" = \"200\" ]; then echo \"✅ OpenWebUI 접근 성공 (HTTP $HTTP_STATUS)\" else echo \"❌ OpenWebUI 접근 실패 (HTTP $HTTP_STATUS)\" fi # HTML 응답 확인 echo \"📄 HTML 응답 확인...\" curl -s http://localhost:8080 | head -20 # 포트 포워딩 종료 kill $PORT_FORWARD_PID echo \"✅ OpenWebUI 접근 테스트 완료\" 브라우저 테스트 체크리스트 수동 테스트 항목:\r□ 메인 페이지 로딩\r□ 회원가입 페이지\r□ 로그인 기능\r□ 채팅 인터페이스\r□ 모델 선택 기능\r□ 파일 업로드 기능\r□ 설정 페이지 접근 🌍 5단계: 로드밸런서 및 네트워킹 테스트 Ingress/LoadBalancer 상태 확인 #!/bin/bash # networking-test.sh echo \"🌍 네트워킹 테스트...\" # Ingress 상태 확인 echo \"📡 Ingress 상태:\" kubectl get ingress -n openwebui -o wide # LoadBalancer 상태 확인 echo \"⚖️ LoadBalancer 상태:\" kubectl get svc -n openwebui -o wide # DNS 해상도 테스트 echo \"🔍 DNS 해상도 테스트:\" INGRESS_HOST=$(kubectl get ingress openwebui-ingress -n openwebui -o jsonpath='{.status.loadBalancer.ingress[0].hostname}') if [ -n \"$INGRESS_HOST\" ]; then echo \"Ingress 호스트: $INGRESS_HOST\" nslookup $INGRESS_HOST # HTTP 테스트 echo \"🔗 외부 접근 테스트:\" curl -I http://$INGRESS_HOST --connect-timeout 10 else echo \"⚠️ Ingress 호스트를 찾을 수 없습니다.\" fi echo \"✅ 네트워킹 테스트 완료\" 서비스 간 통신 테스트 #!/bin/bash # service-communication-test.sh echo \"🔄 서비스 간 통신 테스트...\" # OpenWebUI에서 LiteLLM 연결 테스트 echo \"📡 OpenWebUI → LiteLLM 연결 테스트:\" kubectl exec deployment/openwebui -n openwebui -- \\ curl -s http://litellm-service.litellm.svc.cluster.local:4000/health # OpenWebUI에서 PostgreSQL 연결 테스트 echo \"🗃️ OpenWebUI → PostgreSQL 연결 테스트:\" kubectl exec deployment/openwebui -n openwebui -- \\ nc -zv postgres-service 5432 # LiteLLM에서 PostgreSQL 연결 테스트 echo \"🗃️ LiteLLM → PostgreSQL 연결 테스트:\" kubectl exec deployment/litellm -n litellm -- \\ nc -zv postgres-service.openwebui.svc.cluster.local 5432 echo \"✅ 서비스 간 통신 테스트 완료\" 📊 6단계: 로그 및 모니터링 확인 애플리케이션 로그 확인 #!/bin/bash # log-check.sh echo \"📊 로그 확인...\" echo \"🗃️ PostgreSQL 로그:\" kubectl logs deployment/postgres -n openwebui --tail=20 echo \"🤖 LiteLLM 로그:\" kubectl logs deployment/litellm -n litellm --tail=20 echo \"🌐 OpenWebUI 로그:\" kubectl logs deployment/openwebui -n openwebui --tail=20 # 에러 로그 검색 echo \"❌ 에러 로그 검색:\" kubectl logs deployment/openwebui -n openwebui | grep -i error | tail -10 kubectl logs deployment/litellm -n litellm | grep -i error | tail -10 echo \"✅ 로그 확인 완료\" 이벤트 확인 # 클러스터 이벤트 확인 kubectl get events -A --sort-by='.lastTimestamp' | tail -20 # 네임스페이스별 이벤트 kubectl get events -n openwebui --sort-by='.lastTimestamp' kubectl get events -n litellm --sort-by='.lastTimestamp' 메트릭 확인 # 리소스 사용량 모니터링 kubectl top pods -n openwebui --containers kubectl top pods -n litellm --containers # 파드별 상세 메트릭 kubectl describe pod -l app=openwebui -n openwebui kubectl describe pod -l app=litellm -n litellm 🚀 7단계: 부하 테스트 간단한 부하 테스트 #!/bin/bash # load-test.sh echo \"🚀 부하 테스트 시작...\" # 포트 포워딩 설정 kubectl port-forward svc/openwebui-service 8080:8080 -n openwebui \u0026 PORT_FORWARD_PID=$! sleep 5 # Apache Bench를 사용한 부하 테스트 echo \"⚡ HTTP 부하 테스트 (100 요청, 동시접속 10):\" ab -n 100 -c 10 http://localhost:8080/ # curl을 사용한 반복 테스트 echo \"🔄 반복 접속 테스트:\" for i in {1..10}; do echo \"요청 $i:\" curl -s -o /dev/null -w \"HTTP Status: %{http_code}, Time: %{time_total}s\\n\" http://localhost:8080/ sleep 1 done # 포트 포워딩 종료 kill $PORT_FORWARD_PID echo \"✅ 부하 테스트 완료\" K6를 사용한 고급 부하 테스트 // k6-load-test.js import http from 'k6/http'; import { check, sleep } from 'k6'; export let options = { stages: [ { duration: '2m', target: 10 }, // 2분간 10명 사용자로 증가 { duration: '5m', target: 10 }, // 5분간 10명 사용자 유지 { duration: '2m', target: 20 }, // 2분간 20명 사용자로 증가 { duration: '5m', target: 20 }, // 5분간 20명 사용자 유지 { duration: '2m', target: 0 }, // 2분간 0명으로 감소 ], }; export default function () { let response = http.get('http://localhost:8080'); check(response, { 'status is 200': (r) =\u003e r.status === 200, 'response time \u003c 500ms': (r) =\u003e r.timings.duration \u003c 500, }); sleep(1); } # K6 설치 및 실행 # 1. K6 설치 (macOS) brew install k6 # 2. 부하 테스트 실행 kubectl port-forward svc/openwebui-service 8080:8080 -n openwebui \u0026 k6 run k6-load-test.js 🔧 8단계: 장애 복구 테스트 파드 장애 시뮬레이션 #!/bin/bash # failure-recovery-test.sh echo \"🔧 장애 복구 테스트...\" echo \"💥 OpenWebUI 파드 삭제 (장애 시뮬레이션):\" kubectl delete pod -l app=openwebui -n openwebui echo \"⏳ 파드 재생성 대기 (30초):\" sleep 30 echo \"✅ 파드 복구 상태 확인:\" kubectl get pods -l app=openwebui -n openwebui echo \"🔍 서비스 가용성 테스트:\" kubectl port-forward svc/openwebui-service 8080:8080 -n openwebui \u0026 PORT_FORWARD_PID=$! sleep 10 HTTP_STATUS=$(curl -s -o /dev/null -w \"%{http_code}\" http://localhost:8080) echo \"HTTP 상태: $HTTP_STATUS\" kill $PORT_FORWARD_PID if [ \"$HTTP_STATUS\" = \"200\" ]; then echo \"✅ 장애 복구 성공\" else echo \"❌ 장애 복구 실패\" fi echo \"✅ 장애 복구 테스트 완료\" 데이터베이스 장애 테스트 #!/bin/bash # db-failure-test.sh echo \"🗃️ 데이터베이스 장애 테스트...\" echo \"💥 PostgreSQL 파드 삭제:\" kubectl delete pod -l app=postgres -n openwebui echo \"⏳ 파드 재생성 및 데이터 복구 대기 (60초):\" sleep 60 echo \"✅ PostgreSQL 복구 확인:\" kubectl wait --for=condition=ready pod -l app=postgres -n openwebui --timeout=300s echo \"🔍 데이터 무결성 확인:\" kubectl exec deployment/postgres -n openwebui -- psql -U openwebui -d openwebui -c \"SELECT 1 as test;\" echo \"✅ 데이터베이스 장애 테스트 완료\" 📈 9단계: 성능 벤치마크 애플리케이션 성능 측정 #!/bin/bash # performance-benchmark.sh echo \"📈 성능 벤치마크 시작...\" # 포트 포워딩 설정 kubectl port-forward svc/openwebui-service 8080:8080 -n openwebui \u0026 PORT_FORWARD_PID=$! sleep 5 echo \"⏱️ 응답 시간 측정 (10회):\" for i in {1..10}; do curl -s -o /dev/null -w \"응답시간 $i: %{time_total}s\\n\" http://localhost:8080/ done echo \"📊 동시 접속 테스트:\" ab -n 50 -c 5 http://localhost:8080/ | grep -E \"(Requests per second|Time per request)\" # 포트 포워딩 종료 kill $PORT_FORWARD_PID echo \"💾 리소스 사용량 기록:\" kubectl top pods -n openwebui --containers kubectl top pods -n litellm --containers echo \"✅ 성능 벤치마크 완료\" 🔍 10단계: 종합 검증 리포트 자동 검증 스크립트 #!/bin/bash # comprehensive-verification.sh set -e REPORT_FILE=\"verification-report-$(date +%Y%m%d-%H%M%S).txt\" echo \"📋 OpenWebUI 종합 검증 리포트\" | tee $REPORT_FILE echo \"생성 시간: $(date)\" | tee -a $REPORT_FILE echo \"======================================\" | tee -a $REPORT_FILE # 1. 인프라 상태 echo \"🏗️ 1. 인프라 상태\" | tee -a $REPORT_FILE kubectl get nodes --no-headers | wc -l | xargs echo \"- 활성 노드 수:\" | tee -a $REPORT_FILE kubectl get pods -A --field-selector=status.phase=Running --no-headers | wc -l | xargs echo \"- 실행 중인 파드:\" | tee -a $REPORT_FILE # 2. 애플리케이션 상태 echo \"🌐 2. 애플리케이션 상태\" | tee -a $REPORT_FILE kubectl get pods -n openwebui -l app=openwebui --no-headers | grep Running | wc -l | xargs echo \"- OpenWebUI 파드:\" | tee -a $REPORT_FILE kubectl get pods -n litellm -l app=litellm --no-headers | grep Running | wc -l | xargs echo \"- LiteLLM 파드:\" | tee -a $REPORT_FILE kubectl get pods -n openwebui -l app=postgres --no-headers | grep Running | wc -l | xargs echo \"- PostgreSQL 파드:\" | tee -a $REPORT_FILE # 3. 서비스 연결성 echo \"🔗 3. 서비스 연결성\" | tee -a $REPORT_FILE if kubectl exec deployment/openwebui -n openwebui -- curl -s http://litellm-service.litellm.svc.cluster.local:4000/health \u003e /dev/null; then echo \"- OpenWebUI → LiteLLM: ✅\" | tee -a $REPORT_FILE else echo \"- OpenWebUI → LiteLLM: ❌\" | tee -a $REPORT_FILE fi if kubectl exec deployment/postgres -n openwebui -- pg_isready \u003e /dev/null; then echo \"- PostgreSQL 연결: ✅\" | tee -a $REPORT_FILE else echo \"- PostgreSQL 연결: ❌\" | tee -a $REPORT_FILE fi # 4. 외부 접근성 echo \"🌍 4. 외부 접근성\" | tee -a $REPORT_FILE kubectl port-forward svc/openwebui-service 8080:8080 -n openwebui \u0026 PORT_FORWARD_PID=$! sleep 5 HTTP_STATUS=$(curl -s -o /dev/null -w \"%{http_code}\" http://localhost:8080 || echo \"000\") if [ \"$HTTP_STATUS\" = \"200\" ]; then echo \"- HTTP 접근: ✅ ($HTTP_STATUS)\" | tee -a $REPORT_FILE else echo \"- HTTP 접근: ❌ ($HTTP_STATUS)\" | tee -a $REPORT_FILE fi kill $PORT_FORWARD_PID # 5. 리소스 사용량 echo \"📊 5. 리소스 사용량\" | tee -a $REPORT_FILE kubectl top nodes --no-headers | awk '{print \"- 노드 \" $1 \": CPU \" $3 \", Memory \" $5}' | tee -a $REPORT_FILE # 6. 최근 에러 로그 echo \"❌ 6. 최근 에러 (최근 10분)\" | tee -a $REPORT_FILE ERROR_COUNT=$(kubectl logs --since=10m -l app=openwebui -n openwebui | grep -i error | wc -l) echo \"- OpenWebUI 에러: $ERROR_COUNT 건\" | tee -a $REPORT_FILE echo \"======================================\" | tee -a $REPORT_FILE echo \"✅ 검증 완료 - 리포트 파일: $REPORT_FILE\" | tee -a $REPORT_FILE 검증 체크리스트 확인 #!/bin/bash # final-checklist.sh echo \"📋 최종 배포 검증 체크리스트\" echo \"===============================\" checks=( \"모든 파드가 Running 상태인가?\" \"데이터베이스 연결이 정상인가?\" \"LiteLLM API가 응답하는가?\" \"OpenWebUI 웹 페이지가 로드되는가?\" \"외부에서 접근 가능한가?\" \"파드 간 통신이 정상인가?\" \"로그에 심각한 에러가 없는가?\" \"리소스 사용량이 적정한가?\" \"장애 복구가 정상 작동하는가?\" \"성능이 요구사항을 만족하는가?\" ) for check in \"${checks[@]}\"; do echo \"□ $check\" done echo \"\" echo \"모든 항목이 체크되면 배포가 성공적으로 완료된 것입니다! 🎉\" 🚨 문제 해결 가이드 일반적인 문제들 1. 파드가 Pending 상태 # 원인 확인 kubectl describe pod -n # 일반적인 해결책 # - 노드 리소스 부족: 스케일링 또는 리소스 조정 # - PVC 마운트 실패: StorageClass 확인 # - 이미지 Pull 실패: 이미지 레지스트리 접근 권한 확인 2. 서비스 연결 실패 # 서비스 엔드포인트 확인 kubectl get endpoints -n # DNS 해상도 테스트 kubectl exec -it -n -- nslookup # 네트워크 정책 확인 kubectl get networkpolicy -A 3. 로드밸런서 접근 불가 # ALB 상태 확인 kubectl describe ingress -n # AWS 콘솔에서 로드밸런서 상태 확인 aws elbv2 describe-load-balancers # 보안 그룹 규칙 확인 aws ec2 describe-security-groups 📚 성능 최적화 권장사항 리소스 최적화 # 권장 리소스 설정 resources: requests: memory: \"256Mi\" cpu: \"250m\" limits: memory: \"512Mi\" cpu: \"500m\" 캐싱 전략 Redis 캐시 추가 고려 CDN 설정 (정적 자원용) 데이터베이스 쿼리 최적화 모니터링 강화 Prometheus + Grafana 설치 Alert Manager 설정 로그 집계 시스템 구축 ⏭️ 다음 단계 배포 검증이 완료되었다면:\n운영 환경 배포 준비 모니터링 시스템 확장 백업 및 재해 복구 계획 수립 CI/CD 파이프라인 최적화 ",
+  "wordCount" : "2135",
+  "inLanguage": "en",
+  "datePublished": "0001-01-01T00:00:00Z",
+  "dateModified": "0001-01-01T00:00:00Z",
+  "mainEntityOfPage": {
+    "@type": "WebPage",
+    "@id": "https://8dobibim.github.io/backend/%EB%B0%B0%ED%8F%AC-%EA%B2%80%EC%A6%9D-%EA%B0%80%EC%9D%B4%EB%93%9C/"
+  },
+  "publisher": {
+    "@type": "Organization",
+    "name": "8dobibim Tech Blog",
+    "logo": {
+      "@type": "ImageObject",
+      "url": "https://8dobibim.github.io/favicon.ico"
+    }
+  }
+}
+</script>
 </head>
 
 <body class="" id="top">
@@ -638,7 +1266,7 @@ Alert Manager 설정
 <header class="header">
     <nav class="nav">
         <div class="logo">
-            <a href="http://localhost:65390/" accesskey="h" title="8dobibim Tech Blog (Alt + H)">8dobibim Tech Blog</a>
+            <a href="https://8dobibim.github.io/" accesskey="h" title="8dobibim Tech Blog (Alt + H)">8dobibim Tech Blog</a>
             <div class="logo-switches">
                 <button id="theme-toggle" accesskey="t" title="(Alt + T)" aria-label="Toggle theme">
                     <svg id="moon" xmlns="http://www.w3.org/2000/svg" width="24" height="18" viewBox="0 0 24 24"
@@ -664,12 +1292,12 @@ Alert Manager 설정
         </div>
         <ul id="menu">
             <li>
-                <a href="http://localhost:65390/frontend/" title="🖥 프론트엔드">
+                <a href="https://8dobibim.github.io/frontend/" title="🖥 프론트엔드">
                     <span>🖥 프론트엔드</span>
                 </a>
             </li>
             <li>
-                <a href="http://localhost:65390/backend/" title="💾 백엔드">
+                <a href="https://8dobibim.github.io/backend/" title="💾 백엔드">
                     <span>💾 백엔드</span>
                 </a>
             </li>
@@ -680,7 +1308,7 @@ Alert Manager 설정
 
 <article class="post-single">
   <header class="post-header">
-    <div class="breadcrumbs"><a href="http://localhost:65390/">Home</a>&nbsp;»&nbsp;<a href="http://localhost:65390/backend/">Backend 문서</a></div>
+    <div class="breadcrumbs"><a href="https://8dobibim.github.io/">Home</a>&nbsp;»&nbsp;<a href="https://8dobibim.github.io/backend/">Backend 문서</a></div>
     <h1 class="post-title entry-hint-parent">
       
     </h1>
@@ -1393,12 +2021,12 @@ Alert Manager 설정
     <ul class="post-tags">
     </ul>
 <nav class="paginav">
-  <a class="prev" href="http://localhost:65390/backend/terraform-%EC%84%A4%EC%A0%95/">
+  <a class="prev" href="https://8dobibim.github.io/backend/terraform-%EC%84%A4%EC%A0%95/">
     <span class="title">« Prev</span>
     <br>
     <span></span>
   </a>
-  <a class="next" href="http://localhost:65390/backend/%EC%82%AC%EC%A0%84%EC%A4%80%EB%B9%84%EC%82%AC%ED%95%AD/">
+  <a class="next" href="https://8dobibim.github.io/backend/%EC%82%AC%EC%A0%84%EC%A4%80%EB%B9%84%EC%82%AC%ED%95%AD/">
     <span class="title">Next »</span>
     <br>
     <span></span>
@@ -1410,7 +2038,7 @@ Alert Manager 설정
     </main>
     
 <footer class="footer">
-        <span>&copy; 2025 <a href="http://localhost:65390/">8dobibim Tech Blog</a></span> · 
+        <span>&copy; 2025 <a href="https://8dobibim.github.io/">8dobibim Tech Blog</a></span> · 
 
     <span>
         Powered by

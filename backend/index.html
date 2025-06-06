@@ -1,10 +1,10 @@
 <!DOCTYPE html>
 <html lang="en" dir="auto">
 
-<head><script src="/livereload.js?mindelay=10&amp;v=2&amp;port=65390&amp;path=livereload" data-no-instant defer></script><meta charset="utf-8">
+<head><meta charset="utf-8">
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
 <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-<meta name="robots" content="noindex, nofollow">
+<meta name="robots" content="index, follow">
 <title>Backend 문서 | 8dobibim Tech Blog</title>
 <meta name="keywords" content="">
 <meta name="description" content="📘 8dobibim 운영 및 배포 가이드
@@ -37,17 +37,17 @@ API 프록시 환경 구축, 인프라 자동화, CI/CD 파이프라인 설정, 
 🧯 트러블슈팅 가이드 &amp; FAQ
 ">
 <meta name="author" content="">
-<link rel="canonical" href="http://localhost:65390/backend/">
+<link rel="canonical" href="https://8dobibim.github.io/backend/">
 <link crossorigin="anonymous" href="/assets/css/stylesheet.36819bea596090d8b48cf10d9831382996197aa7e4fc86f792f7c08c9ca4d23b.css" integrity="sha256-NoGb6llgkNi0jPENmDE4KZYZeqfk/Ib3kvfAjJyk0js=" rel="preload stylesheet" as="style">
-<link rel="icon" href="http://localhost:65390/favicon.ico">
-<link rel="icon" type="image/png" sizes="16x16" href="http://localhost:65390/favicon-16x16.png">
-<link rel="icon" type="image/png" sizes="32x32" href="http://localhost:65390/favicon-32x32.png">
-<link rel="apple-touch-icon" href="http://localhost:65390/apple-touch-icon.png">
-<link rel="mask-icon" href="http://localhost:65390/safari-pinned-tab.svg">
+<link rel="icon" href="https://8dobibim.github.io/favicon.ico">
+<link rel="icon" type="image/png" sizes="16x16" href="https://8dobibim.github.io/favicon-16x16.png">
+<link rel="icon" type="image/png" sizes="32x32" href="https://8dobibim.github.io/favicon-32x32.png">
+<link rel="apple-touch-icon" href="https://8dobibim.github.io/apple-touch-icon.png">
+<link rel="mask-icon" href="https://8dobibim.github.io/safari-pinned-tab.svg">
 <meta name="theme-color" content="#2e2e33">
 <meta name="msapplication-TileColor" content="#2e2e33">
-<link rel="alternate" type="application/rss+xml" href="http://localhost:65390/backend/index.xml">
-<link rel="alternate" hreflang="en" href="http://localhost:65390/backend/">
+<link rel="alternate" type="application/rss+xml" href="https://8dobibim.github.io/backend/index.xml">
+<link rel="alternate" hreflang="en" href="https://8dobibim.github.io/backend/">
 <noscript>
     <style>
         #theme-toggle,
@@ -84,7 +84,34 @@ API 프록시 환경 구축, 인프라 자동화, CI/CD 파이프라인 설정, 
         }
 
     </style>
-</noscript>
+</noscript><meta property="og:url" content="https://8dobibim.github.io/backend/">
+  <meta property="og:site_name" content="8dobibim Tech Blog">
+  <meta property="og:title" content="Backend 문서">
+  <meta property="og:description" content="📘 8dobibim 운영 및 배포 가이드 이 문서는 OpenWebUI 및 LiteLLM 기반으로 백엔드 시스템을 구성하고,
+API 프록시 환경 구축, 인프라 자동화, CI/CD 파이프라인 설정, 운영 효율화 등을 다룬 내용을 정리하고 있습니다.
+각 섹션을 통해 프로젝트의 방향성과 작업 내용을 한눈에 파악할 수 있으며, 하단의 문서 링크를 통해 세부 작업 내역을 확인할 수 있습니다.
+📋 사전 준비 🧾 사전준비사항 🌐 AWS 환경 설정 ⚙️ 인프라 설정 📐 Terraform 설정 ☸️ EKS 클러스터 배포 가이드 🔁 CI/CD 및 애플리케이션 배포 🚀 CI/CD 파이프라인 가이드라인 📦 애플리케이션 배포 가이드 ✅ 배포 검증 및 운영 🧪 배포 검증 가이드 🖥️ 운영 매뉴얼 🛠️ 트러블슈팅 🧯 트러블슈팅 가이드 &amp; FAQ ">
+  <meta property="og:locale" content="ko">
+  <meta property="og:type" content="website">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Backend 문서">
+<meta name="twitter:description" content="">
+
+
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BreadcrumbList",
+  "itemListElement": [
+    {
+      "@type": "ListItem",
+      "position":  1 ,
+      "name": "Backend 문서",
+      "item": "https://8dobibim.github.io/backend/"
+    }
+  ]
+}
+</script>
 </head>
 
 <body class="list" id="top">
@@ -102,7 +129,7 @@ API 프록시 환경 구축, 인프라 자동화, CI/CD 파이프라인 설정, 
 <header class="header">
     <nav class="nav">
         <div class="logo">
-            <a href="http://localhost:65390/" accesskey="h" title="8dobibim Tech Blog (Alt + H)">8dobibim Tech Blog</a>
+            <a href="https://8dobibim.github.io/" accesskey="h" title="8dobibim Tech Blog (Alt + H)">8dobibim Tech Blog</a>
             <div class="logo-switches">
                 <button id="theme-toggle" accesskey="t" title="(Alt + T)" aria-label="Toggle theme">
                     <svg id="moon" xmlns="http://www.w3.org/2000/svg" width="24" height="18" viewBox="0 0 24 24"
@@ -128,12 +155,12 @@ API 프록시 환경 구축, 인프라 자동화, CI/CD 파이프라인 설정, 
         </div>
         <ul id="menu">
             <li>
-                <a href="http://localhost:65390/frontend/" title="🖥 프론트엔드">
+                <a href="https://8dobibim.github.io/frontend/" title="🖥 프론트엔드">
                     <span>🖥 프론트엔드</span>
                 </a>
             </li>
             <li>
-                <a href="http://localhost:65390/backend/" title="💾 백엔드">
+                <a href="https://8dobibim.github.io/backend/" title="💾 백엔드">
                     <span class="active">💾 백엔드</span>
                 </a>
             </li>
@@ -141,7 +168,7 @@ API 프록시 환경 구축, 인프라 자동화, CI/CD 파이프라인 설정, 
     </nav>
 </header>
 <main class="main"> 
-<header class="page-header"><div class="breadcrumbs"><a href="http://localhost:65390/">Home</a></div>
+<header class="page-header"><div class="breadcrumbs"><a href="https://8dobibim.github.io/">Home</a></div>
   <h1>
     Backend 문서
   </h1>
@@ -192,7 +219,7 @@ API 프록시 환경 구축, 인프라 자동화, CI/CD 파이프라인 설정, 
 ...</p>
   </div>
   <footer class="entry-footer">8 min&nbsp;·&nbsp;1606 words</footer>
-  <a class="entry-link" aria-label="post link to " href="http://localhost:65390/backend/aws-%ED%99%98%EA%B2%BD-%EC%84%A4%EC%A0%95/"></a>
+  <a class="entry-link" aria-label="post link to " href="https://8dobibim.github.io/backend/aws-%ED%99%98%EA%B2%BD-%EC%84%A4%EC%A0%95/"></a>
 </article>
 
 <article class="post-entry"> 
@@ -209,7 +236,7 @@ API 프록시 환경 구축, 인프라 자동화, CI/CD 파이프라인 설정, 
 ...</p>
   </div>
   <footer class="entry-footer">8 min&nbsp;·&nbsp;1584 words</footer>
-  <a class="entry-link" aria-label="post link to " href="http://localhost:65390/backend/ci_cd-%ED%8C%8C%EC%9D%B4%ED%94%84%EB%9D%BC%EC%9D%B8-%EA%B0%80%EC%9D%B4%EB%93%9C%EB%9D%BC%EC%9D%B8/"></a>
+  <a class="entry-link" aria-label="post link to " href="https://8dobibim.github.io/backend/ci_cd-%ED%8C%8C%EC%9D%B4%ED%94%84%EB%9D%BC%EC%9D%B8-%EA%B0%80%EC%9D%B4%EB%93%9C%EB%9D%BC%EC%9D%B8/"></a>
 </article>
 
 <article class="post-entry"> 
@@ -225,7 +252,7 @@ API 프록시 환경 구축, 인프라 자동화, CI/CD 파이프라인 설정, 
 ...</p>
   </div>
   <footer class="entry-footer">6 min&nbsp;·&nbsp;1106 words</footer>
-  <a class="entry-link" aria-label="post link to " href="http://localhost:65390/backend/eks-%ED%81%B4%EB%9F%AC%EC%8A%A4%ED%84%B0-%EB%B0%B0%ED%8F%AC-%EA%B0%80%EC%9D%B4%EB%93%9C/"></a>
+  <a class="entry-link" aria-label="post link to " href="https://8dobibim.github.io/backend/eks-%ED%81%B4%EB%9F%AC%EC%8A%A4%ED%84%B0-%EB%B0%B0%ED%8F%AC-%EA%B0%80%EC%9D%B4%EB%93%9C/"></a>
 </article>
 
 <article class="post-entry"> 
@@ -242,7 +269,7 @@ API 프록시 환경 구축, 인프라 자동화, CI/CD 파이프라인 설정, 
 ...</p>
   </div>
   <footer class="entry-footer">10 min&nbsp;·&nbsp;2101 words</footer>
-  <a class="entry-link" aria-label="post link to " href="http://localhost:65390/backend/terraform-%EC%84%A4%EC%A0%95/"></a>
+  <a class="entry-link" aria-label="post link to " href="https://8dobibim.github.io/backend/terraform-%EC%84%A4%EC%A0%95/"></a>
 </article>
 
 <article class="post-entry"> 
@@ -258,7 +285,7 @@ API 프록시 환경 구축, 인프라 자동화, CI/CD 파이프라인 설정, 
 ...</p>
   </div>
   <footer class="entry-footer">11 min&nbsp;·&nbsp;2135 words</footer>
-  <a class="entry-link" aria-label="post link to " href="http://localhost:65390/backend/%EB%B0%B0%ED%8F%AC-%EA%B2%80%EC%A6%9D-%EA%B0%80%EC%9D%B4%EB%93%9C/"></a>
+  <a class="entry-link" aria-label="post link to " href="https://8dobibim.github.io/backend/%EB%B0%B0%ED%8F%AC-%EA%B2%80%EC%A6%9D-%EA%B0%80%EC%9D%B4%EB%93%9C/"></a>
 </article>
 
 <article class="post-entry"> 
@@ -275,7 +302,7 @@ API 프록시 환경 구축, 인프라 자동화, CI/CD 파이프라인 설정, 
 ...</p>
   </div>
   <footer class="entry-footer">6 min&nbsp;·&nbsp;1243 words</footer>
-  <a class="entry-link" aria-label="post link to " href="http://localhost:65390/backend/%EC%82%AC%EC%A0%84%EC%A4%80%EB%B9%84%EC%82%AC%ED%95%AD/"></a>
+  <a class="entry-link" aria-label="post link to " href="https://8dobibim.github.io/backend/%EC%82%AC%EC%A0%84%EC%A4%80%EB%B9%84%EC%82%AC%ED%95%AD/"></a>
 </article>
 
 <article class="post-entry"> 
@@ -291,7 +318,7 @@ API 프록시 환경 구축, 인프라 자동화, CI/CD 파이프라인 설정, 
 ...</p>
   </div>
   <footer class="entry-footer">7 min&nbsp;·&nbsp;1413 words</footer>
-  <a class="entry-link" aria-label="post link to " href="http://localhost:65390/backend/%EC%95%A0%ED%94%8C%EB%A6%AC%EC%BC%80%EC%9D%B4%EC%85%98-%EB%B0%B0%ED%8F%AC-%EA%B0%80%EC%9D%B4%EB%93%9C/"></a>
+  <a class="entry-link" aria-label="post link to " href="https://8dobibim.github.io/backend/%EC%95%A0%ED%94%8C%EB%A6%AC%EC%BC%80%EC%9D%B4%EC%85%98-%EB%B0%B0%ED%8F%AC-%EA%B0%80%EC%9D%B4%EB%93%9C/"></a>
 </article>
 
 <article class="post-entry"> 
@@ -307,7 +334,7 @@ API 프록시 환경 구축, 인프라 자동화, CI/CD 파이프라인 설정, 
 ...</p>
   </div>
   <footer class="entry-footer">7 min&nbsp;·&nbsp;1419 words</footer>
-  <a class="entry-link" aria-label="post link to " href="http://localhost:65390/backend/%EC%9A%B4%EC%98%81-%EB%A9%94%EB%89%B4%EC%96%BC/"></a>
+  <a class="entry-link" aria-label="post link to " href="https://8dobibim.github.io/backend/%EC%9A%B4%EC%98%81-%EB%A9%94%EB%89%B4%EC%96%BC/"></a>
 </article>
 
 <article class="post-entry"> 
@@ -320,12 +347,12 @@ API 프록시 환경 구축, 인프라 자동화, CI/CD 파이프라인 설정, 
 ...</p>
   </div>
   <footer class="entry-footer">10 min&nbsp;·&nbsp;2035 words</footer>
-  <a class="entry-link" aria-label="post link to " href="http://localhost:65390/backend/%ED%8A%B8%EB%9F%AC%EB%B8%94%EC%8A%88%ED%8C%85-%EA%B0%80%EC%9D%B4%EB%93%9C--faq/"></a>
+  <a class="entry-link" aria-label="post link to " href="https://8dobibim.github.io/backend/%ED%8A%B8%EB%9F%AC%EB%B8%94%EC%8A%88%ED%8C%85-%EA%B0%80%EC%9D%B4%EB%93%9C--faq/"></a>
 </article>
     </main>
     
 <footer class="footer">
-        <span>&copy; 2025 <a href="http://localhost:65390/">8dobibim Tech Blog</a></span> · 
+        <span>&copy; 2025 <a href="https://8dobibim.github.io/">8dobibim Tech Blog</a></span> · 
 
     <span>
         Powered by

@@ -1,10 +1,10 @@
 <!DOCTYPE html>
 <html lang="en" dir="auto">
 
-<head><script src="/livereload.js?mindelay=10&amp;v=2&amp;port=65390&amp;path=livereload" data-no-instant defer></script><meta charset="utf-8">
+<head><meta charset="utf-8">
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
 <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-<meta name="robots" content="noindex, nofollow">
+<meta name="robots" content="index, follow">
 <title>8dobibim Tech Blog</title>
 <meta name="keywords" content="">
 <meta name="description" content="🐳 Docker 이미지 빌드 가이드
@@ -64,16 +64,16 @@ docker run -d -p 3000:80 --name 8dobibim-front 8dobibim-front
 
 macOS는 localhost:3000 바로 접속 가능 (Chrome/Safari 등)">
 <meta name="author" content="">
-<link rel="canonical" href="http://localhost:65390/frontend/docker_%EC%9D%B4%EB%AF%B8%EC%A7%80_%EB%B9%8C%EB%93%9C_%EA%B0%80%EC%9D%B4%EB%93%9C/">
+<link rel="canonical" href="https://8dobibim.github.io/frontend/docker_%EC%9D%B4%EB%AF%B8%EC%A7%80_%EB%B9%8C%EB%93%9C_%EA%B0%80%EC%9D%B4%EB%93%9C/">
 <link crossorigin="anonymous" href="/assets/css/stylesheet.36819bea596090d8b48cf10d9831382996197aa7e4fc86f792f7c08c9ca4d23b.css" integrity="sha256-NoGb6llgkNi0jPENmDE4KZYZeqfk/Ib3kvfAjJyk0js=" rel="preload stylesheet" as="style">
-<link rel="icon" href="http://localhost:65390/favicon.ico">
-<link rel="icon" type="image/png" sizes="16x16" href="http://localhost:65390/favicon-16x16.png">
-<link rel="icon" type="image/png" sizes="32x32" href="http://localhost:65390/favicon-32x32.png">
-<link rel="apple-touch-icon" href="http://localhost:65390/apple-touch-icon.png">
-<link rel="mask-icon" href="http://localhost:65390/safari-pinned-tab.svg">
+<link rel="icon" href="https://8dobibim.github.io/favicon.ico">
+<link rel="icon" type="image/png" sizes="16x16" href="https://8dobibim.github.io/favicon-16x16.png">
+<link rel="icon" type="image/png" sizes="32x32" href="https://8dobibim.github.io/favicon-32x32.png">
+<link rel="apple-touch-icon" href="https://8dobibim.github.io/apple-touch-icon.png">
+<link rel="mask-icon" href="https://8dobibim.github.io/safari-pinned-tab.svg">
 <meta name="theme-color" content="#2e2e33">
 <meta name="msapplication-TileColor" content="#2e2e33">
-<link rel="alternate" hreflang="en" href="http://localhost:65390/frontend/docker_%EC%9D%B4%EB%AF%B8%EC%A7%80_%EB%B9%8C%EB%93%9C_%EA%B0%80%EC%9D%B4%EB%93%9C/">
+<link rel="alternate" hreflang="en" href="https://8dobibim.github.io/frontend/docker_%EC%9D%B4%EB%AF%B8%EC%A7%80_%EB%B9%8C%EB%93%9C_%EA%B0%80%EC%9D%B4%EB%93%9C/">
 <noscript>
     <style>
         #theme-toggle,
@@ -110,7 +110,123 @@ macOS는 localhost:3000 바로 접속 가능 (Chrome/Safari 등)">
         }
 
     </style>
-</noscript>
+</noscript><meta property="og:url" content="https://8dobibim.github.io/frontend/docker_%EC%9D%B4%EB%AF%B8%EC%A7%80_%EB%B9%8C%EB%93%9C_%EA%B0%80%EC%9D%B4%EB%93%9C/">
+  <meta property="og:site_name" content="8dobibim Tech Blog">
+  <meta property="og:title" content="8dobibim Tech Blog">
+  <meta property="og:description" content="🐳 Docker 이미지 빌드 가이드 OpenWebUI 기반 프론트를 Docker 환경에서 실행하는 과정을 운영체제별로 정리했습니다.
+📦 사전 준비 공통 사항 항목 설명 프로젝트 루트 submodules/8dobibim -&gt; open-webui 로 이동 주요 파일 Dockerfile, .dockerignore, nginx/default.conf 결과 포트 기본적으로 localhost:3000 (포트는 자유 설정 가능) 🪟 Windows 📥 1. Docker Desktop 설치 공식 설치 페이지: https://www.docker.com/products/docker-desktop/ WSL2 백엔드 권장 (설치 시 자동 안내됨) 설치 후 Docker 실행 여부 확인 docker --version ⚙️ 2. 프로젝트 디렉토리 이동 (Git Bash 또는 PowerShell) cd path/to/8dobibim_front 🧱 3. Docker 이미지 빌드 docker build -t 8dobibim-front ▶️ 4. 실행 docker run -d -p 3000:80 --name 8dobibim-front 8dobibim-front 🖥️ 5. 접속 http://localhost:3000 🍎 macOS 📥 1. Docker Desktop 설치 공식 설치 페이지: https://www.docker.com/products/docker-desktop/ 설치 후 Terminal에서 확인: docker –version ⚙️ 2. 터미널에서 실행 cd /path/to/8dobibim_front docker build -t 8dobibim-front . docker run -d -p 3000:80 --name 8dobibim-front 8dobibim-front macOS는 localhost:3000 바로 접속 가능 (Chrome/Safari 등)">
+  <meta property="og:locale" content="ko">
+  <meta property="og:type" content="article">
+    <meta property="article:section" content="frontend">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="">
+<meta name="twitter:description" content="🐳 Docker 이미지 빌드 가이드
+OpenWebUI 기반 프론트를 Docker 환경에서 실행하는 과정을 운영체제별로 정리했습니다.
+
+📦 사전 준비 공통 사항
+
+  
+      
+          항목
+          설명
+      
+  
+  
+      
+          프로젝트 루트
+          submodules/8dobibim -&gt; open-webui 로 이동
+      
+      
+          주요 파일
+          Dockerfile, .dockerignore, nginx/default.conf
+      
+      
+          결과 포트
+          기본적으로 localhost:3000 (포트는 자유 설정 가능)
+      
+  
+
+
+🪟 Windows
+📥 1. Docker Desktop 설치
+
+공식 설치 페이지: https://www.docker.com/products/docker-desktop/
+WSL2 백엔드 권장 (설치 시 자동 안내됨)
+설치 후 Docker 실행 여부 확인
+
+docker --version
+⚙️ 2. 프로젝트 디렉토리 이동 (Git Bash 또는 PowerShell)
+cd path/to/8dobibim_front
+🧱 3. Docker 이미지 빌드
+docker build -t 8dobibim-front 
+▶️ 4. 실행
+docker run -d -p 3000:80 --name 8dobibim-front 8dobibim-front
+🖥️ 5. 접속
+http://localhost:3000
+
+🍎 macOS
+📥 1. Docker Desktop 설치
+
+공식 설치 페이지: https://www.docker.com/products/docker-desktop/
+설치 후 Terminal에서 확인: docker &ndash;version
+
+⚙️ 2. 터미널에서 실행
+cd /path/to/8dobibim_front
+docker build -t 8dobibim-front .
+docker run -d -p 3000:80 --name 8dobibim-front 8dobibim-front
+
+macOS는 localhost:3000 바로 접속 가능 (Chrome/Safari 등)">
+
+
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BreadcrumbList",
+  "itemListElement": [
+    {
+      "@type": "ListItem",
+      "position":  1 ,
+      "name": "Frontend 문서",
+      "item": "https://8dobibim.github.io/frontend/"
+    }, 
+    {
+      "@type": "ListItem",
+      "position":  2 ,
+      "name": "",
+      "item": "https://8dobibim.github.io/frontend/docker_%EC%9D%B4%EB%AF%B8%EC%A7%80_%EB%B9%8C%EB%93%9C_%EA%B0%80%EC%9D%B4%EB%93%9C/"
+    }
+  ]
+}
+</script>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BlogPosting",
+  "headline": "",
+  "name": "",
+  "description": "🐳 Docker 이미지 빌드 가이드 OpenWebUI 기반 프론트를 Docker 환경에서 실행하는 과정을 운영체제별로 정리했습니다.\n📦 사전 준비 공통 사항 항목 설명 프로젝트 루트 submodules/8dobibim -\u0026gt; open-webui 로 이동 주요 파일 Dockerfile, .dockerignore, nginx/default.conf 결과 포트 기본적으로 localhost:3000 (포트는 자유 설정 가능) 🪟 Windows 📥 1. Docker Desktop 설치 공식 설치 페이지: https://www.docker.com/products/docker-desktop/ WSL2 백엔드 권장 (설치 시 자동 안내됨) 설치 후 Docker 실행 여부 확인 docker --version ⚙️ 2. 프로젝트 디렉토리 이동 (Git Bash 또는 PowerShell) cd path/to/8dobibim_front 🧱 3. Docker 이미지 빌드 docker build -t 8dobibim-front ▶️ 4. 실행 docker run -d -p 3000:80 --name 8dobibim-front 8dobibim-front 🖥️ 5. 접속 http://localhost:3000 🍎 macOS 📥 1. Docker Desktop 설치 공식 설치 페이지: https://www.docker.com/products/docker-desktop/ 설치 후 Terminal에서 확인: docker \u0026ndash;version ⚙️ 2. 터미널에서 실행 cd /path/to/8dobibim_front docker build -t 8dobibim-front . docker run -d -p 3000:80 --name 8dobibim-front 8dobibim-front macOS는 localhost:3000 바로 접속 가능 (Chrome/Safari 등)\n",
+  "keywords": [
+    
+  ],
+  "articleBody": "🐳 Docker 이미지 빌드 가이드 OpenWebUI 기반 프론트를 Docker 환경에서 실행하는 과정을 운영체제별로 정리했습니다.\n📦 사전 준비 공통 사항 항목 설명 프로젝트 루트 submodules/8dobibim -\u003e open-webui 로 이동 주요 파일 Dockerfile, .dockerignore, nginx/default.conf 결과 포트 기본적으로 localhost:3000 (포트는 자유 설정 가능) 🪟 Windows 📥 1. Docker Desktop 설치 공식 설치 페이지: https://www.docker.com/products/docker-desktop/ WSL2 백엔드 권장 (설치 시 자동 안내됨) 설치 후 Docker 실행 여부 확인 docker --version ⚙️ 2. 프로젝트 디렉토리 이동 (Git Bash 또는 PowerShell) cd path/to/8dobibim_front 🧱 3. Docker 이미지 빌드 docker build -t 8dobibim-front ▶️ 4. 실행 docker run -d -p 3000:80 --name 8dobibim-front 8dobibim-front 🖥️ 5. 접속 http://localhost:3000 🍎 macOS 📥 1. Docker Desktop 설치 공식 설치 페이지: https://www.docker.com/products/docker-desktop/ 설치 후 Terminal에서 확인: docker –version ⚙️ 2. 터미널에서 실행 cd /path/to/8dobibim_front docker build -t 8dobibim-front . docker run -d -p 3000:80 --name 8dobibim-front 8dobibim-front macOS는 localhost:3000 바로 접속 가능 (Chrome/Safari 등)\n🐧 Ubuntu / Linux 📥 1. Docker \u0026 Docker Compose 설치 sudo apt update sudo apt install docker.io docker-compose -y 추가로 Docker 권한 없이 실행하려면:\nsudo usermod -aG docker $USER newgrp docker ⚙️ 2. 프로젝트 디렉토리로 이동 cd ~/projects/8dobibim_front 🧱 3. Docker 이미지 빌드 docker build -t 8dobibim-front . ▶️ 4. 실행 docker run -d -p 3000:80 --name 8dobibim-front 8dobibim-front 🖥️ 5. 접속 로컬 브라우저: http://localhost:3000 외부 접속 시: http://\u003c서버 IP\u003e:3000 ",
+  "wordCount" : "216",
+  "inLanguage": "en",
+  "datePublished": "0001-01-01T00:00:00Z",
+  "dateModified": "0001-01-01T00:00:00Z",
+  "mainEntityOfPage": {
+    "@type": "WebPage",
+    "@id": "https://8dobibim.github.io/frontend/docker_%EC%9D%B4%EB%AF%B8%EC%A7%80_%EB%B9%8C%EB%93%9C_%EA%B0%80%EC%9D%B4%EB%93%9C/"
+  },
+  "publisher": {
+    "@type": "Organization",
+    "name": "8dobibim Tech Blog",
+    "logo": {
+      "@type": "ImageObject",
+      "url": "https://8dobibim.github.io/favicon.ico"
+    }
+  }
+}
+</script>
 </head>
 
 <body class="" id="top">
@@ -128,7 +244,7 @@ macOS는 localhost:3000 바로 접속 가능 (Chrome/Safari 등)">
 <header class="header">
     <nav class="nav">
         <div class="logo">
-            <a href="http://localhost:65390/" accesskey="h" title="8dobibim Tech Blog (Alt + H)">8dobibim Tech Blog</a>
+            <a href="https://8dobibim.github.io/" accesskey="h" title="8dobibim Tech Blog (Alt + H)">8dobibim Tech Blog</a>
             <div class="logo-switches">
                 <button id="theme-toggle" accesskey="t" title="(Alt + T)" aria-label="Toggle theme">
                     <svg id="moon" xmlns="http://www.w3.org/2000/svg" width="24" height="18" viewBox="0 0 24 24"
@@ -154,12 +270,12 @@ macOS는 localhost:3000 바로 접속 가능 (Chrome/Safari 등)">
         </div>
         <ul id="menu">
             <li>
-                <a href="http://localhost:65390/frontend/" title="🖥 프론트엔드">
+                <a href="https://8dobibim.github.io/frontend/" title="🖥 프론트엔드">
                     <span>🖥 프론트엔드</span>
                 </a>
             </li>
             <li>
-                <a href="http://localhost:65390/backend/" title="💾 백엔드">
+                <a href="https://8dobibim.github.io/backend/" title="💾 백엔드">
                     <span>💾 백엔드</span>
                 </a>
             </li>
@@ -170,7 +286,7 @@ macOS는 localhost:3000 바로 접속 가능 (Chrome/Safari 등)">
 
 <article class="post-single">
   <header class="post-header">
-    <div class="breadcrumbs"><a href="http://localhost:65390/">Home</a>&nbsp;»&nbsp;<a href="http://localhost:65390/frontend/">Frontend 문서</a></div>
+    <div class="breadcrumbs"><a href="https://8dobibim.github.io/">Home</a>&nbsp;»&nbsp;<a href="https://8dobibim.github.io/frontend/">Frontend 문서</a></div>
     <h1 class="post-title entry-hint-parent">
       
     </h1>
@@ -320,7 +436,7 @@ macOS는 localhost:3000 바로 접속 가능 (Chrome/Safari 등)">
     </main>
     
 <footer class="footer">
-        <span>&copy; 2025 <a href="http://localhost:65390/">8dobibim Tech Blog</a></span> · 
+        <span>&copy; 2025 <a href="https://8dobibim.github.io/">8dobibim Tech Blog</a></span> · 
 
     <span>
         Powered by

@@ -1,10 +1,10 @@
 <!DOCTYPE html>
 <html lang="en" dir="auto">
 
-<head><script src="/livereload.js?mindelay=10&amp;v=2&amp;port=65390&amp;path=livereload" data-no-instant defer></script><meta charset="utf-8">
+<head><meta charset="utf-8">
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
 <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-<meta name="robots" content="noindex, nofollow">
+<meta name="robots" content="index, follow">
 <title>8dobibim Tech Blog</title>
 <meta name="keywords" content="">
 <meta name="description" content="한국어 현지화 및 누락 번역 문자열 추가 작업
@@ -55,16 +55,16 @@ OpenWebUI의 기능 확장(음성 기능, 설정 메뉴 등)으로 인한 번역
 
 전체 변경 내용은 PR diff를 참고">
 <meta name="author" content="">
-<link rel="canonical" href="http://localhost:65390/frontend/%ED%95%9C%EA%B5%AD%EC%96%B4_%ED%98%84%EC%A7%80%ED%99%94_%EB%B0%8F_%ED%92%88%EC%A7%88%EA%B0%9C%EC%84%A0/">
+<link rel="canonical" href="https://8dobibim.github.io/frontend/%ED%95%9C%EA%B5%AD%EC%96%B4_%ED%98%84%EC%A7%80%ED%99%94_%EB%B0%8F_%ED%92%88%EC%A7%88%EA%B0%9C%EC%84%A0/">
 <link crossorigin="anonymous" href="/assets/css/stylesheet.36819bea596090d8b48cf10d9831382996197aa7e4fc86f792f7c08c9ca4d23b.css" integrity="sha256-NoGb6llgkNi0jPENmDE4KZYZeqfk/Ib3kvfAjJyk0js=" rel="preload stylesheet" as="style">
-<link rel="icon" href="http://localhost:65390/favicon.ico">
-<link rel="icon" type="image/png" sizes="16x16" href="http://localhost:65390/favicon-16x16.png">
-<link rel="icon" type="image/png" sizes="32x32" href="http://localhost:65390/favicon-32x32.png">
-<link rel="apple-touch-icon" href="http://localhost:65390/apple-touch-icon.png">
-<link rel="mask-icon" href="http://localhost:65390/safari-pinned-tab.svg">
+<link rel="icon" href="https://8dobibim.github.io/favicon.ico">
+<link rel="icon" type="image/png" sizes="16x16" href="https://8dobibim.github.io/favicon-16x16.png">
+<link rel="icon" type="image/png" sizes="32x32" href="https://8dobibim.github.io/favicon-32x32.png">
+<link rel="apple-touch-icon" href="https://8dobibim.github.io/apple-touch-icon.png">
+<link rel="mask-icon" href="https://8dobibim.github.io/safari-pinned-tab.svg">
 <meta name="theme-color" content="#2e2e33">
 <meta name="msapplication-TileColor" content="#2e2e33">
-<link rel="alternate" hreflang="en" href="http://localhost:65390/frontend/%ED%95%9C%EA%B5%AD%EC%96%B4_%ED%98%84%EC%A7%80%ED%99%94_%EB%B0%8F_%ED%92%88%EC%A7%88%EA%B0%9C%EC%84%A0/">
+<link rel="alternate" hreflang="en" href="https://8dobibim.github.io/frontend/%ED%95%9C%EA%B5%AD%EC%96%B4_%ED%98%84%EC%A7%80%ED%99%94_%EB%B0%8F_%ED%92%88%EC%A7%88%EA%B0%9C%EC%84%A0/">
 <noscript>
     <style>
         #theme-toggle,
@@ -101,7 +101,116 @@ OpenWebUI의 기능 확장(음성 기능, 설정 메뉴 등)으로 인한 번역
         }
 
     </style>
-</noscript>
+</noscript><meta property="og:url" content="https://8dobibim.github.io/frontend/%ED%95%9C%EA%B5%AD%EC%96%B4_%ED%98%84%EC%A7%80%ED%99%94_%EB%B0%8F_%ED%92%88%EC%A7%88%EA%B0%9C%EC%84%A0/">
+  <meta property="og:site_name" content="8dobibim Tech Blog">
+  <meta property="og:title" content="8dobibim Tech Blog">
+  <meta property="og:description" content="한국어 현지화 및 누락 번역 문자열 추가 작업 📌 설명 [i18n] OpenWebUI의 한국어 번역(‘ko-KR’) 파일에 대한 전반적인 개선 작업입니다.
+누락된 한글 번역 문자열을 추가하고, 기존 번역의 문맥적 부자연스러움을 개선하였습니다.
+또한, 일부 UI 구성 요소에서 영어가 그대로 노출되는 현상을 해결하여, 사용자 경험의 일관성과 번역 완성도를 향상시키는 것을 목표로 하였습니다.
+🧭 배경 일부 UI 텍스트가 영어로 노출되어 사용자에게 문맥상 어색하게 인식됨 locales/ko/*.json 파일 내 일부 key 누락으로 인해 t(&#39;key&#39;) 호출 시 fallback이 발생 번역 간 용어 사용이 일관되지 않아 사용자 혼란을 유발 이는 사용자 경험(UX)을 저해하고, 현지화(i18n) 품질 저하로 이어짐 OpenWebUI의 기능 확장(음성 기능, 설정 메뉴 등)으로 인한 번역 범위 확장 필요 ✅ 작업 내용 항목 설명 신규 번역 최근 추가된 메뉴 항목, 설정, 음성 기능 관련 문자열 번역 기존 개선 약 180여 개 항목의 표현을 자연스럽게 개선- 일관된 용어 사용 (“대화”, “삭제”, “설정” 등)- 모바일 및 데스크탑 UI에서 자연스러운 길이 유지 정리 작업 불필요하거나 중복된 항목 정리 파일 경로 src/lib/i18n/locales/ko/translation.json 197 additions, 197 deletions 전체 변경 내용은 PR diff를 참고">
+  <meta property="og:locale" content="ko">
+  <meta property="og:type" content="article">
+    <meta property="article:section" content="frontend">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="">
+<meta name="twitter:description" content="한국어 현지화 및 누락 번역 문자열 추가 작업
+📌 설명
+[i18n] OpenWebUI의 한국어 번역(&lsquo;ko-KR&rsquo;) 파일에 대한 전반적인 개선 작업입니다.
+누락된 한글 번역 문자열을 추가하고, 기존 번역의 문맥적 부자연스러움을 개선하였습니다.
+또한, 일부 UI 구성 요소에서 영어가 그대로 노출되는 현상을 해결하여, 사용자 경험의 일관성과 번역 완성도를 향상시키는 것을 목표로 하였습니다.
+
+🧭 배경
+
+일부 UI 텍스트가 영어로 노출되어 사용자에게 문맥상 어색하게 인식됨
+locales/ko/*.json 파일 내 일부 key 누락으로 인해 t(&#39;key&#39;) 호출 시 fallback이 발생
+번역 간 용어 사용이 일관되지 않아 사용자 혼란을 유발
+이는 사용자 경험(UX)을 저해하고, 현지화(i18n) 품질 저하로 이어짐
+OpenWebUI의 기능 확장(음성 기능, 설정 메뉴 등)으로 인한 번역 범위 확장 필요
+
+
+✅ 작업 내용
+
+  
+      
+          항목
+          설명
+      
+  
+  
+      
+          신규 번역
+          최근 추가된 메뉴 항목, 설정, 음성 기능 관련 문자열 번역
+      
+      
+          기존 개선
+          약 180여 개 항목의 표현을 자연스럽게 개선- 일관된 용어 사용 (&ldquo;대화&rdquo;, &ldquo;삭제&rdquo;, &ldquo;설정&rdquo; 등)- 모바일 및 데스크탑 UI에서 자연스러운 길이 유지
+      
+      
+          정리 작업
+          불필요하거나 중복된 항목 정리
+      
+      
+          파일 경로
+          src/lib/i18n/locales/ko/translation.json
+      
+  
+
+
+197 additions, 197 deletions
+
+
+전체 변경 내용은 PR diff를 참고">
+
+
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BreadcrumbList",
+  "itemListElement": [
+    {
+      "@type": "ListItem",
+      "position":  1 ,
+      "name": "Frontend 문서",
+      "item": "https://8dobibim.github.io/frontend/"
+    }, 
+    {
+      "@type": "ListItem",
+      "position":  2 ,
+      "name": "",
+      "item": "https://8dobibim.github.io/frontend/%ED%95%9C%EA%B5%AD%EC%96%B4_%ED%98%84%EC%A7%80%ED%99%94_%EB%B0%8F_%ED%92%88%EC%A7%88%EA%B0%9C%EC%84%A0/"
+    }
+  ]
+}
+</script>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BlogPosting",
+  "headline": "",
+  "name": "",
+  "description": "한국어 현지화 및 누락 번역 문자열 추가 작업 📌 설명 [i18n] OpenWebUI의 한국어 번역(\u0026lsquo;ko-KR\u0026rsquo;) 파일에 대한 전반적인 개선 작업입니다.\n누락된 한글 번역 문자열을 추가하고, 기존 번역의 문맥적 부자연스러움을 개선하였습니다.\n또한, 일부 UI 구성 요소에서 영어가 그대로 노출되는 현상을 해결하여, 사용자 경험의 일관성과 번역 완성도를 향상시키는 것을 목표로 하였습니다.\n🧭 배경 일부 UI 텍스트가 영어로 노출되어 사용자에게 문맥상 어색하게 인식됨 locales/ko/*.json 파일 내 일부 key 누락으로 인해 t('key') 호출 시 fallback이 발생 번역 간 용어 사용이 일관되지 않아 사용자 혼란을 유발 이는 사용자 경험(UX)을 저해하고, 현지화(i18n) 품질 저하로 이어짐 OpenWebUI의 기능 확장(음성 기능, 설정 메뉴 등)으로 인한 번역 범위 확장 필요 ✅ 작업 내용 항목 설명 신규 번역 최근 추가된 메뉴 항목, 설정, 음성 기능 관련 문자열 번역 기존 개선 약 180여 개 항목의 표현을 자연스럽게 개선- 일관된 용어 사용 (\u0026ldquo;대화\u0026rdquo;, \u0026ldquo;삭제\u0026rdquo;, \u0026ldquo;설정\u0026rdquo; 등)- 모바일 및 데스크탑 UI에서 자연스러운 길이 유지 정리 작업 불필요하거나 중복된 항목 정리 파일 경로 src/lib/i18n/locales/ko/translation.json 197 additions, 197 deletions 전체 변경 내용은 PR diff를 참고\n",
+  "keywords": [
+    
+  ],
+  "articleBody": "한국어 현지화 및 누락 번역 문자열 추가 작업 📌 설명 [i18n] OpenWebUI의 한국어 번역(‘ko-KR’) 파일에 대한 전반적인 개선 작업입니다.\n누락된 한글 번역 문자열을 추가하고, 기존 번역의 문맥적 부자연스러움을 개선하였습니다.\n또한, 일부 UI 구성 요소에서 영어가 그대로 노출되는 현상을 해결하여, 사용자 경험의 일관성과 번역 완성도를 향상시키는 것을 목표로 하였습니다.\n🧭 배경 일부 UI 텍스트가 영어로 노출되어 사용자에게 문맥상 어색하게 인식됨 locales/ko/*.json 파일 내 일부 key 누락으로 인해 t('key') 호출 시 fallback이 발생 번역 간 용어 사용이 일관되지 않아 사용자 혼란을 유발 이는 사용자 경험(UX)을 저해하고, 현지화(i18n) 품질 저하로 이어짐 OpenWebUI의 기능 확장(음성 기능, 설정 메뉴 등)으로 인한 번역 범위 확장 필요 ✅ 작업 내용 항목 설명 신규 번역 최근 추가된 메뉴 항목, 설정, 음성 기능 관련 문자열 번역 기존 개선 약 180여 개 항목의 표현을 자연스럽게 개선- 일관된 용어 사용 (“대화”, “삭제”, “설정” 등)- 모바일 및 데스크탑 UI에서 자연스러운 길이 유지 정리 작업 불필요하거나 중복된 항목 정리 파일 경로 src/lib/i18n/locales/ko/translation.json 197 additions, 197 deletions 전체 변경 내용은 PR diff를 참고\n🔍 번역 기준 및 제외 원칙 다음 기준을 기반으로 번역 포함/제외 여부를 판단하였습니다:\n❌ 번역 제외 기준 고유명사 및 기술용어\n예: ChatGPT, GPT-4, Plugin 등은 혼동 방지를 위해 유지 짧고 자주 등장하는 UI 단어\n예: \"All\", \"Save\", \"On/Off\", \"Copy\" 등은 문맥에 따라 유지 ✅ 예외적으로 번역한 경우 기존 UI 내 일관성 저하 또는 혼동이 발생하는 경우 버튼/섹션 명칭 등 역할이 명확한 경우에는 “모두”, “저장” 등으로 번역 문맥적 자연스러움을 확보하기 위해 최소한의 번역 적용이 필요한 경우 🧪 테스트 및 적용 결과 로컬 환경에서 최신 버전 UI에 적용 후 전체 확인 완료\n한국어 번역이 누락된 UI 요소의 완전한 현지화 달성\ni18n fallback 에러 및 경고 없이 정상 작동\n사용자 입장에서 혼동 없이 직관적인 인터페이스 제공\n적용 전 적용 후 🛠 공식 OpenWebUI 레포지토리에 PR 생성 및 승인 해당 한국어 번역 개선 작업은 공식 OpenWebUI 레포지토리에 Pull Request 형태로 기여되었으며,\n검토 및 리뷰를 거쳐 정식으로 병합(merged) 되었습니다.\n✅ PR 승인 완료: open-webui#13929 🚀 기여 내용은 OpenWebUI 공식 릴리즈(v0.6.10) 에 포함되었습니다. → 릴리즈 노트 보기 이를 통해 OpenWebUI의 한국어 현지화 품질이 향상되었으며,\n전 세계 사용자에게 실제 배포된 버전에 적용되어 실질적인 오픈소스 기여 성과를 이뤄냈습니다.\n",
+  "wordCount" : "339",
+  "inLanguage": "en",
+  "datePublished": "0001-01-01T00:00:00Z",
+  "dateModified": "0001-01-01T00:00:00Z",
+  "mainEntityOfPage": {
+    "@type": "WebPage",
+    "@id": "https://8dobibim.github.io/frontend/%ED%95%9C%EA%B5%AD%EC%96%B4_%ED%98%84%EC%A7%80%ED%99%94_%EB%B0%8F_%ED%92%88%EC%A7%88%EA%B0%9C%EC%84%A0/"
+  },
+  "publisher": {
+    "@type": "Organization",
+    "name": "8dobibim Tech Blog",
+    "logo": {
+      "@type": "ImageObject",
+      "url": "https://8dobibim.github.io/favicon.ico"
+    }
+  }
+}
+</script>
 </head>
 
 <body class="" id="top">
@@ -119,7 +228,7 @@ OpenWebUI의 기능 확장(음성 기능, 설정 메뉴 등)으로 인한 번역
 <header class="header">
     <nav class="nav">
         <div class="logo">
-            <a href="http://localhost:65390/" accesskey="h" title="8dobibim Tech Blog (Alt + H)">8dobibim Tech Blog</a>
+            <a href="https://8dobibim.github.io/" accesskey="h" title="8dobibim Tech Blog (Alt + H)">8dobibim Tech Blog</a>
             <div class="logo-switches">
                 <button id="theme-toggle" accesskey="t" title="(Alt + T)" aria-label="Toggle theme">
                     <svg id="moon" xmlns="http://www.w3.org/2000/svg" width="24" height="18" viewBox="0 0 24 24"
@@ -145,12 +254,12 @@ OpenWebUI의 기능 확장(음성 기능, 설정 메뉴 등)으로 인한 번역
         </div>
         <ul id="menu">
             <li>
-                <a href="http://localhost:65390/frontend/" title="🖥 프론트엔드">
+                <a href="https://8dobibim.github.io/frontend/" title="🖥 프론트엔드">
                     <span>🖥 프론트엔드</span>
                 </a>
             </li>
             <li>
-                <a href="http://localhost:65390/backend/" title="💾 백엔드">
+                <a href="https://8dobibim.github.io/backend/" title="💾 백엔드">
                     <span>💾 백엔드</span>
                 </a>
             </li>
@@ -161,7 +270,7 @@ OpenWebUI의 기능 확장(음성 기능, 설정 메뉴 등)으로 인한 번역
 
 <article class="post-single">
   <header class="post-header">
-    <div class="breadcrumbs"><a href="http://localhost:65390/">Home</a>&nbsp;»&nbsp;<a href="http://localhost:65390/frontend/">Frontend 문서</a></div>
+    <div class="breadcrumbs"><a href="https://8dobibim.github.io/">Home</a>&nbsp;»&nbsp;<a href="https://8dobibim.github.io/frontend/">Frontend 문서</a></div>
     <h1 class="post-title entry-hint-parent">
       
     </h1>
@@ -317,7 +426,7 @@ OpenWebUI의 기능 확장(음성 기능, 설정 메뉴 등)으로 인한 번역
     </main>
     
 <footer class="footer">
-        <span>&copy; 2025 <a href="http://localhost:65390/">8dobibim Tech Blog</a></span> · 
+        <span>&copy; 2025 <a href="https://8dobibim.github.io/">8dobibim Tech Blog</a></span> · 
 
     <span>
         Powered by

@@ -1,10 +1,10 @@
 <!DOCTYPE html>
 <html lang="en" dir="auto">
 
-<head><script src="/livereload.js?mindelay=10&amp;v=2&amp;port=65390&amp;path=livereload" data-no-instant defer></script><meta charset="utf-8">
+<head><meta charset="utf-8">
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
 <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-<meta name="robots" content="noindex, nofollow">
+<meta name="robots" content="index, follow">
 <title>8dobibim Tech Blog</title>
 <meta name="keywords" content="">
 <meta name="description" content="🚀 OpenWebUI AWS 배포 사전 준비사항
@@ -43,16 +43,16 @@ AWS 계정 준비
 
 AWS 계정이 없는 경우">
 <meta name="author" content="">
-<link rel="canonical" href="http://localhost:65390/backend/%EC%82%AC%EC%A0%84%EC%A4%80%EB%B9%84%EC%82%AC%ED%95%AD/">
+<link rel="canonical" href="https://8dobibim.github.io/backend/%EC%82%AC%EC%A0%84%EC%A4%80%EB%B9%84%EC%82%AC%ED%95%AD/">
 <link crossorigin="anonymous" href="/assets/css/stylesheet.36819bea596090d8b48cf10d9831382996197aa7e4fc86f792f7c08c9ca4d23b.css" integrity="sha256-NoGb6llgkNi0jPENmDE4KZYZeqfk/Ib3kvfAjJyk0js=" rel="preload stylesheet" as="style">
-<link rel="icon" href="http://localhost:65390/favicon.ico">
-<link rel="icon" type="image/png" sizes="16x16" href="http://localhost:65390/favicon-16x16.png">
-<link rel="icon" type="image/png" sizes="32x32" href="http://localhost:65390/favicon-32x32.png">
-<link rel="apple-touch-icon" href="http://localhost:65390/apple-touch-icon.png">
-<link rel="mask-icon" href="http://localhost:65390/safari-pinned-tab.svg">
+<link rel="icon" href="https://8dobibim.github.io/favicon.ico">
+<link rel="icon" type="image/png" sizes="16x16" href="https://8dobibim.github.io/favicon-16x16.png">
+<link rel="icon" type="image/png" sizes="32x32" href="https://8dobibim.github.io/favicon-32x32.png">
+<link rel="apple-touch-icon" href="https://8dobibim.github.io/apple-touch-icon.png">
+<link rel="mask-icon" href="https://8dobibim.github.io/safari-pinned-tab.svg">
 <meta name="theme-color" content="#2e2e33">
 <meta name="msapplication-TileColor" content="#2e2e33">
-<link rel="alternate" hreflang="en" href="http://localhost:65390/backend/%EC%82%AC%EC%A0%84%EC%A4%80%EB%B9%84%EC%82%AC%ED%95%AD/">
+<link rel="alternate" hreflang="en" href="https://8dobibim.github.io/backend/%EC%82%AC%EC%A0%84%EC%A4%80%EB%B9%84%EC%82%AC%ED%95%AD/">
 <noscript>
     <style>
         #theme-toggle,
@@ -89,7 +89,105 @@ AWS 계정이 없는 경우">
         }
 
     </style>
-</noscript>
+</noscript><meta property="og:url" content="https://8dobibim.github.io/backend/%EC%82%AC%EC%A0%84%EC%A4%80%EB%B9%84%EC%82%AC%ED%95%AD/">
+  <meta property="og:site_name" content="8dobibim Tech Blog">
+  <meta property="og:title" content="8dobibim Tech Blog">
+  <meta property="og:description" content="🚀 OpenWebUI AWS 배포 사전 준비사항 ⏱️ 예상 소요시간: 약 60-90분
+💡 난이도: 초급
+📋 목표: AWS에 OpenWebUI를 배포하기 위한 모든 도구와 환경을 준비합니다.
+📋 준비 완료 체크리스트 작업을 시작하기 전에 아래 항목들을 체크해주세요:
+필수 계정 AWS 계정 (결제 정보 등록 완료) GitHub 계정 Docker Hub 계정 (선택사항) 필수 도구 설치 AWS CLI v2 Terraform v1.5&#43; kubectl v1.24&#43; Docker Desktop Git 코드 에디터 (VS Code 권장) 권한 및 설정 AWS IAM 사용자 생성 및 권한 설정 AWS CLI 자격 증명 설정 GitHub Personal Access Token 생성 1️⃣ AWS 계정 및 IAM 설정 AWS 계정 준비 AWS 계정이 없는 경우">
+  <meta property="og:locale" content="ko">
+  <meta property="og:type" content="article">
+    <meta property="article:section" content="backend">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="">
+<meta name="twitter:description" content="🚀 OpenWebUI AWS 배포 사전 준비사항
+
+⏱️ 예상 소요시간: 약 60-90분
+💡 난이도: 초급
+📋 목표: AWS에 OpenWebUI를 배포하기 위한 모든 도구와 환경을 준비합니다.
+
+📋 준비 완료 체크리스트
+작업을 시작하기 전에 아래 항목들을 체크해주세요:
+필수 계정
+
+ AWS 계정 (결제 정보 등록 완료)
+ GitHub 계정
+ Docker Hub 계정 (선택사항)
+
+필수 도구 설치
+
+ AWS CLI v2
+ Terraform v1.5&#43;
+ kubectl v1.24&#43;
+ Docker Desktop
+ Git
+ 코드 에디터 (VS Code 권장)
+
+권한 및 설정
+
+ AWS IAM 사용자 생성 및 권한 설정
+ AWS CLI 자격 증명 설정
+ GitHub Personal Access Token 생성
+
+
+1️⃣ AWS 계정 및 IAM 설정
+AWS 계정 준비
+
+
+AWS 계정이 없는 경우">
+
+
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BreadcrumbList",
+  "itemListElement": [
+    {
+      "@type": "ListItem",
+      "position":  1 ,
+      "name": "Backend 문서",
+      "item": "https://8dobibim.github.io/backend/"
+    }, 
+    {
+      "@type": "ListItem",
+      "position":  2 ,
+      "name": "",
+      "item": "https://8dobibim.github.io/backend/%EC%82%AC%EC%A0%84%EC%A4%80%EB%B9%84%EC%82%AC%ED%95%AD/"
+    }
+  ]
+}
+</script>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BlogPosting",
+  "headline": "",
+  "name": "",
+  "description": "🚀 OpenWebUI AWS 배포 사전 준비사항 ⏱️ 예상 소요시간: 약 60-90분\n💡 난이도: 초급\n📋 목표: AWS에 OpenWebUI를 배포하기 위한 모든 도구와 환경을 준비합니다.\n📋 준비 완료 체크리스트 작업을 시작하기 전에 아래 항목들을 체크해주세요:\n필수 계정 AWS 계정 (결제 정보 등록 완료) GitHub 계정 Docker Hub 계정 (선택사항) 필수 도구 설치 AWS CLI v2 Terraform v1.5+ kubectl v1.24+ Docker Desktop Git 코드 에디터 (VS Code 권장) 권한 및 설정 AWS IAM 사용자 생성 및 권한 설정 AWS CLI 자격 증명 설정 GitHub Personal Access Token 생성 1️⃣ AWS 계정 및 IAM 설정 AWS 계정 준비 AWS 계정이 없는 경우\n",
+  "keywords": [
+    
+  ],
+  "articleBody": "🚀 OpenWebUI AWS 배포 사전 준비사항 ⏱️ 예상 소요시간: 약 60-90분\n💡 난이도: 초급\n📋 목표: AWS에 OpenWebUI를 배포하기 위한 모든 도구와 환경을 준비합니다.\n📋 준비 완료 체크리스트 작업을 시작하기 전에 아래 항목들을 체크해주세요:\n필수 계정 AWS 계정 (결제 정보 등록 완료) GitHub 계정 Docker Hub 계정 (선택사항) 필수 도구 설치 AWS CLI v2 Terraform v1.5+ kubectl v1.24+ Docker Desktop Git 코드 에디터 (VS Code 권장) 권한 및 설정 AWS IAM 사용자 생성 및 권한 설정 AWS CLI 자격 증명 설정 GitHub Personal Access Token 생성 1️⃣ AWS 계정 및 IAM 설정 AWS 계정 준비 AWS 계정이 없는 경우\nAWS 회원가입 페이지에서 계정 생성 신용카드 정보 등록 (프리티어 사용 가능) 이메일 인증 완료 결제 알림 설정 (중요!)\n💰 예상 월 비용: $50-150 (테스트 환경 기준)\r⚠️ 비용 초과를 방지하기 위해 결제 알림을 설정하세요! IAM 사용자 생성 (보안을 위해 필수!) ⚠️ 중요: 루트 계정을 직접 사용하지 마세요! IAM 사용자를 생성해서 사용하는 것이 보안상 안전합니다.\n1단계: IAM 콘솔 접속\nAWS 콘솔 → 서비스 검색 → “IAM” 입력 → Identity and Access Management 선택 2단계: 사용자 생성\n사용자 이름: openwebui-deploy-user\r액세스 유형: ✅ 프로그래밍 방식 액세스 3단계: 권한 설정 아래 정책들을 연결해주세요:\nAmazonEKSClusterPolicy AmazonEKSWorkerNodePolicy AmazonEKS_CNI_Policy AmazonEC2ContainerRegistryReadOnly AmazonS3FullAccess (Terraform 상태 파일용) AmazonDynamoDBFullAccess (Terraform 락용) 또는 사용자 정의 정책 사용:\n{ \"Version\": \"2012-10-17\", \"Statement\": [ { \"Effect\": \"Allow\", \"Action\": [ \"eks:*\", \"ec2:*\", \"iam:*\", \"s3:*\", \"dynamodb:*\", \"ecr:*\", \"logs:*\", \"cloudformation:*\" ], \"Resource\": \"*\" } ] } 4단계: 액세스 키 저장\n⚠️ 중요: 액세스 키와 시크릿 키를 안전한 곳에 저장하세요!\r나중에 다시 확인할 수 없습니다.\rAccess Key ID: AKIA........................\rSecret Access Key: ........................................ 2️⃣ 필수 도구 설치 AWS CLI 설치 🪟 Windows 방법 1: MSI 설치 파일 (권장)\nAWS CLI Windows 설치 파일 다운로드 다운로드한 파일 실행하여 설치 설치 완료 후 새 명령 프롬프트 열기 방법 2: 명령어 설치\n# PowerShell에서 실행 msiexec.exe /i https://awscli.amazonaws.com/AWSCLIV2.msi 🍎 macOS 방법 1: PKG 파일 (권장)\nAWS CLI macOS 설치 파일 다운로드 다운로드한 파일 실행하여 설치 방법 2: Homebrew\nbrew install awscli 🐧 Linux (Ubuntu/Debian) # 필요한 패키지 설치 sudo apt update sudo apt install -y curl unzip # AWS CLI v2 다운로드 및 설치 curl \"https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip\" -o \"awscliv2.zip\" unzip awscliv2.zip sudo ./aws/install 설치 확인 aws --version # 예상 출력: aws-cli/2.x.x Python/3.x.x Linux/5.x.x botocore/2.x.x AWS CLI 설정 aws configure 입력 내용:\nAWS Access Key ID [None]: [위에서 생성한 액세스 키 입력]\rAWS Secret Access Key [None]: [위에서 생성한 시크릿 키 입력]\rDefault region name [None]: ap-northeast-2\rDefault output format [None]: json 설정 확인:\naws sts get-caller-identity 예상 출력:\n{ \"UserId\": \"AIDACKCEVSQ6C2EXAMPLE\", \"Account\": \"123456789012\", \"Arn\": \"arn:aws:iam::123456789012:user/openwebui-deploy-user\" } Terraform 설치 🪟 Windows 방법 1: Chocolatey (권장)\n# PowerShell을 관리자 권한으로 실행 choco install terraform 방법 2: 직접 다운로드\nTerraform 다운로드 페이지에서 Windows 버전 다운로드 ZIP 파일 압축 해제 terraform.exe를 C:\\Windows\\System32\\ 폴더에 복사 🍎 macOS # Homebrew 사용 brew tap hashicorp/tap brew install hashicorp/tap/terraform 🐧 Linux # HashiCorp GPG 키 추가 wget -O- https://apt.releases.hashicorp.com/gpg | sudo gpg --dearmor -o /usr/share/keyrings/hashicorp-archive-keyring.gpg # HashiCorp 리포지토리 추가 echo \"deb [signed-by=/usr/share/keyrings/hashicorp-archive-keyring.gpg] https://apt.releases.hashicorp.com $(lsb_release -cs) main\" | sudo tee /etc/apt/sources.list.d/hashicorp.list # 패키지 업데이트 및 Terraform 설치 sudo apt update \u0026\u0026 sudo apt install terraform 설치 확인 terraform version # 예상 출력: Terraform v1.5.x kubectl 설치 🪟 Windows # PowerShell에서 실행 curl.exe -LO \"https://dl.k8s.io/release/v1.28.0/bin/windows/amd64/kubectl.exe\" # kubectl.exe를 PATH가 설정된 폴더로 이동 🍎 macOS # Homebrew 사용 brew install kubectl # 또는 직접 다운로드 curl -LO \"https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/darwin/amd64/kubectl\" chmod +x ./kubectl sudo mv ./kubectl /usr/local/bin/kubectl 🐧 Linux curl -LO \"https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl\" chmod +x kubectl sudo mv kubectl /usr/local/bin/ 설치 확인 kubectl version --client # 예상 출력: Client Version: v1.28.x Docker Desktop 설치 🪟 Windows \u0026 🍎 macOS Docker Desktop 다운로드 페이지에서 운영체제에 맞는 버전 다운로드 설치 파일 실행 설치 완료 후 Docker Desktop 실행 Docker 계정으로 로그인 (선택사항) 🐧 Linux # Ubuntu/Debian sudo apt update sudo apt install -y apt-transport-https ca-certificates curl gnupg lsb-release # Docker GPG 키 추가 curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo gpg --dearmor -o /usr/share/keyrings/docker-archive-keyring.gpg # Docker 리포지토리 추가 echo \"deb [arch=amd64 signed-by=/usr/share/keyrings/docker-archive-keyring.gpg] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable\" | sudo tee /etc/apt/sources.list.d/docker.list \u003e /dev/null # Docker 설치 sudo apt update sudo apt install -y docker-ce docker-ce-cli containerd.io docker-compose-plugin # 현재 사용자를 docker 그룹에 추가 sudo usermod -aG docker $USER # 시스템 재시작 또는 로그아웃/로그인 설치 확인 docker --version # 예상 출력: Docker version 24.x.x docker run hello-world # 예상 출력: Hello from Docker! 메시지가 출력되어야 함 Git 설치 및 설정 설치 Windows: Git for Windows 다운로드 및 설치 macOS: brew install git 또는 Xcode Command Line Tools Linux: sudo apt install git Git 설정 git config --global user.name \"Your Name\" git config --global user.email \"your.email@example.com\" 설치 확인 git --version # 예상 출력: git version 2.x.x 3️⃣ GitHub 설정 Personal Access Token 생성 GitHub 접속 및 설정\nGitHub.com 로그인 우측 상단 프로필 클릭 → Settings Developer settings 접속\n좌측 메뉴 맨 아래 “Developer settings” 클릭 “Personal access tokens” → “Tokens (classic)” 클릭 토큰 생성\nNote: OpenWebUI Deployment Token\rExpiration: 90 days (또는 원하는 기간)\rSelect scopes:\r✅ repo (전체 선택)\r✅ workflow\r✅ write:packages\r✅ read:packages 토큰 저장\n⚠️ 중요: 생성된 토큰을 안전한 곳에 저장하세요!\rghp_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx 4️⃣ 작업 디렉토리 설정 프로젝트 폴더 생성 # 작업할 디렉토리 생성 mkdir openwebui-aws-deployment cd openwebui-aws-deployment # Git 초기화 git init # 기본 폴더 구조 생성 mkdir -p {terraform,kubernetes,docs,scripts} mkdir -p .github/workflows # 디렉토리 구조 확인 tree . 예상 구조:\nopenwebui-aws-deployment/\r├── .github/\r│ └── workflows/\r├── terraform/\r├── kubernetes/\r├── docs/\r├── scripts/\r└── README.md .gitignore 파일 생성 cat \u003e .gitignore \u003c\u003c 'EOF' # Terraform *.tfstate *.tfstate.* .terraform/ .terraform.lock.hcl terraform.tfvars *.auto.tfvars # AWS .aws/ # IDE .vscode/ .idea/ *.swp *.swo # OS .DS_Store Thumbs.db # Secrets *.pem *.key secrets/ EOF 5️⃣ VS Code 확장 프로그램 (권장) VS Code를 사용하는 경우 아래 확장 프로그램을 설치하면 작업이 편해집니다:\n{ \"recommendations\": [ \"hashicorp.terraform\", \"ms-kubernetes-tools.vscode-kubernetes-tools\", \"ms-vscode.vscode-json\", \"redhat.vscode-yaml\", \"github.vscode-github-actions\", \"ms-vscode-remote.remote-containers\" ] } 6️⃣ 환경 변수 설정 환경 변수 템플릿 파일 생성 cat \u003e .env.template \u003c\u003c 'EOF' # AWS 설정 AWS_REGION=ap-northeast-2 AWS_ACCOUNT_ID=your-account-id # 프로젝트 설정 PROJECT_NAME=openwebui ENVIRONMENT=dev CLUSTER_NAME=openwebui-eks-dev # GitHub 설정 GITHUB_TOKEN=your-github-token GITHUB_REPOSITORY=your-username/openwebui-aws-deployment # Docker 설정 (선택사항) DOCKER_USERNAME=your-docker-username DOCKER_TOKEN=your-docker-token EOF 실제 환경 변수 파일 생성 cp .env.template .env # .env 파일을 열어서 실제 값으로 수정하세요 ✅ 최종 검증 모든 설정이 완료되었다면 아래 명령어들을 실행해서 정상 작동하는지 확인해주세요:\n# AWS 연결 확인 echo \"=== AWS CLI 테스트 ===\" aws sts get-caller-identity # Terraform 확인 echo \"=== Terraform 테스트 ===\" terraform version # kubectl 확인 echo \"=== kubectl 테스트 ===\" kubectl version --client # Docker 확인 echo \"=== Docker 테스트 ===\" docker run --rm hello-world # Git 확인 echo \"=== Git 테스트 ===\" git --version 모든 명령어가 오류 없이 실행되면 준비 완료입니다! 🎉\n🚨 문제 해결 자주 발생하는 문제들 1. AWS CLI 자격 증명 오류 오류 메시지:\nUnable to locate credentials. You can configure credentials by running \"aws configure\". 해결 방법:\n# 설정 다시 실행 aws configure # 또는 환경 변수로 설정 export AWS_ACCESS_KEY_ID=your-access-key export AWS_SECRET_ACCESS_KEY=your-secret-key export AWS_DEFAULT_REGION=ap-northeast-2 2. Docker 권한 오류 (Linux) 오류 메시지:\npermission denied while trying to connect to the Docker daemon socket 해결 방법:\n# 현재 사용자를 docker 그룹에 추가 sudo usermod -aG docker $USER # 로그아웃 후 다시 로그인 또는 재부팅 # 또는 임시로: newgrp docker 3. kubectl 명령어 찾을 수 없음 해결 방법:\n# PATH 확인 echo $PATH # kubectl 위치 확인 which kubectl # 없다면 다시 설치하거나 PATH에 추가 export PATH=$PATH:/usr/local/bin 📚 참고 자료 AWS CLI 사용 설명서 Terraform 공식 문서 Kubernetes 공식 문서 Docker 공식 문서 GitHub Actions 문서 ⏭️ 다음 단계 사전 준비가 완료되었다면 다음 문서로 진행하세요:\n[02-aws-environment-setup.md] - AWS 환경 설정 [03-terraform-configuration.md] - Terraform 설정 💡 팁: 이 문서를 완료하는데 시간이 오래 걸리더라도 걱정하지 마세요. 한 번 제대로 설정해두면 앞으로의 작업이 훨씬 수월해집니다!\n",
+  "wordCount" : "1243",
+  "inLanguage": "en",
+  "datePublished": "0001-01-01T00:00:00Z",
+  "dateModified": "0001-01-01T00:00:00Z",
+  "mainEntityOfPage": {
+    "@type": "WebPage",
+    "@id": "https://8dobibim.github.io/backend/%EC%82%AC%EC%A0%84%EC%A4%80%EB%B9%84%EC%82%AC%ED%95%AD/"
+  },
+  "publisher": {
+    "@type": "Organization",
+    "name": "8dobibim Tech Blog",
+    "logo": {
+      "@type": "ImageObject",
+      "url": "https://8dobibim.github.io/favicon.ico"
+    }
+  }
+}
+</script>
 </head>
 
 <body class="" id="top">
@@ -107,7 +205,7 @@ AWS 계정이 없는 경우">
 <header class="header">
     <nav class="nav">
         <div class="logo">
-            <a href="http://localhost:65390/" accesskey="h" title="8dobibim Tech Blog (Alt + H)">8dobibim Tech Blog</a>
+            <a href="https://8dobibim.github.io/" accesskey="h" title="8dobibim Tech Blog (Alt + H)">8dobibim Tech Blog</a>
             <div class="logo-switches">
                 <button id="theme-toggle" accesskey="t" title="(Alt + T)" aria-label="Toggle theme">
                     <svg id="moon" xmlns="http://www.w3.org/2000/svg" width="24" height="18" viewBox="0 0 24 24"
@@ -133,12 +231,12 @@ AWS 계정이 없는 경우">
         </div>
         <ul id="menu">
             <li>
-                <a href="http://localhost:65390/frontend/" title="🖥 프론트엔드">
+                <a href="https://8dobibim.github.io/frontend/" title="🖥 프론트엔드">
                     <span>🖥 프론트엔드</span>
                 </a>
             </li>
             <li>
-                <a href="http://localhost:65390/backend/" title="💾 백엔드">
+                <a href="https://8dobibim.github.io/backend/" title="💾 백엔드">
                     <span>💾 백엔드</span>
                 </a>
             </li>
@@ -149,7 +247,7 @@ AWS 계정이 없는 경우">
 
 <article class="post-single">
   <header class="post-header">
-    <div class="breadcrumbs"><a href="http://localhost:65390/">Home</a>&nbsp;»&nbsp;<a href="http://localhost:65390/backend/">Backend 문서</a></div>
+    <div class="breadcrumbs"><a href="https://8dobibim.github.io/">Home</a>&nbsp;»&nbsp;<a href="https://8dobibim.github.io/backend/">Backend 문서</a></div>
     <h1 class="post-title entry-hint-parent">
       
     </h1>
@@ -745,12 +843,12 @@ ghp_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
     <ul class="post-tags">
     </ul>
 <nav class="paginav">
-  <a class="prev" href="http://localhost:65390/backend/%EB%B0%B0%ED%8F%AC-%EA%B2%80%EC%A6%9D-%EA%B0%80%EC%9D%B4%EB%93%9C/">
+  <a class="prev" href="https://8dobibim.github.io/backend/%EB%B0%B0%ED%8F%AC-%EA%B2%80%EC%A6%9D-%EA%B0%80%EC%9D%B4%EB%93%9C/">
     <span class="title">« Prev</span>
     <br>
     <span></span>
   </a>
-  <a class="next" href="http://localhost:65390/backend/%EC%95%A0%ED%94%8C%EB%A6%AC%EC%BC%80%EC%9D%B4%EC%85%98-%EB%B0%B0%ED%8F%AC-%EA%B0%80%EC%9D%B4%EB%93%9C/">
+  <a class="next" href="https://8dobibim.github.io/backend/%EC%95%A0%ED%94%8C%EB%A6%AC%EC%BC%80%EC%9D%B4%EC%85%98-%EB%B0%B0%ED%8F%AC-%EA%B0%80%EC%9D%B4%EB%93%9C/">
     <span class="title">Next »</span>
     <br>
     <span></span>
@@ -762,7 +860,7 @@ ghp_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
     </main>
     
 <footer class="footer">
-        <span>&copy; 2025 <a href="http://localhost:65390/">8dobibim Tech Blog</a></span> · 
+        <span>&copy; 2025 <a href="https://8dobibim.github.io/">8dobibim Tech Blog</a></span> · 
 
     <span>
         Powered by

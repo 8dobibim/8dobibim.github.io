@@ -1,10 +1,10 @@
 <!DOCTYPE html>
 <html lang="en" dir="auto">
 
-<head><script src="/livereload.js?mindelay=10&amp;v=2&amp;port=65390&amp;path=livereload" data-no-instant defer></script><meta charset="utf-8">
+<head><meta charset="utf-8">
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
 <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-<meta name="robots" content="noindex, nofollow">
+<meta name="robots" content="index, follow">
 <title>8dobibim Tech Blog</title>
 <meta name="keywords" content="">
 <meta name="description" content="🛠️ OpenWebUI 운영 매뉴얼
@@ -438,16 +438,16 @@ DR(재해복구) 테스트
 
 이제 완전한 운영 매뉴얼이 준비되었습니다! 🛠️">
 <meta name="author" content="">
-<link rel="canonical" href="http://localhost:65390/backend/%EC%9A%B4%EC%98%81-%EB%A9%94%EB%89%B4%EC%96%BC/">
+<link rel="canonical" href="https://8dobibim.github.io/backend/%EC%9A%B4%EC%98%81-%EB%A9%94%EB%89%B4%EC%96%BC/">
 <link crossorigin="anonymous" href="/assets/css/stylesheet.36819bea596090d8b48cf10d9831382996197aa7e4fc86f792f7c08c9ca4d23b.css" integrity="sha256-NoGb6llgkNi0jPENmDE4KZYZeqfk/Ib3kvfAjJyk0js=" rel="preload stylesheet" as="style">
-<link rel="icon" href="http://localhost:65390/favicon.ico">
-<link rel="icon" type="image/png" sizes="16x16" href="http://localhost:65390/favicon-16x16.png">
-<link rel="icon" type="image/png" sizes="32x32" href="http://localhost:65390/favicon-32x32.png">
-<link rel="apple-touch-icon" href="http://localhost:65390/apple-touch-icon.png">
-<link rel="mask-icon" href="http://localhost:65390/safari-pinned-tab.svg">
+<link rel="icon" href="https://8dobibim.github.io/favicon.ico">
+<link rel="icon" type="image/png" sizes="16x16" href="https://8dobibim.github.io/favicon-16x16.png">
+<link rel="icon" type="image/png" sizes="32x32" href="https://8dobibim.github.io/favicon-32x32.png">
+<link rel="apple-touch-icon" href="https://8dobibim.github.io/apple-touch-icon.png">
+<link rel="mask-icon" href="https://8dobibim.github.io/safari-pinned-tab.svg">
 <meta name="theme-color" content="#2e2e33">
 <meta name="msapplication-TileColor" content="#2e2e33">
-<link rel="alternate" hreflang="en" href="http://localhost:65390/backend/%EC%9A%B4%EC%98%81-%EB%A9%94%EB%89%B4%EC%96%BC/">
+<link rel="alternate" hreflang="en" href="https://8dobibim.github.io/backend/%EC%9A%B4%EC%98%81-%EB%A9%94%EB%89%B4%EC%96%BC/">
 <noscript>
     <style>
         #theme-toggle,
@@ -484,7 +484,499 @@ DR(재해복구) 테스트
         }
 
     </style>
-</noscript>
+</noscript><meta property="og:url" content="https://8dobibim.github.io/backend/%EC%9A%B4%EC%98%81-%EB%A9%94%EB%89%B4%EC%96%BC/">
+  <meta property="og:site_name" content="8dobibim Tech Blog">
+  <meta property="og:title" content="8dobibim Tech Blog">
+  <meta property="og:description" content="🛠️ OpenWebUI 운영 매뉴얼 👥 대상: DevOps 엔지니어, SRE, 시스템 관리자
+📅 업데이트: 정기적으로 업데이트 필요
+🚨 비상 연락처: [팀 연락처 정보]
+📋 일일 운영 체크리스트 매일 확인 항목 #!/bin/bash # daily-check.sh echo &#34;📅 $(date &#39;&#43;%Y-%m-%d %H:%M:%S&#39;) - 일일 운영 체크 시작&#34; # 1. 클러스터 상태 kubectl get nodes kubectl get pods -A | grep -v Running # 2. 애플리케이션 상태 kubectl get pods -n openwebui -n litellm # 3. 리소스 사용량 kubectl top nodes kubectl top pods -A # 4. 최근 에러 로그 (최근 1시간) kubectl logs --since=1h -n openwebui -l app=openwebui | grep -i error | tail -10 # 5. 디스크 사용량 kubectl get pvc -A echo &#34;✅ 일일 체크 완료&#34; 주간 확인 항목 백업 상태 확인 보안 패치 검토 비용 사용량 확인 성능 메트릭 검토 로그 정리 🔍 모니터링 및 알람 핵심 메트릭 # prometheus-alerts.yml groups: - name: openwebui.rules rules: # 파드 상태 알람 - alert: PodCrashLooping expr: rate(kube_pod_container_status_restarts_total[5m]) &gt; 0 for: 5m annotations: summary: &#34;Pod {{ $labels.pod }} is crash looping&#34; # 리소스 사용량 알람 - alert: HighCPUUsage expr: (cpu_usage_rate &gt; 80) for: 10m annotations: summary: &#34;High CPU usage: {{ $value }}%&#34; # 응답 시간 알람 - alert: HighResponseTime expr: http_request_duration_seconds &gt; 2 for: 5m annotations: summary: &#34;High response time: {{ $value }}s&#34; 로그 모니터링 # 실시간 로그 모니터링 kubectl logs -f deployment/openwebui -n openwebui # 에러 로그 검색 kubectl logs deployment/openwebui -n openwebui | grep -E &#34;(ERROR|FATAL|CRITICAL)&#34; # 특정 시간대 로그 kubectl logs --since=2h --until=1h deployment/openwebui -n openwebui 📊 성능 관리 스케일링 관리 # 수동 스케일링 kubectl scale deployment openwebui --replicas=5 -n openwebui kubectl scale deployment litellm --replicas=3 -n litellm # HPA 상태 확인 kubectl get hpa -A # 스케일링 이벤트 확인 kubectl describe hpa openwebui-hpa -n openwebui 리소스 최적화 # 리소스 요청량 조정 예시 resources: requests: memory: &#34;512Mi&#34; # 실제 사용량 기반 조정 cpu: &#34;250m&#34; limits: memory: &#34;1Gi&#34; # OOM 방지 cpu: &#34;500m&#34; # CPU 스로틀링 방지 데이터베이스 성능 # PostgreSQL 연결 수 확인 kubectl exec deployment/postgres -n openwebui -- \ psql -U openwebui -d openwebui -c \ &#34;SELECT count(*) FROM pg_stat_activity WHERE state = &#39;active&#39;;&#34; # 슬로우 쿼리 확인 kubectl exec deployment/postgres -n openwebui -- \ psql -U openwebui -d openwebui -c \ &#34;SELECT query, mean_exec_time FROM pg_stat_statements ORDER BY mean_exec_time DESC LIMIT 10;&#34; # 데이터베이스 크기 확인 kubectl exec deployment/postgres -n openwebui -- \ psql -U openwebui -d openwebui -c \ &#34;SELECT pg_size_pretty(pg_database_size(&#39;openwebui&#39;));&#34; 🔄 백업 및 복원 데이터베이스 백업 #!/bin/bash # backup-database.sh BACKUP_DATE=$(date &#43;%Y%m%d_%H%M%S) BACKUP_FILE=&#34;openwebui_backup_${BACKUP_DATE}.sql&#34; # PostgreSQL 백업 kubectl exec deployment/postgres -n openwebui -- \ pg_dump -U openwebui openwebui &gt; $BACKUP_FILE # S3에 업로드 aws s3 cp $BACKUP_FILE s3://openwebui-backups/database/ # 로컬 파일 정리 (7일 이상 된 파일) find . -name &#34;openwebui_backup_*.sql&#34; -mtime &#43;7 -delete echo &#34;✅ 백업 완료: $BACKUP_FILE&#34; 데이터베이스 복원 #!/bin/bash # restore-database.sh BACKUP_FILE=$1 if [ -z &#34;$BACKUP_FILE&#34; ]; then echo &#34;사용법: $0 &lt;backup_file&gt;&#34; exit 1 fi # S3에서 백업 파일 다운로드 aws s3 cp s3://openwebui-backups/database/$BACKUP_FILE . # 애플리케이션 중지 kubectl scale deployment openwebui --replicas=0 -n openwebui kubectl scale deployment litellm --replicas=0 -n litellm # 데이터베이스 복원 kubectl exec -i deployment/postgres -n openwebui -- \ psql -U openwebui openwebui &lt; $BACKUP_FILE # 애플리케이션 재시작 kubectl scale deployment openwebui --replicas=2 -n openwebui kubectl scale deployment litellm --replicas=2 -n litellm echo &#34;✅ 복원 완료&#34; 설정 파일 백업 # ConfigMap 백업 kubectl get configmap -n openwebui -o yaml &gt; configmaps-backup.yaml kubectl get configmap -n litellm -o yaml &gt;&gt; configmaps-backup.yaml # Secret 백업 (암호화된 형태) kubectl get secret -n openwebui -o yaml &gt; secrets-backup.yaml kubectl get secret -n litellm -o yaml &gt;&gt; secrets-backup.yaml 🚨 장애 대응 긴급 상황 대응 절차 1단계: 상황 파악 (5분 이내) # 전체 상태 빠른 확인 kubectl get pods -A | grep -v Running kubectl get nodes kubectl top nodes # 최근 이벤트 확인 kubectl get events -A --sort-by=&#39;.lastTimestamp&#39; | tail -20 2단계: 임시 조치 (10분 이내) # 파드 재시작 kubectl rollout restart deployment/openwebui -n openwebui # 트래픽 차단 (필요시) kubectl patch ingress openwebui-ingress -n openwebui -p \ &#39;{&#34;metadata&#34;:{&#34;annotations&#34;:{&#34;nginx.ingress.kubernetes.io/server-snippet&#34;:&#34;return 503;&#34;}}}&#39; # 스케일 다운 (리소스 부족 시) kubectl scale deployment openwebui --replicas=1 -n openwebui 3단계: 근본 원인 분석 # 상세 로그 분석 kubectl logs deployment/openwebui -n openwebui --previous kubectl describe pod -l app=openwebui -n openwebui # 리소스 사용량 분석 kubectl top pods -n openwebui --containers kubectl describe nodes 일반적인 장애 시나리오 파드가 시작되지 않는 경우 # 원인 확인 kubectl describe pod &lt;pod-name&gt; -n openwebui # 일반적인 해결책 # 1. 이미지 문제 kubectl get pods -n openwebui -o jsonpath=&#39;{.items[*].spec.containers[*].image}&#39; # 2. 리소스 부족 kubectl describe nodes | grep -A 5 &#34;Allocated resources&#34; # 3. PVC 마운트 실패 kubectl get pvc -n openwebui kubectl describe pvc &lt;pvc-name&gt; -n openwebui 데이터베이스 연결 실패 # PostgreSQL 상태 확인 kubectl get pods -l app=postgres -n openwebui kubectl logs deployment/postgres -n openwebui # 연결 테스트 kubectl exec deployment/postgres -n openwebui -- pg_isready # 네트워크 연결 확인 kubectl exec deployment/openwebui -n openwebui -- \ nc -zv postgres-service 5432 높은 응답 시간 # 리소스 사용량 확인 kubectl top pods -n openwebui # HPA 스케일링 강제 실행 kubectl patch hpa openwebui-hpa -n openwebui -p \ &#39;{&#34;spec&#34;:{&#34;minReplicas&#34;:3}}&#39; # 캐시 클리어 (애플리케이션별 방법) kubectl exec deployment/openwebui -n openwebui -- \ curl -X POST http://localhost:8080/api/v1/cache/clear 🔧 유지보수 정기 업데이트 #!/bin/bash # update-system.sh echo &#34;🔄 시스템 업데이트 시작...&#34; # 1. EKS 클러스터 업데이트 확인 aws eks describe-cluster --name openwebui-eks-dev \ --query &#39;cluster.version&#39; --output text # 2. 노드 그룹 업데이트 확인 aws eks describe-nodegroup --cluster-name openwebui-eks-dev \ --nodegroup-name primary-nodes \ --query &#39;nodegroup.version&#39; --output text # 3. Add-on 업데이트 kubectl get pods -n kube-system # 4. 애플리케이션 이미지 업데이트 kubectl set image deployment/openwebui openwebui=ghcr.io/openwebui:latest -n openwebui echo &#34;✅ 업데이트 완료&#34; 보안 패치 # 보안 스캔 실행 trivy image ghcr.io/openwebui:latest # 취약점 있는 컨테이너 재배포 kubectl rollout restart deployment/openwebui -n openwebui # 시크릿 로테이션 kubectl create secret generic api-keys \ --from-literal=OPENAI_API_KEY=new-key \ --dry-run=client -o yaml | kubectl apply -f - 용량 관리 # 디스크 사용량 모니터링 kubectl get pvc -A -o custom-columns=NAME:.metadata.name,SIZE:.spec.resources.requests.storage,USED:.status.capacity.storage # 로그 정리 kubectl logs deployment/openwebui -n openwebui --tail=1000 &gt; /dev/null # 이미지 정리 (노드에서 직접) docker system prune -a 📈 성능 튜닝 애플리케이션 최적화 # OpenWebUI 성능 설정 env: - name: WEBUI_SECRET_KEY value: &#34;optimized-secret-key&#34; - name: MAX_WORKERS value: &#34;4&#34; - name: TIMEOUT value: &#34;60&#34; - name: KEEP_ALIVE value: &#34;2&#34; 데이터베이스 튜닝 -- PostgreSQL 성능 튜닝 -- 연결 풀 설정 ALTER SYSTEM SET max_connections = 100; ALTER SYSTEM SET shared_buffers = &#39;256MB&#39;; ALTER SYSTEM SET effective_cache_size = &#39;1GB&#39;; ALTER SYSTEM SET work_mem = &#39;4MB&#39;; -- 인덱스 확인 및 최적화 SELECT schemaname, tablename, attname, n_distinct, correlation FROM pg_stats WHERE tablename = &#39;your_table&#39;; 네트워크 최적화 # Ingress 설정 최적화 annotations: nginx.ingress.kubernetes.io/proxy-connect-timeout: &#34;60&#34; nginx.ingress.kubernetes.io/proxy-send-timeout: &#34;60&#34; nginx.ingress.kubernetes.io/proxy-read-timeout: &#34;60&#34; nginx.ingress.kubernetes.io/proxy-body-size: &#34;50m&#34; nginx.ingress.kubernetes.io/enable-cors: &#34;true&#34; 💰 비용 최적화 리소스 사용량 분석 # 노드 비용 분석 kubectl describe nodes | grep -A 3 &#34;Allocated resources&#34; # Spot 인스턴스 활용률 kubectl get nodes -l node.kubernetes.io/instance-type # 사용하지 않는 리소스 정리 kubectl get pods -A --field-selector=status.phase=Succeeded kubectl delete pods --field-selector=status.phase=Succeeded -A 자동 스케일링 최적화 # 비용 효율적인 HPA 설정 spec: minReplicas: 1 # 최소 비용 maxReplicas: 10 # 트래픽 대응 targetCPUUtilizationPercentage: 70 # 적절한 활용률 behavior: scaleDown: stabilizationWindowSeconds: 300 # 급격한 스케일 다운 방지 policies: - type: Percent value: 50 periodSeconds: 60 📞 비상 연락 체계 장애 등급별 대응 P0 (Critical): - 서비스 완전 중단 - 즉시 대응 (24/7) - 연락처: [긴급 연락처] P1 (High): - 주요 기능 장애 - 4시간 이내 대응 - 연락처: [팀 리더] P2 (Medium): - 부분 기능 장애 - 24시간 이내 대응 - 연락처: [담당자] P3 (Low): - 성능 저하 - 72시간 이내 대응 - 연락처: [팀 메일] 에스컬레이션 절차 1차 담당자 (30분 이내 응답) 팀 리더 (1시간 이내) 기술 책임자 (2시간 이내) CTO (4시간 이내) 📚 운영 도구 및 대시보드 필수 도구 # kubectl 플러그인 설치 kubectl krew install ctx ns stern top # 유용한 명령어 별칭 alias k=&#39;kubectl&#39; alias kgp=&#39;kubectl get pods&#39; alias kgs=&#39;kubectl get svc&#39; alias kgn=&#39;kubectl get nodes&#39; alias kdp=&#39;kubectl describe pod&#39; alias kl=&#39;kubectl logs&#39; 모니터링 대시보드 Grafana: http://grafana.your-domain.com Prometheus: http://prometheus.your-domain.com Jaeger: http://jaeger.your-domain.com (트레이싱) ArgoCD: http://argocd.your-domain.com (GitOps) 로그 분석 # 중앙화된 로깅 (ELK Stack) kubectl port-forward svc/kibana 5601:5601 -n logging # 로그 쿼리 예시 # Kibana에서: kubernetes.namespace:&#34;openwebui&#34; AND level:&#34;ERROR&#34; 🔄 정기 작업 스케줄 일일 작업 (자동화) # CronJob 예시 apiVersion: batch/v1 kind: CronJob metadata: name: daily-cleanup spec: schedule: &#34;0 2 * * *&#34; # 매일 오전 2시 jobTemplate: spec: template: spec: containers: - name: cleanup image: alpine:latest command: - /bin/sh - -c - | # 로그 정리 find /var/log -name &#34;*.log&#34; -mtime &#43;7 -delete # 임시 파일 정리 find /tmp -mtime &#43;1 -delete restartPolicy: OnFailure 주간 작업 백업 검증 테스트 보안 스캔 실행 성능 리포트 작성 비용 분석 리포트 월간 작업 DR(재해복구) 테스트 보안 감사 용량 계획 검토 아키텍처 리뷰 이제 완전한 운영 매뉴얼이 준비되었습니다! 🛠️">
+  <meta property="og:locale" content="ko">
+  <meta property="og:type" content="article">
+    <meta property="article:section" content="backend">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="">
+<meta name="twitter:description" content="🛠️ OpenWebUI 운영 매뉴얼
+
+👥 대상: DevOps 엔지니어, SRE, 시스템 관리자
+📅 업데이트: 정기적으로 업데이트 필요
+🚨 비상 연락처: [팀 연락처 정보]
+
+📋 일일 운영 체크리스트
+매일 확인 항목
+#!/bin/bash
+# daily-check.sh
+
+echo &#34;📅 $(date &#39;&#43;%Y-%m-%d %H:%M:%S&#39;) - 일일 운영 체크 시작&#34;
+
+# 1. 클러스터 상태
+kubectl get nodes
+kubectl get pods -A | grep -v Running
+
+# 2. 애플리케이션 상태
+kubectl get pods -n openwebui -n litellm
+
+# 3. 리소스 사용량
+kubectl top nodes
+kubectl top pods -A
+
+# 4. 최근 에러 로그 (최근 1시간)
+kubectl logs --since=1h -n openwebui -l app=openwebui | grep -i error | tail -10
+
+# 5. 디스크 사용량
+kubectl get pvc -A
+
+echo &#34;✅ 일일 체크 완료&#34;
+주간 확인 항목
+
+ 백업 상태 확인
+ 보안 패치 검토
+ 비용 사용량 확인
+ 성능 메트릭 검토
+ 로그 정리
+
+
+🔍 모니터링 및 알람
+핵심 메트릭
+# prometheus-alerts.yml
+groups:
+- name: openwebui.rules
+  rules:
+  # 파드 상태 알람
+  - alert: PodCrashLooping
+    expr: rate(kube_pod_container_status_restarts_total[5m]) &gt; 0
+    for: 5m
+    annotations:
+      summary: &#34;Pod {{ $labels.pod }} is crash looping&#34;
+  
+  # 리소스 사용량 알람
+  - alert: HighCPUUsage
+    expr: (cpu_usage_rate &gt; 80)
+    for: 10m
+    annotations:
+      summary: &#34;High CPU usage: {{ $value }}%&#34;
+  
+  # 응답 시간 알람
+  - alert: HighResponseTime
+    expr: http_request_duration_seconds &gt; 2
+    for: 5m
+    annotations:
+      summary: &#34;High response time: {{ $value }}s&#34;
+로그 모니터링
+# 실시간 로그 모니터링
+kubectl logs -f deployment/openwebui -n openwebui
+
+# 에러 로그 검색
+kubectl logs deployment/openwebui -n openwebui | grep -E &#34;(ERROR|FATAL|CRITICAL)&#34;
+
+# 특정 시간대 로그
+kubectl logs --since=2h --until=1h deployment/openwebui -n openwebui
+
+📊 성능 관리
+스케일링 관리
+# 수동 스케일링
+kubectl scale deployment openwebui --replicas=5 -n openwebui
+kubectl scale deployment litellm --replicas=3 -n litellm
+
+# HPA 상태 확인
+kubectl get hpa -A
+
+# 스케일링 이벤트 확인
+kubectl describe hpa openwebui-hpa -n openwebui
+리소스 최적화
+# 리소스 요청량 조정 예시
+resources:
+  requests:
+    memory: &#34;512Mi&#34;    # 실제 사용량 기반 조정
+    cpu: &#34;250m&#34;
+  limits:
+    memory: &#34;1Gi&#34;      # OOM 방지
+    cpu: &#34;500m&#34;        # CPU 스로틀링 방지
+데이터베이스 성능
+# PostgreSQL 연결 수 확인
+kubectl exec deployment/postgres -n openwebui -- \
+  psql -U openwebui -d openwebui -c \
+  &#34;SELECT count(*) FROM pg_stat_activity WHERE state = &#39;active&#39;;&#34;
+
+# 슬로우 쿼리 확인
+kubectl exec deployment/postgres -n openwebui -- \
+  psql -U openwebui -d openwebui -c \
+  &#34;SELECT query, mean_exec_time FROM pg_stat_statements ORDER BY mean_exec_time DESC LIMIT 10;&#34;
+
+# 데이터베이스 크기 확인
+kubectl exec deployment/postgres -n openwebui -- \
+  psql -U openwebui -d openwebui -c \
+  &#34;SELECT pg_size_pretty(pg_database_size(&#39;openwebui&#39;));&#34;
+
+🔄 백업 및 복원
+데이터베이스 백업
+#!/bin/bash
+# backup-database.sh
+
+BACKUP_DATE=$(date &#43;%Y%m%d_%H%M%S)
+BACKUP_FILE=&#34;openwebui_backup_${BACKUP_DATE}.sql&#34;
+
+# PostgreSQL 백업
+kubectl exec deployment/postgres -n openwebui -- \
+  pg_dump -U openwebui openwebui &gt; $BACKUP_FILE
+
+# S3에 업로드
+aws s3 cp $BACKUP_FILE s3://openwebui-backups/database/
+
+# 로컬 파일 정리 (7일 이상 된 파일)
+find . -name &#34;openwebui_backup_*.sql&#34; -mtime &#43;7 -delete
+
+echo &#34;✅ 백업 완료: $BACKUP_FILE&#34;
+데이터베이스 복원
+#!/bin/bash
+# restore-database.sh
+
+BACKUP_FILE=$1
+
+if [ -z &#34;$BACKUP_FILE&#34; ]; then
+  echo &#34;사용법: $0 &lt;backup_file&gt;&#34;
+  exit 1
+fi
+
+# S3에서 백업 파일 다운로드
+aws s3 cp s3://openwebui-backups/database/$BACKUP_FILE .
+
+# 애플리케이션 중지
+kubectl scale deployment openwebui --replicas=0 -n openwebui
+kubectl scale deployment litellm --replicas=0 -n litellm
+
+# 데이터베이스 복원
+kubectl exec -i deployment/postgres -n openwebui -- \
+  psql -U openwebui openwebui &lt; $BACKUP_FILE
+
+# 애플리케이션 재시작
+kubectl scale deployment openwebui --replicas=2 -n openwebui
+kubectl scale deployment litellm --replicas=2 -n litellm
+
+echo &#34;✅ 복원 완료&#34;
+설정 파일 백업
+# ConfigMap 백업
+kubectl get configmap -n openwebui -o yaml &gt; configmaps-backup.yaml
+kubectl get configmap -n litellm -o yaml &gt;&gt; configmaps-backup.yaml
+
+# Secret 백업 (암호화된 형태)
+kubectl get secret -n openwebui -o yaml &gt; secrets-backup.yaml
+kubectl get secret -n litellm -o yaml &gt;&gt; secrets-backup.yaml
+
+🚨 장애 대응
+긴급 상황 대응 절차
+1단계: 상황 파악 (5분 이내)
+# 전체 상태 빠른 확인
+kubectl get pods -A | grep -v Running
+kubectl get nodes
+kubectl top nodes
+
+# 최근 이벤트 확인
+kubectl get events -A --sort-by=&#39;.lastTimestamp&#39; | tail -20
+2단계: 임시 조치 (10분 이내)
+# 파드 재시작
+kubectl rollout restart deployment/openwebui -n openwebui
+
+# 트래픽 차단 (필요시)
+kubectl patch ingress openwebui-ingress -n openwebui -p \
+  &#39;{&#34;metadata&#34;:{&#34;annotations&#34;:{&#34;nginx.ingress.kubernetes.io/server-snippet&#34;:&#34;return 503;&#34;}}}&#39;
+
+# 스케일 다운 (리소스 부족 시)
+kubectl scale deployment openwebui --replicas=1 -n openwebui
+3단계: 근본 원인 분석
+# 상세 로그 분석
+kubectl logs deployment/openwebui -n openwebui --previous
+kubectl describe pod -l app=openwebui -n openwebui
+
+# 리소스 사용량 분석
+kubectl top pods -n openwebui --containers
+kubectl describe nodes
+일반적인 장애 시나리오
+파드가 시작되지 않는 경우
+# 원인 확인
+kubectl describe pod &lt;pod-name&gt; -n openwebui
+
+# 일반적인 해결책
+# 1. 이미지 문제
+kubectl get pods -n openwebui -o jsonpath=&#39;{.items[*].spec.containers[*].image}&#39;
+
+# 2. 리소스 부족
+kubectl describe nodes | grep -A 5 &#34;Allocated resources&#34;
+
+# 3. PVC 마운트 실패
+kubectl get pvc -n openwebui
+kubectl describe pvc &lt;pvc-name&gt; -n openwebui
+데이터베이스 연결 실패
+# PostgreSQL 상태 확인
+kubectl get pods -l app=postgres -n openwebui
+kubectl logs deployment/postgres -n openwebui
+
+# 연결 테스트
+kubectl exec deployment/postgres -n openwebui -- pg_isready
+
+# 네트워크 연결 확인
+kubectl exec deployment/openwebui -n openwebui -- \
+  nc -zv postgres-service 5432
+높은 응답 시간
+# 리소스 사용량 확인
+kubectl top pods -n openwebui
+
+# HPA 스케일링 강제 실행
+kubectl patch hpa openwebui-hpa -n openwebui -p \
+  &#39;{&#34;spec&#34;:{&#34;minReplicas&#34;:3}}&#39;
+
+# 캐시 클리어 (애플리케이션별 방법)
+kubectl exec deployment/openwebui -n openwebui -- \
+  curl -X POST http://localhost:8080/api/v1/cache/clear
+
+🔧 유지보수
+정기 업데이트
+#!/bin/bash
+# update-system.sh
+
+echo &#34;🔄 시스템 업데이트 시작...&#34;
+
+# 1. EKS 클러스터 업데이트 확인
+aws eks describe-cluster --name openwebui-eks-dev \
+  --query &#39;cluster.version&#39; --output text
+
+# 2. 노드 그룹 업데이트 확인
+aws eks describe-nodegroup --cluster-name openwebui-eks-dev \
+  --nodegroup-name primary-nodes \
+  --query &#39;nodegroup.version&#39; --output text
+
+# 3. Add-on 업데이트
+kubectl get pods -n kube-system
+
+# 4. 애플리케이션 이미지 업데이트
+kubectl set image deployment/openwebui openwebui=ghcr.io/openwebui:latest -n openwebui
+
+echo &#34;✅ 업데이트 완료&#34;
+보안 패치
+# 보안 스캔 실행
+trivy image ghcr.io/openwebui:latest
+
+# 취약점 있는 컨테이너 재배포
+kubectl rollout restart deployment/openwebui -n openwebui
+
+# 시크릿 로테이션
+kubectl create secret generic api-keys \
+  --from-literal=OPENAI_API_KEY=new-key \
+  --dry-run=client -o yaml | kubectl apply -f -
+용량 관리
+# 디스크 사용량 모니터링
+kubectl get pvc -A -o custom-columns=NAME:.metadata.name,SIZE:.spec.resources.requests.storage,USED:.status.capacity.storage
+
+# 로그 정리
+kubectl logs deployment/openwebui -n openwebui --tail=1000 &gt; /dev/null
+
+# 이미지 정리 (노드에서 직접)
+docker system prune -a
+
+📈 성능 튜닝
+애플리케이션 최적화
+# OpenWebUI 성능 설정
+env:
+- name: WEBUI_SECRET_KEY
+  value: &#34;optimized-secret-key&#34;
+- name: MAX_WORKERS
+  value: &#34;4&#34;
+- name: TIMEOUT
+  value: &#34;60&#34;
+- name: KEEP_ALIVE
+  value: &#34;2&#34;
+데이터베이스 튜닝
+-- PostgreSQL 성능 튜닝
+-- 연결 풀 설정
+ALTER SYSTEM SET max_connections = 100;
+ALTER SYSTEM SET shared_buffers = &#39;256MB&#39;;
+ALTER SYSTEM SET effective_cache_size = &#39;1GB&#39;;
+ALTER SYSTEM SET work_mem = &#39;4MB&#39;;
+
+-- 인덱스 확인 및 최적화
+SELECT schemaname, tablename, attname, n_distinct, correlation 
+FROM pg_stats WHERE tablename = &#39;your_table&#39;;
+네트워크 최적화
+# Ingress 설정 최적화
+annotations:
+  nginx.ingress.kubernetes.io/proxy-connect-timeout: &#34;60&#34;
+  nginx.ingress.kubernetes.io/proxy-send-timeout: &#34;60&#34;
+  nginx.ingress.kubernetes.io/proxy-read-timeout: &#34;60&#34;
+  nginx.ingress.kubernetes.io/proxy-body-size: &#34;50m&#34;
+  nginx.ingress.kubernetes.io/enable-cors: &#34;true&#34;
+
+💰 비용 최적화
+리소스 사용량 분석
+# 노드 비용 분석
+kubectl describe nodes | grep -A 3 &#34;Allocated resources&#34;
+
+# Spot 인스턴스 활용률
+kubectl get nodes -l node.kubernetes.io/instance-type
+
+# 사용하지 않는 리소스 정리
+kubectl get pods -A --field-selector=status.phase=Succeeded
+kubectl delete pods --field-selector=status.phase=Succeeded -A
+자동 스케일링 최적화
+# 비용 효율적인 HPA 설정
+spec:
+  minReplicas: 1        # 최소 비용
+  maxReplicas: 10       # 트래픽 대응
+  targetCPUUtilizationPercentage: 70  # 적절한 활용률
+  
+  behavior:
+    scaleDown:
+      stabilizationWindowSeconds: 300  # 급격한 스케일 다운 방지
+      policies:
+      - type: Percent
+        value: 50
+        periodSeconds: 60
+
+📞 비상 연락 체계
+장애 등급별 대응
+P0 (Critical): 
+  - 서비스 완전 중단
+  - 즉시 대응 (24/7)
+  - 연락처: [긴급 연락처]
+
+P1 (High):
+  - 주요 기능 장애
+  - 4시간 이내 대응
+  - 연락처: [팀 리더]
+
+P2 (Medium):
+  - 부분 기능 장애  
+  - 24시간 이내 대응
+  - 연락처: [담당자]
+
+P3 (Low):
+  - 성능 저하
+  - 72시간 이내 대응
+  - 연락처: [팀 메일]
+에스컬레이션 절차
+
+1차 담당자 (30분 이내 응답)
+팀 리더 (1시간 이내)
+기술 책임자 (2시간 이내)
+CTO (4시간 이내)
+
+
+📚 운영 도구 및 대시보드
+필수 도구
+# kubectl 플러그인 설치
+kubectl krew install ctx ns stern top
+
+# 유용한 명령어 별칭
+alias k=&#39;kubectl&#39;
+alias kgp=&#39;kubectl get pods&#39;
+alias kgs=&#39;kubectl get svc&#39; 
+alias kgn=&#39;kubectl get nodes&#39;
+alias kdp=&#39;kubectl describe pod&#39;
+alias kl=&#39;kubectl logs&#39;
+모니터링 대시보드
+
+Grafana: http://grafana.your-domain.com
+Prometheus: http://prometheus.your-domain.com
+Jaeger: http://jaeger.your-domain.com (트레이싱)
+ArgoCD: http://argocd.your-domain.com (GitOps)
+
+로그 분석
+# 중앙화된 로깅 (ELK Stack)
+kubectl port-forward svc/kibana 5601:5601 -n logging
+
+# 로그 쿼리 예시
+# Kibana에서: kubernetes.namespace:&#34;openwebui&#34; AND level:&#34;ERROR&#34;
+
+🔄 정기 작업 스케줄
+일일 작업 (자동화)
+# CronJob 예시
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: daily-cleanup
+spec:
+  schedule: &#34;0 2 * * *&#34;  # 매일 오전 2시
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          containers:
+          - name: cleanup
+            image: alpine:latest
+            command:
+            - /bin/sh
+            - -c
+            - |
+              # 로그 정리
+              find /var/log -name &#34;*.log&#34; -mtime &#43;7 -delete
+              # 임시 파일 정리
+              find /tmp -mtime &#43;1 -delete
+          restartPolicy: OnFailure
+주간 작업
+
+백업 검증 테스트
+보안 스캔 실행
+성능 리포트 작성
+비용 분석 리포트
+
+월간 작업
+
+DR(재해복구) 테스트
+보안 감사
+용량 계획 검토
+아키텍처 리뷰
+
+이제 완전한 운영 매뉴얼이 준비되었습니다! 🛠️">
+
+
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BreadcrumbList",
+  "itemListElement": [
+    {
+      "@type": "ListItem",
+      "position":  1 ,
+      "name": "Backend 문서",
+      "item": "https://8dobibim.github.io/backend/"
+    }, 
+    {
+      "@type": "ListItem",
+      "position":  2 ,
+      "name": "",
+      "item": "https://8dobibim.github.io/backend/%EC%9A%B4%EC%98%81-%EB%A9%94%EB%89%B4%EC%96%BC/"
+    }
+  ]
+}
+</script>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BlogPosting",
+  "headline": "",
+  "name": "",
+  "description": "🛠️ OpenWebUI 운영 매뉴얼 👥 대상: DevOps 엔지니어, SRE, 시스템 관리자\n📅 업데이트: 정기적으로 업데이트 필요\n🚨 비상 연락처: [팀 연락처 정보]\n📋 일일 운영 체크리스트 매일 확인 항목 #!/bin/bash # daily-check.sh echo \u0026#34;📅 $(date \u0026#39;+%Y-%m-%d %H:%M:%S\u0026#39;) - 일일 운영 체크 시작\u0026#34; # 1. 클러스터 상태 kubectl get nodes kubectl get pods -A | grep -v Running # 2. 애플리케이션 상태 kubectl get pods -n openwebui -n litellm # 3. 리소스 사용량 kubectl top nodes kubectl top pods -A # 4. 최근 에러 로그 (최근 1시간) kubectl logs --since=1h -n openwebui -l app=openwebui | grep -i error | tail -10 # 5. 디스크 사용량 kubectl get pvc -A echo \u0026#34;✅ 일일 체크 완료\u0026#34; 주간 확인 항목 백업 상태 확인 보안 패치 검토 비용 사용량 확인 성능 메트릭 검토 로그 정리 🔍 모니터링 및 알람 핵심 메트릭 # prometheus-alerts.yml groups: - name: openwebui.rules rules: # 파드 상태 알람 - alert: PodCrashLooping expr: rate(kube_pod_container_status_restarts_total[5m]) \u0026gt; 0 for: 5m annotations: summary: \u0026#34;Pod {{ $labels.pod }} is crash looping\u0026#34; # 리소스 사용량 알람 - alert: HighCPUUsage expr: (cpu_usage_rate \u0026gt; 80) for: 10m annotations: summary: \u0026#34;High CPU usage: {{ $value }}%\u0026#34; # 응답 시간 알람 - alert: HighResponseTime expr: http_request_duration_seconds \u0026gt; 2 for: 5m annotations: summary: \u0026#34;High response time: {{ $value }}s\u0026#34; 로그 모니터링 # 실시간 로그 모니터링 kubectl logs -f deployment/openwebui -n openwebui # 에러 로그 검색 kubectl logs deployment/openwebui -n openwebui | grep -E \u0026#34;(ERROR|FATAL|CRITICAL)\u0026#34; # 특정 시간대 로그 kubectl logs --since=2h --until=1h deployment/openwebui -n openwebui 📊 성능 관리 스케일링 관리 # 수동 스케일링 kubectl scale deployment openwebui --replicas=5 -n openwebui kubectl scale deployment litellm --replicas=3 -n litellm # HPA 상태 확인 kubectl get hpa -A # 스케일링 이벤트 확인 kubectl describe hpa openwebui-hpa -n openwebui 리소스 최적화 # 리소스 요청량 조정 예시 resources: requests: memory: \u0026#34;512Mi\u0026#34; # 실제 사용량 기반 조정 cpu: \u0026#34;250m\u0026#34; limits: memory: \u0026#34;1Gi\u0026#34; # OOM 방지 cpu: \u0026#34;500m\u0026#34; # CPU 스로틀링 방지 데이터베이스 성능 # PostgreSQL 연결 수 확인 kubectl exec deployment/postgres -n openwebui -- \\ psql -U openwebui -d openwebui -c \\ \u0026#34;SELECT count(*) FROM pg_stat_activity WHERE state = \u0026#39;active\u0026#39;;\u0026#34; # 슬로우 쿼리 확인 kubectl exec deployment/postgres -n openwebui -- \\ psql -U openwebui -d openwebui -c \\ \u0026#34;SELECT query, mean_exec_time FROM pg_stat_statements ORDER BY mean_exec_time DESC LIMIT 10;\u0026#34; # 데이터베이스 크기 확인 kubectl exec deployment/postgres -n openwebui -- \\ psql -U openwebui -d openwebui -c \\ \u0026#34;SELECT pg_size_pretty(pg_database_size(\u0026#39;openwebui\u0026#39;));\u0026#34; 🔄 백업 및 복원 데이터베이스 백업 #!/bin/bash # backup-database.sh BACKUP_DATE=$(date +%Y%m%d_%H%M%S) BACKUP_FILE=\u0026#34;openwebui_backup_${BACKUP_DATE}.sql\u0026#34; # PostgreSQL 백업 kubectl exec deployment/postgres -n openwebui -- \\ pg_dump -U openwebui openwebui \u0026gt; $BACKUP_FILE # S3에 업로드 aws s3 cp $BACKUP_FILE s3://openwebui-backups/database/ # 로컬 파일 정리 (7일 이상 된 파일) find . -name \u0026#34;openwebui_backup_*.sql\u0026#34; -mtime +7 -delete echo \u0026#34;✅ 백업 완료: $BACKUP_FILE\u0026#34; 데이터베이스 복원 #!/bin/bash # restore-database.sh BACKUP_FILE=$1 if [ -z \u0026#34;$BACKUP_FILE\u0026#34; ]; then echo \u0026#34;사용법: $0 \u0026lt;backup_file\u0026gt;\u0026#34; exit 1 fi # S3에서 백업 파일 다운로드 aws s3 cp s3://openwebui-backups/database/$BACKUP_FILE . # 애플리케이션 중지 kubectl scale deployment openwebui --replicas=0 -n openwebui kubectl scale deployment litellm --replicas=0 -n litellm # 데이터베이스 복원 kubectl exec -i deployment/postgres -n openwebui -- \\ psql -U openwebui openwebui \u0026lt; $BACKUP_FILE # 애플리케이션 재시작 kubectl scale deployment openwebui --replicas=2 -n openwebui kubectl scale deployment litellm --replicas=2 -n litellm echo \u0026#34;✅ 복원 완료\u0026#34; 설정 파일 백업 # ConfigMap 백업 kubectl get configmap -n openwebui -o yaml \u0026gt; configmaps-backup.yaml kubectl get configmap -n litellm -o yaml \u0026gt;\u0026gt; configmaps-backup.yaml # Secret 백업 (암호화된 형태) kubectl get secret -n openwebui -o yaml \u0026gt; secrets-backup.yaml kubectl get secret -n litellm -o yaml \u0026gt;\u0026gt; secrets-backup.yaml 🚨 장애 대응 긴급 상황 대응 절차 1단계: 상황 파악 (5분 이내) # 전체 상태 빠른 확인 kubectl get pods -A | grep -v Running kubectl get nodes kubectl top nodes # 최근 이벤트 확인 kubectl get events -A --sort-by=\u0026#39;.lastTimestamp\u0026#39; | tail -20 2단계: 임시 조치 (10분 이내) # 파드 재시작 kubectl rollout restart deployment/openwebui -n openwebui # 트래픽 차단 (필요시) kubectl patch ingress openwebui-ingress -n openwebui -p \\ \u0026#39;{\u0026#34;metadata\u0026#34;:{\u0026#34;annotations\u0026#34;:{\u0026#34;nginx.ingress.kubernetes.io/server-snippet\u0026#34;:\u0026#34;return 503;\u0026#34;}}}\u0026#39; # 스케일 다운 (리소스 부족 시) kubectl scale deployment openwebui --replicas=1 -n openwebui 3단계: 근본 원인 분석 # 상세 로그 분석 kubectl logs deployment/openwebui -n openwebui --previous kubectl describe pod -l app=openwebui -n openwebui # 리소스 사용량 분석 kubectl top pods -n openwebui --containers kubectl describe nodes 일반적인 장애 시나리오 파드가 시작되지 않는 경우 # 원인 확인 kubectl describe pod \u0026lt;pod-name\u0026gt; -n openwebui # 일반적인 해결책 # 1. 이미지 문제 kubectl get pods -n openwebui -o jsonpath=\u0026#39;{.items[*].spec.containers[*].image}\u0026#39; # 2. 리소스 부족 kubectl describe nodes | grep -A 5 \u0026#34;Allocated resources\u0026#34; # 3. PVC 마운트 실패 kubectl get pvc -n openwebui kubectl describe pvc \u0026lt;pvc-name\u0026gt; -n openwebui 데이터베이스 연결 실패 # PostgreSQL 상태 확인 kubectl get pods -l app=postgres -n openwebui kubectl logs deployment/postgres -n openwebui # 연결 테스트 kubectl exec deployment/postgres -n openwebui -- pg_isready # 네트워크 연결 확인 kubectl exec deployment/openwebui -n openwebui -- \\ nc -zv postgres-service 5432 높은 응답 시간 # 리소스 사용량 확인 kubectl top pods -n openwebui # HPA 스케일링 강제 실행 kubectl patch hpa openwebui-hpa -n openwebui -p \\ \u0026#39;{\u0026#34;spec\u0026#34;:{\u0026#34;minReplicas\u0026#34;:3}}\u0026#39; # 캐시 클리어 (애플리케이션별 방법) kubectl exec deployment/openwebui -n openwebui -- \\ curl -X POST http://localhost:8080/api/v1/cache/clear 🔧 유지보수 정기 업데이트 #!/bin/bash # update-system.sh echo \u0026#34;🔄 시스템 업데이트 시작...\u0026#34; # 1. EKS 클러스터 업데이트 확인 aws eks describe-cluster --name openwebui-eks-dev \\ --query \u0026#39;cluster.version\u0026#39; --output text # 2. 노드 그룹 업데이트 확인 aws eks describe-nodegroup --cluster-name openwebui-eks-dev \\ --nodegroup-name primary-nodes \\ --query \u0026#39;nodegroup.version\u0026#39; --output text # 3. Add-on 업데이트 kubectl get pods -n kube-system # 4. 애플리케이션 이미지 업데이트 kubectl set image deployment/openwebui openwebui=ghcr.io/openwebui:latest -n openwebui echo \u0026#34;✅ 업데이트 완료\u0026#34; 보안 패치 # 보안 스캔 실행 trivy image ghcr.io/openwebui:latest # 취약점 있는 컨테이너 재배포 kubectl rollout restart deployment/openwebui -n openwebui # 시크릿 로테이션 kubectl create secret generic api-keys \\ --from-literal=OPENAI_API_KEY=new-key \\ --dry-run=client -o yaml | kubectl apply -f - 용량 관리 # 디스크 사용량 모니터링 kubectl get pvc -A -o custom-columns=NAME:.metadata.name,SIZE:.spec.resources.requests.storage,USED:.status.capacity.storage # 로그 정리 kubectl logs deployment/openwebui -n openwebui --tail=1000 \u0026gt; /dev/null # 이미지 정리 (노드에서 직접) docker system prune -a 📈 성능 튜닝 애플리케이션 최적화 # OpenWebUI 성능 설정 env: - name: WEBUI_SECRET_KEY value: \u0026#34;optimized-secret-key\u0026#34; - name: MAX_WORKERS value: \u0026#34;4\u0026#34; - name: TIMEOUT value: \u0026#34;60\u0026#34; - name: KEEP_ALIVE value: \u0026#34;2\u0026#34; 데이터베이스 튜닝 -- PostgreSQL 성능 튜닝 -- 연결 풀 설정 ALTER SYSTEM SET max_connections = 100; ALTER SYSTEM SET shared_buffers = \u0026#39;256MB\u0026#39;; ALTER SYSTEM SET effective_cache_size = \u0026#39;1GB\u0026#39;; ALTER SYSTEM SET work_mem = \u0026#39;4MB\u0026#39;; -- 인덱스 확인 및 최적화 SELECT schemaname, tablename, attname, n_distinct, correlation FROM pg_stats WHERE tablename = \u0026#39;your_table\u0026#39;; 네트워크 최적화 # Ingress 설정 최적화 annotations: nginx.ingress.kubernetes.io/proxy-connect-timeout: \u0026#34;60\u0026#34; nginx.ingress.kubernetes.io/proxy-send-timeout: \u0026#34;60\u0026#34; nginx.ingress.kubernetes.io/proxy-read-timeout: \u0026#34;60\u0026#34; nginx.ingress.kubernetes.io/proxy-body-size: \u0026#34;50m\u0026#34; nginx.ingress.kubernetes.io/enable-cors: \u0026#34;true\u0026#34; 💰 비용 최적화 리소스 사용량 분석 # 노드 비용 분석 kubectl describe nodes | grep -A 3 \u0026#34;Allocated resources\u0026#34; # Spot 인스턴스 활용률 kubectl get nodes -l node.kubernetes.io/instance-type # 사용하지 않는 리소스 정리 kubectl get pods -A --field-selector=status.phase=Succeeded kubectl delete pods --field-selector=status.phase=Succeeded -A 자동 스케일링 최적화 # 비용 효율적인 HPA 설정 spec: minReplicas: 1 # 최소 비용 maxReplicas: 10 # 트래픽 대응 targetCPUUtilizationPercentage: 70 # 적절한 활용률 behavior: scaleDown: stabilizationWindowSeconds: 300 # 급격한 스케일 다운 방지 policies: - type: Percent value: 50 periodSeconds: 60 📞 비상 연락 체계 장애 등급별 대응 P0 (Critical): - 서비스 완전 중단 - 즉시 대응 (24/7) - 연락처: [긴급 연락처] P1 (High): - 주요 기능 장애 - 4시간 이내 대응 - 연락처: [팀 리더] P2 (Medium): - 부분 기능 장애 - 24시간 이내 대응 - 연락처: [담당자] P3 (Low): - 성능 저하 - 72시간 이내 대응 - 연락처: [팀 메일] 에스컬레이션 절차 1차 담당자 (30분 이내 응답) 팀 리더 (1시간 이내) 기술 책임자 (2시간 이내) CTO (4시간 이내) 📚 운영 도구 및 대시보드 필수 도구 # kubectl 플러그인 설치 kubectl krew install ctx ns stern top # 유용한 명령어 별칭 alias k=\u0026#39;kubectl\u0026#39; alias kgp=\u0026#39;kubectl get pods\u0026#39; alias kgs=\u0026#39;kubectl get svc\u0026#39; alias kgn=\u0026#39;kubectl get nodes\u0026#39; alias kdp=\u0026#39;kubectl describe pod\u0026#39; alias kl=\u0026#39;kubectl logs\u0026#39; 모니터링 대시보드 Grafana: http://grafana.your-domain.com Prometheus: http://prometheus.your-domain.com Jaeger: http://jaeger.your-domain.com (트레이싱) ArgoCD: http://argocd.your-domain.com (GitOps) 로그 분석 # 중앙화된 로깅 (ELK Stack) kubectl port-forward svc/kibana 5601:5601 -n logging # 로그 쿼리 예시 # Kibana에서: kubernetes.namespace:\u0026#34;openwebui\u0026#34; AND level:\u0026#34;ERROR\u0026#34; 🔄 정기 작업 스케줄 일일 작업 (자동화) # CronJob 예시 apiVersion: batch/v1 kind: CronJob metadata: name: daily-cleanup spec: schedule: \u0026#34;0 2 * * *\u0026#34; # 매일 오전 2시 jobTemplate: spec: template: spec: containers: - name: cleanup image: alpine:latest command: - /bin/sh - -c - | # 로그 정리 find /var/log -name \u0026#34;*.log\u0026#34; -mtime +7 -delete # 임시 파일 정리 find /tmp -mtime +1 -delete restartPolicy: OnFailure 주간 작업 백업 검증 테스트 보안 스캔 실행 성능 리포트 작성 비용 분석 리포트 월간 작업 DR(재해복구) 테스트 보안 감사 용량 계획 검토 아키텍처 리뷰 이제 완전한 운영 매뉴얼이 준비되었습니다! 🛠️\n",
+  "keywords": [
+    
+  ],
+  "articleBody": "🛠️ OpenWebUI 운영 매뉴얼 👥 대상: DevOps 엔지니어, SRE, 시스템 관리자\n📅 업데이트: 정기적으로 업데이트 필요\n🚨 비상 연락처: [팀 연락처 정보]\n📋 일일 운영 체크리스트 매일 확인 항목 #!/bin/bash # daily-check.sh echo \"📅 $(date '+%Y-%m-%d %H:%M:%S') - 일일 운영 체크 시작\" # 1. 클러스터 상태 kubectl get nodes kubectl get pods -A | grep -v Running # 2. 애플리케이션 상태 kubectl get pods -n openwebui -n litellm # 3. 리소스 사용량 kubectl top nodes kubectl top pods -A # 4. 최근 에러 로그 (최근 1시간) kubectl logs --since=1h -n openwebui -l app=openwebui | grep -i error | tail -10 # 5. 디스크 사용량 kubectl get pvc -A echo \"✅ 일일 체크 완료\" 주간 확인 항목 백업 상태 확인 보안 패치 검토 비용 사용량 확인 성능 메트릭 검토 로그 정리 🔍 모니터링 및 알람 핵심 메트릭 # prometheus-alerts.yml groups: - name: openwebui.rules rules: # 파드 상태 알람 - alert: PodCrashLooping expr: rate(kube_pod_container_status_restarts_total[5m]) \u003e 0 for: 5m annotations: summary: \"Pod {{ $labels.pod }} is crash looping\" # 리소스 사용량 알람 - alert: HighCPUUsage expr: (cpu_usage_rate \u003e 80) for: 10m annotations: summary: \"High CPU usage: {{ $value }}%\" # 응답 시간 알람 - alert: HighResponseTime expr: http_request_duration_seconds \u003e 2 for: 5m annotations: summary: \"High response time: {{ $value }}s\" 로그 모니터링 # 실시간 로그 모니터링 kubectl logs -f deployment/openwebui -n openwebui # 에러 로그 검색 kubectl logs deployment/openwebui -n openwebui | grep -E \"(ERROR|FATAL|CRITICAL)\" # 특정 시간대 로그 kubectl logs --since=2h --until=1h deployment/openwebui -n openwebui 📊 성능 관리 스케일링 관리 # 수동 스케일링 kubectl scale deployment openwebui --replicas=5 -n openwebui kubectl scale deployment litellm --replicas=3 -n litellm # HPA 상태 확인 kubectl get hpa -A # 스케일링 이벤트 확인 kubectl describe hpa openwebui-hpa -n openwebui 리소스 최적화 # 리소스 요청량 조정 예시 resources: requests: memory: \"512Mi\" # 실제 사용량 기반 조정 cpu: \"250m\" limits: memory: \"1Gi\" # OOM 방지 cpu: \"500m\" # CPU 스로틀링 방지 데이터베이스 성능 # PostgreSQL 연결 수 확인 kubectl exec deployment/postgres -n openwebui -- \\ psql -U openwebui -d openwebui -c \\ \"SELECT count(*) FROM pg_stat_activity WHERE state = 'active';\" # 슬로우 쿼리 확인 kubectl exec deployment/postgres -n openwebui -- \\ psql -U openwebui -d openwebui -c \\ \"SELECT query, mean_exec_time FROM pg_stat_statements ORDER BY mean_exec_time DESC LIMIT 10;\" # 데이터베이스 크기 확인 kubectl exec deployment/postgres -n openwebui -- \\ psql -U openwebui -d openwebui -c \\ \"SELECT pg_size_pretty(pg_database_size('openwebui'));\" 🔄 백업 및 복원 데이터베이스 백업 #!/bin/bash # backup-database.sh BACKUP_DATE=$(date +%Y%m%d_%H%M%S) BACKUP_FILE=\"openwebui_backup_${BACKUP_DATE}.sql\" # PostgreSQL 백업 kubectl exec deployment/postgres -n openwebui -- \\ pg_dump -U openwebui openwebui \u003e $BACKUP_FILE # S3에 업로드 aws s3 cp $BACKUP_FILE s3://openwebui-backups/database/ # 로컬 파일 정리 (7일 이상 된 파일) find . -name \"openwebui_backup_*.sql\" -mtime +7 -delete echo \"✅ 백업 완료: $BACKUP_FILE\" 데이터베이스 복원 #!/bin/bash # restore-database.sh BACKUP_FILE=$1 if [ -z \"$BACKUP_FILE\" ]; then echo \"사용법: $0 \" exit 1 fi # S3에서 백업 파일 다운로드 aws s3 cp s3://openwebui-backups/database/$BACKUP_FILE . # 애플리케이션 중지 kubectl scale deployment openwebui --replicas=0 -n openwebui kubectl scale deployment litellm --replicas=0 -n litellm # 데이터베이스 복원 kubectl exec -i deployment/postgres -n openwebui -- \\ psql -U openwebui openwebui \u003c $BACKUP_FILE # 애플리케이션 재시작 kubectl scale deployment openwebui --replicas=2 -n openwebui kubectl scale deployment litellm --replicas=2 -n litellm echo \"✅ 복원 완료\" 설정 파일 백업 # ConfigMap 백업 kubectl get configmap -n openwebui -o yaml \u003e configmaps-backup.yaml kubectl get configmap -n litellm -o yaml \u003e\u003e configmaps-backup.yaml # Secret 백업 (암호화된 형태) kubectl get secret -n openwebui -o yaml \u003e secrets-backup.yaml kubectl get secret -n litellm -o yaml \u003e\u003e secrets-backup.yaml 🚨 장애 대응 긴급 상황 대응 절차 1단계: 상황 파악 (5분 이내) # 전체 상태 빠른 확인 kubectl get pods -A | grep -v Running kubectl get nodes kubectl top nodes # 최근 이벤트 확인 kubectl get events -A --sort-by='.lastTimestamp' | tail -20 2단계: 임시 조치 (10분 이내) # 파드 재시작 kubectl rollout restart deployment/openwebui -n openwebui # 트래픽 차단 (필요시) kubectl patch ingress openwebui-ingress -n openwebui -p \\ '{\"metadata\":{\"annotations\":{\"nginx.ingress.kubernetes.io/server-snippet\":\"return 503;\"}}}' # 스케일 다운 (리소스 부족 시) kubectl scale deployment openwebui --replicas=1 -n openwebui 3단계: 근본 원인 분석 # 상세 로그 분석 kubectl logs deployment/openwebui -n openwebui --previous kubectl describe pod -l app=openwebui -n openwebui # 리소스 사용량 분석 kubectl top pods -n openwebui --containers kubectl describe nodes 일반적인 장애 시나리오 파드가 시작되지 않는 경우 # 원인 확인 kubectl describe pod -n openwebui # 일반적인 해결책 # 1. 이미지 문제 kubectl get pods -n openwebui -o jsonpath='{.items[*].spec.containers[*].image}' # 2. 리소스 부족 kubectl describe nodes | grep -A 5 \"Allocated resources\" # 3. PVC 마운트 실패 kubectl get pvc -n openwebui kubectl describe pvc -n openwebui 데이터베이스 연결 실패 # PostgreSQL 상태 확인 kubectl get pods -l app=postgres -n openwebui kubectl logs deployment/postgres -n openwebui # 연결 테스트 kubectl exec deployment/postgres -n openwebui -- pg_isready # 네트워크 연결 확인 kubectl exec deployment/openwebui -n openwebui -- \\ nc -zv postgres-service 5432 높은 응답 시간 # 리소스 사용량 확인 kubectl top pods -n openwebui # HPA 스케일링 강제 실행 kubectl patch hpa openwebui-hpa -n openwebui -p \\ '{\"spec\":{\"minReplicas\":3}}' # 캐시 클리어 (애플리케이션별 방법) kubectl exec deployment/openwebui -n openwebui -- \\ curl -X POST http://localhost:8080/api/v1/cache/clear 🔧 유지보수 정기 업데이트 #!/bin/bash # update-system.sh echo \"🔄 시스템 업데이트 시작...\" # 1. EKS 클러스터 업데이트 확인 aws eks describe-cluster --name openwebui-eks-dev \\ --query 'cluster.version' --output text # 2. 노드 그룹 업데이트 확인 aws eks describe-nodegroup --cluster-name openwebui-eks-dev \\ --nodegroup-name primary-nodes \\ --query 'nodegroup.version' --output text # 3. Add-on 업데이트 kubectl get pods -n kube-system # 4. 애플리케이션 이미지 업데이트 kubectl set image deployment/openwebui openwebui=ghcr.io/openwebui:latest -n openwebui echo \"✅ 업데이트 완료\" 보안 패치 # 보안 스캔 실행 trivy image ghcr.io/openwebui:latest # 취약점 있는 컨테이너 재배포 kubectl rollout restart deployment/openwebui -n openwebui # 시크릿 로테이션 kubectl create secret generic api-keys \\ --from-literal=OPENAI_API_KEY=new-key \\ --dry-run=client -o yaml | kubectl apply -f - 용량 관리 # 디스크 사용량 모니터링 kubectl get pvc -A -o custom-columns=NAME:.metadata.name,SIZE:.spec.resources.requests.storage,USED:.status.capacity.storage # 로그 정리 kubectl logs deployment/openwebui -n openwebui --tail=1000 \u003e /dev/null # 이미지 정리 (노드에서 직접) docker system prune -a 📈 성능 튜닝 애플리케이션 최적화 # OpenWebUI 성능 설정 env: - name: WEBUI_SECRET_KEY value: \"optimized-secret-key\" - name: MAX_WORKERS value: \"4\" - name: TIMEOUT value: \"60\" - name: KEEP_ALIVE value: \"2\" 데이터베이스 튜닝 -- PostgreSQL 성능 튜닝 -- 연결 풀 설정 ALTER SYSTEM SET max_connections = 100; ALTER SYSTEM SET shared_buffers = '256MB'; ALTER SYSTEM SET effective_cache_size = '1GB'; ALTER SYSTEM SET work_mem = '4MB'; -- 인덱스 확인 및 최적화 SELECT schemaname, tablename, attname, n_distinct, correlation FROM pg_stats WHERE tablename = 'your_table'; 네트워크 최적화 # Ingress 설정 최적화 annotations: nginx.ingress.kubernetes.io/proxy-connect-timeout: \"60\" nginx.ingress.kubernetes.io/proxy-send-timeout: \"60\" nginx.ingress.kubernetes.io/proxy-read-timeout: \"60\" nginx.ingress.kubernetes.io/proxy-body-size: \"50m\" nginx.ingress.kubernetes.io/enable-cors: \"true\" 💰 비용 최적화 리소스 사용량 분석 # 노드 비용 분석 kubectl describe nodes | grep -A 3 \"Allocated resources\" # Spot 인스턴스 활용률 kubectl get nodes -l node.kubernetes.io/instance-type # 사용하지 않는 리소스 정리 kubectl get pods -A --field-selector=status.phase=Succeeded kubectl delete pods --field-selector=status.phase=Succeeded -A 자동 스케일링 최적화 # 비용 효율적인 HPA 설정 spec: minReplicas: 1 # 최소 비용 maxReplicas: 10 # 트래픽 대응 targetCPUUtilizationPercentage: 70 # 적절한 활용률 behavior: scaleDown: stabilizationWindowSeconds: 300 # 급격한 스케일 다운 방지 policies: - type: Percent value: 50 periodSeconds: 60 📞 비상 연락 체계 장애 등급별 대응 P0 (Critical): - 서비스 완전 중단 - 즉시 대응 (24/7) - 연락처: [긴급 연락처] P1 (High): - 주요 기능 장애 - 4시간 이내 대응 - 연락처: [팀 리더] P2 (Medium): - 부분 기능 장애 - 24시간 이내 대응 - 연락처: [담당자] P3 (Low): - 성능 저하 - 72시간 이내 대응 - 연락처: [팀 메일] 에스컬레이션 절차 1차 담당자 (30분 이내 응답) 팀 리더 (1시간 이내) 기술 책임자 (2시간 이내) CTO (4시간 이내) 📚 운영 도구 및 대시보드 필수 도구 # kubectl 플러그인 설치 kubectl krew install ctx ns stern top # 유용한 명령어 별칭 alias k='kubectl' alias kgp='kubectl get pods' alias kgs='kubectl get svc' alias kgn='kubectl get nodes' alias kdp='kubectl describe pod' alias kl='kubectl logs' 모니터링 대시보드 Grafana: http://grafana.your-domain.com Prometheus: http://prometheus.your-domain.com Jaeger: http://jaeger.your-domain.com (트레이싱) ArgoCD: http://argocd.your-domain.com (GitOps) 로그 분석 # 중앙화된 로깅 (ELK Stack) kubectl port-forward svc/kibana 5601:5601 -n logging # 로그 쿼리 예시 # Kibana에서: kubernetes.namespace:\"openwebui\" AND level:\"ERROR\" 🔄 정기 작업 스케줄 일일 작업 (자동화) # CronJob 예시 apiVersion: batch/v1 kind: CronJob metadata: name: daily-cleanup spec: schedule: \"0 2 * * *\" # 매일 오전 2시 jobTemplate: spec: template: spec: containers: - name: cleanup image: alpine:latest command: - /bin/sh - -c - | # 로그 정리 find /var/log -name \"*.log\" -mtime +7 -delete # 임시 파일 정리 find /tmp -mtime +1 -delete restartPolicy: OnFailure 주간 작업 백업 검증 테스트 보안 스캔 실행 성능 리포트 작성 비용 분석 리포트 월간 작업 DR(재해복구) 테스트 보안 감사 용량 계획 검토 아키텍처 리뷰 이제 완전한 운영 매뉴얼이 준비되었습니다! 🛠️\n",
+  "wordCount" : "1419",
+  "inLanguage": "en",
+  "datePublished": "0001-01-01T00:00:00Z",
+  "dateModified": "0001-01-01T00:00:00Z",
+  "mainEntityOfPage": {
+    "@type": "WebPage",
+    "@id": "https://8dobibim.github.io/backend/%EC%9A%B4%EC%98%81-%EB%A9%94%EB%89%B4%EC%96%BC/"
+  },
+  "publisher": {
+    "@type": "Organization",
+    "name": "8dobibim Tech Blog",
+    "logo": {
+      "@type": "ImageObject",
+      "url": "https://8dobibim.github.io/favicon.ico"
+    }
+  }
+}
+</script>
 </head>
 
 <body class="" id="top">
@@ -502,7 +994,7 @@ DR(재해복구) 테스트
 <header class="header">
     <nav class="nav">
         <div class="logo">
-            <a href="http://localhost:65390/" accesskey="h" title="8dobibim Tech Blog (Alt + H)">8dobibim Tech Blog</a>
+            <a href="https://8dobibim.github.io/" accesskey="h" title="8dobibim Tech Blog (Alt + H)">8dobibim Tech Blog</a>
             <div class="logo-switches">
                 <button id="theme-toggle" accesskey="t" title="(Alt + T)" aria-label="Toggle theme">
                     <svg id="moon" xmlns="http://www.w3.org/2000/svg" width="24" height="18" viewBox="0 0 24 24"
@@ -528,12 +1020,12 @@ DR(재해복구) 테스트
         </div>
         <ul id="menu">
             <li>
-                <a href="http://localhost:65390/frontend/" title="🖥 프론트엔드">
+                <a href="https://8dobibim.github.io/frontend/" title="🖥 프론트엔드">
                     <span>🖥 프론트엔드</span>
                 </a>
             </li>
             <li>
-                <a href="http://localhost:65390/backend/" title="💾 백엔드">
+                <a href="https://8dobibim.github.io/backend/" title="💾 백엔드">
                     <span>💾 백엔드</span>
                 </a>
             </li>
@@ -544,7 +1036,7 @@ DR(재해복구) 테스트
 
 <article class="post-single">
   <header class="post-header">
-    <div class="breadcrumbs"><a href="http://localhost:65390/">Home</a>&nbsp;»&nbsp;<a href="http://localhost:65390/backend/">Backend 문서</a></div>
+    <div class="breadcrumbs"><a href="https://8dobibim.github.io/">Home</a>&nbsp;»&nbsp;<a href="https://8dobibim.github.io/backend/">Backend 문서</a></div>
     <h1 class="post-title entry-hint-parent">
       
     </h1>
@@ -1124,12 +1616,12 @@ DR(재해복구) 테스트
     <ul class="post-tags">
     </ul>
 <nav class="paginav">
-  <a class="prev" href="http://localhost:65390/backend/%EC%95%A0%ED%94%8C%EB%A6%AC%EC%BC%80%EC%9D%B4%EC%85%98-%EB%B0%B0%ED%8F%AC-%EA%B0%80%EC%9D%B4%EB%93%9C/">
+  <a class="prev" href="https://8dobibim.github.io/backend/%EC%95%A0%ED%94%8C%EB%A6%AC%EC%BC%80%EC%9D%B4%EC%85%98-%EB%B0%B0%ED%8F%AC-%EA%B0%80%EC%9D%B4%EB%93%9C/">
     <span class="title">« Prev</span>
     <br>
     <span></span>
   </a>
-  <a class="next" href="http://localhost:65390/backend/%ED%8A%B8%EB%9F%AC%EB%B8%94%EC%8A%88%ED%8C%85-%EA%B0%80%EC%9D%B4%EB%93%9C--faq/">
+  <a class="next" href="https://8dobibim.github.io/backend/%ED%8A%B8%EB%9F%AC%EB%B8%94%EC%8A%88%ED%8C%85-%EA%B0%80%EC%9D%B4%EB%93%9C--faq/">
     <span class="title">Next »</span>
     <br>
     <span></span>
@@ -1141,7 +1633,7 @@ DR(재해복구) 테스트
     </main>
     
 <footer class="footer">
-        <span>&copy; 2025 <a href="http://localhost:65390/">8dobibim Tech Blog</a></span> · 
+        <span>&copy; 2025 <a href="https://8dobibim.github.io/">8dobibim Tech Blog</a></span> · 
 
     <span>
         Powered by
