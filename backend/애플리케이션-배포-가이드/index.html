@@ -1,0 +1,1645 @@
+<!DOCTYPE html>
+<html lang="en" dir="auto">
+
+<head><script src="/livereload.js?mindelay=10&amp;v=2&amp;port=65390&amp;path=livereload" data-no-instant defer></script><meta charset="utf-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+<meta name="robots" content="noindex, nofollow">
+<title>8dobibim Tech Blog</title>
+<meta name="keywords" content="">
+<meta name="description" content="🚀 애플리케이션 배포 가이드
+
+⏱️ 예상 소요시간: 45-60분
+💡 난이도: 중급
+📋 목표: EKS 클러스터에 OpenWebUI와 LiteLLM을 배포합니다.
+
+📋 배포 완료 체크리스트
+
+ ConfigMap 및 Secret 생성
+ PostgreSQL 데이터베이스 배포
+ LiteLLM 서비스 배포
+ OpenWebUI 애플리케이션 배포
+ Ingress/LoadBalancer 설정
+ SSL 인증서 설정
+ 모니터링 설정
+
+
+📁 배포 파일 구조
+kubernetes/
+├── base/
+│   ├── configmaps/
+│   ├── secrets/
+│   ├── postgres/
+│   ├── litellm/
+│   ├── openwebui/
+│   └── ingress/
+└── overlays/
+    ├── dev/
+    └── prod/
+
+🗂️ 1단계: ConfigMap 및 Secret 생성
+ConfigMap 생성
+# kubernetes/base/configmaps/app-config.yaml
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: app-config
+  namespace: openwebui
+data:
+  # PostgreSQL 설정
+  POSTGRES_HOST: &#34;postgres-service.openwebui.svc.cluster.local&#34;
+  POSTGRES_PORT: &#34;5432&#34;
+  POSTGRES_DB: &#34;openwebui&#34;
+  
+  # LiteLLM 설정
+  LITELLM_HOST: &#34;litellm-service.litellm.svc.cluster.local&#34;
+  LITELLM_PORT: &#34;4000&#34;
+  
+  # OpenWebUI 설정
+  WEBUI_SECRET_KEY: &#34;your-secret-key-here&#34;
+  WEBUI_JWT_SECRET_KEY: &#34;your-jwt-secret-here&#34;
+  DEFAULT_LOCALE: &#34;ko-KR&#34;
+  
+  # 기본 설정
+  LOG_LEVEL: &#34;INFO&#34;
+  ENVIRONMENT: &#34;development&#34;
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: litellm-config
+  namespace: litellm
+data:
+  config.yaml: |
+    model_list:
+      - model_name: gpt-3.5-turbo
+        litellm_params:
+          model: gpt-3.5-turbo
+          api_key: os.environ/OPENAI_API_KEY
+      - model_name: gpt-4
+        litellm_params:
+          model: gpt-4
+          api_key: os.environ/OPENAI_API_KEY
+      - model_name: claude-3-sonnet
+        litellm_params:
+          model: anthropic/claude-3-sonnet-20240229
+          api_key: os.environ/ANTHROPIC_API_KEY
+    
+    general_settings:
+      master_key: os.environ/LITELLM_MASTER_KEY
+      database_url: os.environ/DATABASE_URL
+Secret 생성
+# kubernetes/base/secrets/app-secrets.yaml
+apiVersion: v1
+kind: Secret
+metadata:
+  name: app-secrets
+  namespace: openwebui
+type: Opaque
+data:
+  # Base64로 인코딩된 값들
+  POSTGRES_USER: b3BlbndlYnVp  # openwebui
+  POSTGRES_PASSWORD: cGFzc3dvcmQxMjM=  # password123
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: api-keys
+  namespace: litellm
+type: Opaque
+data:
+  OPENAI_API_KEY: eW91ci1vcGVuYWktYXBpLWtleQ==  # your-openai-api-key
+  ANTHROPIC_API_KEY: eW91ci1hbnRocm9waWMtYXBpLWtleQ==  # your-anthropic-api-key
+  LITELLM_MASTER_KEY: bGl0ZWxsbS1tYXN0ZXIta2V5  # litellm-master-key
+실제 Secret 생성 (명령어)
+# PostgreSQL 인증 정보
+kubectl create secret generic app-secrets \
+  --from-literal=POSTGRES_USER=openwebui \
+  --from-literal=POSTGRES_PASSWORD=password123 \
+  -n openwebui
+
+# API 키들
+kubectl create secret generic api-keys \
+  --from-literal=OPENAI_API_KEY=your-actual-openai-key \
+  --from-literal=ANTHROPIC_API_KEY=your-actual-anthropic-key \
+  --from-literal=LITELLM_MASTER_KEY=your-master-key \
+  -n litellm
+
+🗃️ 2단계: PostgreSQL 데이터베이스 배포
+PVC 생성
+# kubernetes/base/postgres/pvc.yaml
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: postgres-pvc
+  namespace: openwebui
+spec:
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: gp3-encrypted
+  resources:
+    requests:
+      storage: 10Gi
+PostgreSQL Deployment
+# kubernetes/base/postgres/deployment.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: postgres
+  namespace: openwebui
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: postgres
+  template:
+    metadata:
+      labels:
+        app: postgres
+    spec:
+      containers:
+      - name: postgres
+        image: postgres:15
+        ports:
+        - containerPort: 5432
+        env:
+        - name: POSTGRES_DB
+          valueFrom:
+            configMapKeyRef:
+              name: app-config
+              key: POSTGRES_DB
+        - name: POSTGRES_USER
+          valueFrom:
+            secretKeyRef:
+              name: app-secrets
+              key: POSTGRES_USER
+        - name: POSTGRES_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: app-secrets
+              key: POSTGRES_PASSWORD
+        - name: PGDATA
+          value: /var/lib/postgresql/data/pgdata
+        volumeMounts:
+        - name: postgres-storage
+          mountPath: /var/lib/postgresql/data
+        resources:
+          requests:
+            memory: &#34;256Mi&#34;
+            cpu: &#34;250m&#34;
+          limits:
+            memory: &#34;512Mi&#34;
+            cpu: &#34;500m&#34;
+      volumes:
+      - name: postgres-storage
+        persistentVolumeClaim:
+          claimName: postgres-pvc
+PostgreSQL Service
+# kubernetes/base/postgres/service.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: postgres-service
+  namespace: openwebui
+spec:
+  selector:
+    app: postgres
+  ports:
+  - port: 5432
+    targetPort: 5432
+  type: ClusterIP
+
+🤖 3단계: LiteLLM 서비스 배포
+LiteLLM Deployment
+# kubernetes/base/litellm/deployment.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: litellm
+  namespace: litellm
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: litellm
+  template:
+    metadata:
+      labels:
+        app: litellm
+    spec:
+      containers:
+      - name: litellm
+        image: ghcr.io/berriai/litellm:main-latest
+        ports:
+        - containerPort: 4000
+        env:
+        - name: OPENAI_API_KEY
+          valueFrom:
+            secretKeyRef:
+              name: api-keys
+              key: OPENAI_API_KEY
+        - name: ANTHROPIC_API_KEY
+          valueFrom:
+            secretKeyRef:
+              name: api-keys
+              key: ANTHROPIC_API_KEY
+        - name: LITELLM_MASTER_KEY
+          valueFrom:
+            secretKeyRef:
+              name: api-keys
+              key: LITELLM_MASTER_KEY
+        - name: DATABASE_URL
+          value: &#34;postgresql://$(POSTGRES_USER):$(POSTGRES_PASSWORD)@postgres-service.openwebui.svc.cluster.local:5432/litellm&#34;
+        envFrom:
+        - secretRef:
+            name: app-secrets
+        volumeMounts:
+        - name: config
+          mountPath: /app/config.yaml
+          subPath: config.yaml
+        command: [&#34;litellm&#34;, &#34;--config&#34;, &#34;/app/config.yaml&#34;, &#34;--port&#34;, &#34;4000&#34;, &#34;--num_workers&#34;, &#34;8&#34;]
+        resources:
+          requests:
+            memory: &#34;512Mi&#34;
+            cpu: &#34;250m&#34;
+          limits:
+            memory: &#34;1Gi&#34;
+            cpu: &#34;500m&#34;
+        readinessProbe:
+          httpGet:
+            path: /health/readiness
+            port: 4000
+          initialDelaySeconds: 30
+          periodSeconds: 10
+        livenessProbe:
+          httpGet:
+            path: /health/liveliness
+            port: 4000
+          initialDelaySeconds: 60
+          periodSeconds: 30
+      volumes:
+      - name: config
+        configMap:
+          name: litellm-config
+LiteLLM Service
+# kubernetes/base/litellm/service.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: litellm-service
+  namespace: litellm
+spec:
+  selector:
+    app: litellm
+  ports:
+  - port: 4000
+    targetPort: 4000
+  type: ClusterIP
+
+🌐 4단계: OpenWebUI 애플리케이션 배포
+OpenWebUI Deployment
+# kubernetes/base/openwebui/deployment.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: openwebui
+  namespace: openwebui
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: openwebui
+  template:
+    metadata:
+      labels:
+        app: openwebui
+    spec:
+      containers:
+      - name: openwebui
+        image: ghcr.io/open-webui/open-webui:main
+        ports:
+        - containerPort: 8080
+        env:
+        - name: OLLAMA_BASE_URL
+          value: &#34;http://litellm-service.litellm.svc.cluster.local:4000&#34;
+        - name: WEBUI_SECRET_KEY
+          valueFrom:
+            configMapKeyRef:
+              name: app-config
+              key: WEBUI_SECRET_KEY
+        - name: DATABASE_URL
+          value: &#34;postgresql://$(POSTGRES_USER):$(POSTGRES_PASSWORD)@postgres-service:5432/openwebui&#34;
+        - name: DEFAULT_LOCALE
+          valueFrom:
+            configMapKeyRef:
+              name: app-config
+              key: DEFAULT_LOCALE
+        envFrom:
+        - secretRef:
+            name: app-secrets
+        - configMapRef:
+            name: app-config
+        volumeMounts:
+        - name: data
+          mountPath: /app/backend/data
+        resources:
+          requests:
+            memory: &#34;512Mi&#34;
+            cpu: &#34;250m&#34;
+          limits:
+            memory: &#34;1Gi&#34;
+            cpu: &#34;500m&#34;
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: 8080
+          initialDelaySeconds: 30
+          periodSeconds: 10
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 8080
+          initialDelaySeconds: 60
+          periodSeconds: 30
+      volumes:
+      - name: data
+        persistentVolumeClaim:
+          claimName: openwebui-pvc
+OpenWebUI PVC
+# kubernetes/base/openwebui/pvc.yaml
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: openwebui-pvc
+  namespace: openwebui
+spec:
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: gp3-encrypted
+  resources:
+    requests:
+      storage: 5Gi
+OpenWebUI Service
+# kubernetes/base/openwebui/service.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: openwebui-service
+  namespace: openwebui
+spec:
+  selector:
+    app: openwebui
+  ports:
+  - port: 8080
+    targetPort: 8080
+  type: ClusterIP
+
+🌍 5단계: Ingress 및 LoadBalancer 설정
+Application Load Balancer (ALB) 설정
+# kubernetes/base/ingress/ingress.yaml
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: openwebui-ingress
+  namespace: openwebui
+  annotations:
+    # ALB 설정
+    kubernetes.io/ingress.class: alb
+    alb.ingress.kubernetes.io/scheme: internet-facing
+    alb.ingress.kubernetes.io/target-type: ip
+    
+    # SSL 설정
+    alb.ingress.kubernetes.io/listen-ports: &#39;[{&#34;HTTP&#34;: 80}, {&#34;HTTPS&#34;: 443}]&#39;
+    alb.ingress.kubernetes.io/ssl-redirect: &#39;443&#39;
+    alb.ingress.kubernetes.io/certificate-arn: arn:aws:acm:ap-northeast-2:ACCOUNT_ID:certificate/CERT_ID
+    
+    # 헬스체크 설정
+    alb.ingress.kubernetes.io/healthcheck-path: /health
+    alb.ingress.kubernetes.io/healthcheck-interval-seconds: &#39;30&#39;
+    alb.ingress.kubernetes.io/healthcheck-timeout-seconds: &#39;5&#39;
+    alb.ingress.kubernetes.io/healthy-threshold-count: &#39;2&#39;
+    alb.ingress.kubernetes.io/unhealthy-threshold-count: &#39;3&#39;
+    
+    # 기타 설정
+    alb.ingress.kubernetes.io/load-balancer-name: openwebui-alb
+    alb.ingress.kubernetes.io/tags: Environment=dev,Project=openwebui
+spec:
+  rules:
+  - host: openwebui.yourdomain.com
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: openwebui-service
+            port:
+              number: 8080
+LoadBalancer Service (대안)
+# kubernetes/base/ingress/loadbalancer.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: openwebui-loadbalancer
+  namespace: openwebui
+  annotations:
+    service.beta.kubernetes.io/aws-load-balancer-type: &#34;nlb&#34;
+    service.beta.kubernetes.io/aws-load-balancer-scheme: &#34;internet-facing&#34;
+    service.beta.kubernetes.io/aws-load-balancer-name: &#34;openwebui-nlb&#34;
+spec:
+  type: LoadBalancer
+  selector:
+    app: openwebui
+  ports:
+  - port: 80
+    targetPort: 8080
+    protocol: TCP
+
+📊 6단계: 모니터링 설정
+Prometheus ServiceMonitor
+# kubernetes/base/monitoring/servicemonitor.yaml
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: openwebui-monitor
+  namespace: monitoring
+spec:
+  selector:
+    matchLabels:
+      app: openwebui
+  endpoints:
+  - port: http
+    path: /metrics
+    interval: 30s
+---
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: litellm-monitor
+  namespace: monitoring
+spec:
+  selector:
+    matchLabels:
+      app: litellm
+  endpoints:
+  - port: http
+    path: /metrics
+    interval: 30s
+
+🚀 7단계: 배포 실행
+배포 순서
+# 1. 네임스페이스 생성 (이미 완료됨)
+kubectl get namespaces
+
+# 2. ConfigMap 및 Secret 적용
+kubectl apply -f kubernetes/base/configmaps/
+kubectl apply -f kubernetes/base/secrets/
+
+# 3. PostgreSQL 배포
+kubectl apply -f kubernetes/base/postgres/
+
+# PostgreSQL 준비 완료 대기
+kubectl wait --for=condition=ready pod -l app=postgres -n openwebui --timeout=300s
+
+# 4. LiteLLM 배포
+kubectl apply -f kubernetes/base/litellm/
+
+# LiteLLM 준비 완료 대기
+kubectl wait --for=condition=ready pod -l app=litellm -n litellm --timeout=300s
+
+# 5. OpenWebUI 배포
+kubectl apply -f kubernetes/base/openwebui/
+
+# OpenWebUI 준비 완료 대기
+kubectl wait --for=condition=ready pod -l app=openwebui -n openwebui --timeout=300s
+
+# 6. Ingress 설정
+kubectl apply -f kubernetes/base/ingress/
+
+# 7. 모니터링 설정 (선택사항)
+kubectl apply -f kubernetes/base/monitoring/
+배포 스크립트
+#!/bin/bash
+# deploy.sh
+
+set -e
+
+echo &#34;🚀 OpenWebUI 애플리케이션 배포 시작...&#34;
+
+# 환경 확인
+if ! kubectl get nodes &gt; /dev/null 2&gt;&amp;1; then
+    echo &#34;❌ kubectl이 클러스터에 연결되지 않았습니다.&#34;
+    exit 1
+fi
+
+echo &#34;📁 1. ConfigMap 및 Secret 적용...&#34;
+kubectl apply -f kubernetes/base/configmaps/
+kubectl apply -f kubernetes/base/secrets/
+
+echo &#34;🗃️ 2. PostgreSQL 배포...&#34;
+kubectl apply -f kubernetes/base/postgres/
+echo &#34;⏳ PostgreSQL 준비 대기...&#34;
+kubectl wait --for=condition=ready pod -l app=postgres -n openwebui --timeout=300s
+
+echo &#34;🤖 3. LiteLLM 배포...&#34;
+kubectl apply -f kubernetes/base/litellm/
+echo &#34;⏳ LiteLLM 준비 대기...&#34;
+kubectl wait --for=condition=ready pod -l app=litellm -n litellm --timeout=300s
+
+echo &#34;🌐 4. OpenWebUI 배포...&#34;
+kubectl apply -f kubernetes/base/openwebui/
+echo &#34;⏳ OpenWebUI 준비 대기...&#34;
+kubectl wait --for=condition=ready pod -l app=openwebui -n openwebui --timeout=300s
+
+echo &#34;🌍 5. Ingress 설정...&#34;
+kubectl apply -f kubernetes/base/ingress/
+
+echo &#34;📊 6. 모니터링 설정...&#34;
+kubectl apply -f kubernetes/base/monitoring/ || echo &#34;⚠️ 모니터링 설정 실패 (선택사항)&#34;
+
+echo &#34;✅ 배포 완료!&#34;
+echo &#34;🔗 LoadBalancer URL 확인:&#34;
+kubectl get ingress -n openwebui
+kubectl get svc -n openwebui
+
+echo &#34;📋 파드 상태 확인:&#34;
+kubectl get pods -n openwebui
+kubectl get pods -n litellm
+chmod &#43;x deploy.sh
+./deploy.sh
+
+🔍 상태 확인
+배포 상태 확인
+# 전체 파드 상태
+kubectl get pods -A
+
+# 서비스 상태
+kubectl get svc -A
+
+# Ingress 상태
+kubectl get ingress -A
+
+# 로그 확인
+kubectl logs -f deployment/openwebui -n openwebui
+kubectl logs -f deployment/litellm -n litellm
+kubectl logs -f deployment/postgres -n openwebui
+서비스 접근 테스트
+# 포트 포워딩으로 로컬 테스트
+kubectl port-forward svc/openwebui-service 8080:8080 -n openwebui
+
+# 브라우저에서 http://localhost:8080 접속
+
+🔧 설정 업데이트
+ConfigMap 업데이트
+# ConfigMap 수정 후 파드 재시작
+kubectl apply -f kubernetes/base/configmaps/
+kubectl rollout restart deployment/openwebui -n openwebui
+kubectl rollout restart deployment/litellm -n litellm
+Secret 업데이트
+# 새 API 키 추가
+kubectl create secret generic api-keys \
+  --from-literal=OPENAI_API_KEY=new-key \
+  --from-literal=ANTHROPIC_API_KEY=new-key \
+  --dry-run=client -o yaml | kubectl apply -f -
+
+kubectl rollout restart deployment/litellm -n litellm
+
+📈 스케일링
+수동 스케일링
+# OpenWebUI 파드 개수 조정
+kubectl scale deployment openwebui --replicas=3 -n openwebui
+
+# LiteLLM 파드 개수 조정
+kubectl scale deployment litellm --replicas=4 -n litellm
+HPA (Horizontal Pod Autoscaler) 설정
+# kubernetes/base/openwebui/hpa.yaml
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: openwebui-hpa
+  namespace: openwebui
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: openwebui
+  minReplicas: 2
+  maxReplicas: 10
+  metrics:
+  - type: Resource
+    resource:
+      name: cpu
+      target:
+        type: Utilization
+        averageUtilization: 70
+  - type: Resource
+    resource:
+      name: memory
+      target:
+        type: Utilization
+        averageUtilization: 80
+
+⏭️ 다음 단계
+애플리케이션 배포가 완료되었다면:">
+<meta name="author" content="">
+<link rel="canonical" href="http://localhost:65390/backend/%EC%95%A0%ED%94%8C%EB%A6%AC%EC%BC%80%EC%9D%B4%EC%85%98-%EB%B0%B0%ED%8F%AC-%EA%B0%80%EC%9D%B4%EB%93%9C/">
+<link crossorigin="anonymous" href="/assets/css/stylesheet.36819bea596090d8b48cf10d9831382996197aa7e4fc86f792f7c08c9ca4d23b.css" integrity="sha256-NoGb6llgkNi0jPENmDE4KZYZeqfk/Ib3kvfAjJyk0js=" rel="preload stylesheet" as="style">
+<link rel="icon" href="http://localhost:65390/favicon.ico">
+<link rel="icon" type="image/png" sizes="16x16" href="http://localhost:65390/favicon-16x16.png">
+<link rel="icon" type="image/png" sizes="32x32" href="http://localhost:65390/favicon-32x32.png">
+<link rel="apple-touch-icon" href="http://localhost:65390/apple-touch-icon.png">
+<link rel="mask-icon" href="http://localhost:65390/safari-pinned-tab.svg">
+<meta name="theme-color" content="#2e2e33">
+<meta name="msapplication-TileColor" content="#2e2e33">
+<link rel="alternate" hreflang="en" href="http://localhost:65390/backend/%EC%95%A0%ED%94%8C%EB%A6%AC%EC%BC%80%EC%9D%B4%EC%85%98-%EB%B0%B0%ED%8F%AC-%EA%B0%80%EC%9D%B4%EB%93%9C/">
+<noscript>
+    <style>
+        #theme-toggle,
+        .top-link {
+            display: none;
+        }
+
+    </style>
+    <style>
+        @media (prefers-color-scheme: dark) {
+            :root {
+                --theme: rgb(29, 30, 32);
+                --entry: rgb(46, 46, 51);
+                --primary: rgb(218, 218, 219);
+                --secondary: rgb(155, 156, 157);
+                --tertiary: rgb(65, 66, 68);
+                --content: rgb(196, 196, 197);
+                --code-block-bg: rgb(46, 46, 51);
+                --code-bg: rgb(55, 56, 62);
+                --border: rgb(51, 51, 51);
+            }
+
+            .list {
+                background: var(--theme);
+            }
+
+            .list:not(.dark)::-webkit-scrollbar-track {
+                background: 0 0;
+            }
+
+            .list:not(.dark)::-webkit-scrollbar-thumb {
+                border-color: var(--theme);
+            }
+        }
+
+    </style>
+</noscript>
+</head>
+
+<body class="" id="top">
+<script>
+    if (localStorage.getItem("pref-theme") === "dark") {
+        document.body.classList.add('dark');
+    } else if (localStorage.getItem("pref-theme") === "light") {
+        document.body.classList.remove('dark')
+    } else if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
+        document.body.classList.add('dark');
+    }
+
+</script>
+
+<header class="header">
+    <nav class="nav">
+        <div class="logo">
+            <a href="http://localhost:65390/" accesskey="h" title="8dobibim Tech Blog (Alt + H)">8dobibim Tech Blog</a>
+            <div class="logo-switches">
+                <button id="theme-toggle" accesskey="t" title="(Alt + T)" aria-label="Toggle theme">
+                    <svg id="moon" xmlns="http://www.w3.org/2000/svg" width="24" height="18" viewBox="0 0 24 24"
+                        fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                        stroke-linejoin="round">
+                        <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+                    </svg>
+                    <svg id="sun" xmlns="http://www.w3.org/2000/svg" width="24" height="18" viewBox="0 0 24 24"
+                        fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                        stroke-linejoin="round">
+                        <circle cx="12" cy="12" r="5"></circle>
+                        <line x1="12" y1="1" x2="12" y2="3"></line>
+                        <line x1="12" y1="21" x2="12" y2="23"></line>
+                        <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+                        <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+                        <line x1="1" y1="12" x2="3" y2="12"></line>
+                        <line x1="21" y1="12" x2="23" y2="12"></line>
+                        <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+                        <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+                    </svg>
+                </button>
+            </div>
+        </div>
+        <ul id="menu">
+            <li>
+                <a href="http://localhost:65390/frontend/" title="🖥 프론트엔드">
+                    <span>🖥 프론트엔드</span>
+                </a>
+            </li>
+            <li>
+                <a href="http://localhost:65390/backend/" title="💾 백엔드">
+                    <span>💾 백엔드</span>
+                </a>
+            </li>
+        </ul>
+    </nav>
+</header>
+<main class="main">
+
+<article class="post-single">
+  <header class="post-header">
+    <div class="breadcrumbs"><a href="http://localhost:65390/">Home</a>&nbsp;»&nbsp;<a href="http://localhost:65390/backend/">Backend 문서</a></div>
+    <h1 class="post-title entry-hint-parent">
+      
+    </h1>
+    <div class="post-meta">7 min&nbsp;·&nbsp;1413 words
+
+</div>
+  </header> <div class="toc">
+    <details  open>
+        <summary accesskey="c" title="(Alt + C)">
+            <span class="details">Table of Contents</span>
+        </summary>
+
+        <div class="inner"><ul>
+                <li>
+                    <a href="#-%ec%95%a0%ed%94%8c%eb%a6%ac%ec%bc%80%ec%9d%b4%ec%85%98-%eb%b0%b0%ed%8f%ac-%ea%b0%80%ec%9d%b4%eb%93%9c" aria-label="🚀 애플리케이션 배포 가이드">🚀 애플리케이션 배포 가이드</a><ul>
+                        
+                <li>
+                    <a href="#-%eb%b0%b0%ed%8f%ac-%ec%99%84%eb%a3%8c-%ec%b2%b4%ed%81%ac%eb%a6%ac%ec%8a%a4%ed%8a%b8" aria-label="📋 배포 완료 체크리스트">📋 배포 완료 체크리스트</a></li>
+                <li>
+                    <a href="#-%eb%b0%b0%ed%8f%ac-%ed%8c%8c%ec%9d%bc-%ea%b5%ac%ec%a1%b0" aria-label="📁 배포 파일 구조">📁 배포 파일 구조</a></li>
+                <li>
+                    <a href="#-1%eb%8b%a8%ea%b3%84-configmap-%eb%b0%8f-secret-%ec%83%9d%ec%84%b1" aria-label="🗂️ 1단계: ConfigMap 및 Secret 생성">🗂️ 1단계: ConfigMap 및 Secret 생성</a><ul>
+                        
+                <li>
+                    <a href="#configmap-%ec%83%9d%ec%84%b1" aria-label="ConfigMap 생성">ConfigMap 생성</a></li>
+                <li>
+                    <a href="#secret-%ec%83%9d%ec%84%b1" aria-label="Secret 생성">Secret 생성</a></li>
+                <li>
+                    <a href="#%ec%8b%a4%ec%a0%9c-secret-%ec%83%9d%ec%84%b1-%eb%aa%85%eb%a0%b9%ec%96%b4" aria-label="실제 Secret 생성 (명령어)">실제 Secret 생성 (명령어)</a></li></ul>
+                </li>
+                <li>
+                    <a href="#-2%eb%8b%a8%ea%b3%84-postgresql-%eb%8d%b0%ec%9d%b4%ed%84%b0%eb%b2%a0%ec%9d%b4%ec%8a%a4-%eb%b0%b0%ed%8f%ac" aria-label="🗃️ 2단계: PostgreSQL 데이터베이스 배포">🗃️ 2단계: PostgreSQL 데이터베이스 배포</a><ul>
+                        
+                <li>
+                    <a href="#pvc-%ec%83%9d%ec%84%b1" aria-label="PVC 생성">PVC 생성</a></li>
+                <li>
+                    <a href="#postgresql-deployment" aria-label="PostgreSQL Deployment">PostgreSQL Deployment</a></li>
+                <li>
+                    <a href="#postgresql-service" aria-label="PostgreSQL Service">PostgreSQL Service</a></li></ul>
+                </li>
+                <li>
+                    <a href="#-3%eb%8b%a8%ea%b3%84-litellm-%ec%84%9c%eb%b9%84%ec%8a%a4-%eb%b0%b0%ed%8f%ac" aria-label="🤖 3단계: LiteLLM 서비스 배포">🤖 3단계: LiteLLM 서비스 배포</a><ul>
+                        
+                <li>
+                    <a href="#litellm-deployment" aria-label="LiteLLM Deployment">LiteLLM Deployment</a></li>
+                <li>
+                    <a href="#litellm-service" aria-label="LiteLLM Service">LiteLLM Service</a></li></ul>
+                </li>
+                <li>
+                    <a href="#-4%eb%8b%a8%ea%b3%84-openwebui-%ec%95%a0%ed%94%8c%eb%a6%ac%ec%bc%80%ec%9d%b4%ec%85%98-%eb%b0%b0%ed%8f%ac" aria-label="🌐 4단계: OpenWebUI 애플리케이션 배포">🌐 4단계: OpenWebUI 애플리케이션 배포</a><ul>
+                        
+                <li>
+                    <a href="#openwebui-deployment" aria-label="OpenWebUI Deployment">OpenWebUI Deployment</a></li>
+                <li>
+                    <a href="#openwebui-pvc" aria-label="OpenWebUI PVC">OpenWebUI PVC</a></li>
+                <li>
+                    <a href="#openwebui-service" aria-label="OpenWebUI Service">OpenWebUI Service</a></li></ul>
+                </li>
+                <li>
+                    <a href="#-5%eb%8b%a8%ea%b3%84-ingress-%eb%b0%8f-loadbalancer-%ec%84%a4%ec%a0%95" aria-label="🌍 5단계: Ingress 및 LoadBalancer 설정">🌍 5단계: Ingress 및 LoadBalancer 설정</a><ul>
+                        
+                <li>
+                    <a href="#application-load-balancer-alb-%ec%84%a4%ec%a0%95" aria-label="Application Load Balancer (ALB) 설정">Application Load Balancer (ALB) 설정</a></li>
+                <li>
+                    <a href="#loadbalancer-service-%eb%8c%80%ec%95%88" aria-label="LoadBalancer Service (대안)">LoadBalancer Service (대안)</a></li></ul>
+                </li>
+                <li>
+                    <a href="#-6%eb%8b%a8%ea%b3%84-%eb%aa%a8%eb%8b%88%ed%84%b0%eb%a7%81-%ec%84%a4%ec%a0%95" aria-label="📊 6단계: 모니터링 설정">📊 6단계: 모니터링 설정</a><ul>
+                        
+                <li>
+                    <a href="#prometheus-servicemonitor" aria-label="Prometheus ServiceMonitor">Prometheus ServiceMonitor</a></li></ul>
+                </li>
+                <li>
+                    <a href="#-7%eb%8b%a8%ea%b3%84-%eb%b0%b0%ed%8f%ac-%ec%8b%a4%ed%96%89" aria-label="🚀 7단계: 배포 실행">🚀 7단계: 배포 실행</a><ul>
+                        
+                <li>
+                    <a href="#%eb%b0%b0%ed%8f%ac-%ec%88%9c%ec%84%9c" aria-label="배포 순서">배포 순서</a></li>
+                <li>
+                    <a href="#%eb%b0%b0%ed%8f%ac-%ec%8a%a4%ed%81%ac%eb%a6%bd%ed%8a%b8" aria-label="배포 스크립트">배포 스크립트</a></li></ul>
+                </li>
+                <li>
+                    <a href="#-%ec%83%81%ed%83%9c-%ed%99%95%ec%9d%b8" aria-label="🔍 상태 확인">🔍 상태 확인</a><ul>
+                        
+                <li>
+                    <a href="#%eb%b0%b0%ed%8f%ac-%ec%83%81%ed%83%9c-%ed%99%95%ec%9d%b8" aria-label="배포 상태 확인">배포 상태 확인</a></li>
+                <li>
+                    <a href="#%ec%84%9c%eb%b9%84%ec%8a%a4-%ec%a0%91%ea%b7%bc-%ed%85%8c%ec%8a%a4%ed%8a%b8" aria-label="서비스 접근 테스트">서비스 접근 테스트</a></li></ul>
+                </li>
+                <li>
+                    <a href="#-%ec%84%a4%ec%a0%95-%ec%97%85%eb%8d%b0%ec%9d%b4%ed%8a%b8" aria-label="🔧 설정 업데이트">🔧 설정 업데이트</a><ul>
+                        
+                <li>
+                    <a href="#configmap-%ec%97%85%eb%8d%b0%ec%9d%b4%ed%8a%b8" aria-label="ConfigMap 업데이트">ConfigMap 업데이트</a></li>
+                <li>
+                    <a href="#secret-%ec%97%85%eb%8d%b0%ec%9d%b4%ed%8a%b8" aria-label="Secret 업데이트">Secret 업데이트</a></li></ul>
+                </li>
+                <li>
+                    <a href="#-%ec%8a%a4%ec%bc%80%ec%9d%bc%eb%a7%81" aria-label="📈 스케일링">📈 스케일링</a><ul>
+                        
+                <li>
+                    <a href="#%ec%88%98%eb%8f%99-%ec%8a%a4%ec%bc%80%ec%9d%bc%eb%a7%81" aria-label="수동 스케일링">수동 스케일링</a></li>
+                <li>
+                    <a href="#hpa-horizontal-pod-autoscaler-%ec%84%a4%ec%a0%95" aria-label="HPA (Horizontal Pod Autoscaler) 설정">HPA (Horizontal Pod Autoscaler) 설정</a></li></ul>
+                </li>
+                <li>
+                    <a href="#-%eb%8b%a4%ec%9d%8c-%eb%8b%a8%ea%b3%84" aria-label="⏭️ 다음 단계">⏭️ 다음 단계</a>
+                </li>
+            </ul>
+            </li>
+            </ul>
+        </div>
+    </details>
+</div>
+
+  <div class="post-content"><h1 id="-애플리케이션-배포-가이드">🚀 애플리케이션 배포 가이드<a hidden class="anchor" aria-hidden="true" href="#-애플리케이션-배포-가이드">#</a></h1>
+<blockquote>
+<p><strong>⏱️ 예상 소요시간</strong>: 45-60분<br>
+<strong>💡 난이도</strong>: 중급<br>
+<strong>📋 목표</strong>: EKS 클러스터에 OpenWebUI와 LiteLLM을 배포합니다.</p></blockquote>
+<hr>
+<h2 id="-배포-완료-체크리스트">📋 배포 완료 체크리스트<a hidden class="anchor" aria-hidden="true" href="#-배포-완료-체크리스트">#</a></h2>
+<ul>
+<li><input disabled="" type="checkbox"> ConfigMap 및 Secret 생성</li>
+<li><input disabled="" type="checkbox"> PostgreSQL 데이터베이스 배포</li>
+<li><input disabled="" type="checkbox"> LiteLLM 서비스 배포</li>
+<li><input disabled="" type="checkbox"> OpenWebUI 애플리케이션 배포</li>
+<li><input disabled="" type="checkbox"> Ingress/LoadBalancer 설정</li>
+<li><input disabled="" type="checkbox"> SSL 인증서 설정</li>
+<li><input disabled="" type="checkbox"> 모니터링 설정</li>
+</ul>
+<hr>
+<h2 id="-배포-파일-구조">📁 배포 파일 구조<a hidden class="anchor" aria-hidden="true" href="#-배포-파일-구조">#</a></h2>
+<pre tabindex="0"><code>kubernetes/
+├── base/
+│   ├── configmaps/
+│   ├── secrets/
+│   ├── postgres/
+│   ├── litellm/
+│   ├── openwebui/
+│   └── ingress/
+└── overlays/
+    ├── dev/
+    └── prod/
+</code></pre><hr>
+<h2 id="-1단계-configmap-및-secret-생성">🗂️ 1단계: ConfigMap 및 Secret 생성<a hidden class="anchor" aria-hidden="true" href="#-1단계-configmap-및-secret-생성">#</a></h2>
+<h3 id="configmap-생성">ConfigMap 생성<a hidden class="anchor" aria-hidden="true" href="#configmap-생성">#</a></h3>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-yaml" data-lang="yaml"><span style="display:flex;"><span><span style="color:#75715e"># kubernetes/base/configmaps/app-config.yaml</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">apiVersion</span>: <span style="color:#ae81ff">v1</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">kind</span>: <span style="color:#ae81ff">ConfigMap</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">metadata</span>:
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">name</span>: <span style="color:#ae81ff">app-config</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">namespace</span>: <span style="color:#ae81ff">openwebui</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">data</span>:
+</span></span><span style="display:flex;"><span>  <span style="color:#75715e"># PostgreSQL 설정</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">POSTGRES_HOST</span>: <span style="color:#e6db74">&#34;postgres-service.openwebui.svc.cluster.local&#34;</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">POSTGRES_PORT</span>: <span style="color:#e6db74">&#34;5432&#34;</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">POSTGRES_DB</span>: <span style="color:#e6db74">&#34;openwebui&#34;</span>
+</span></span><span style="display:flex;"><span>  
+</span></span><span style="display:flex;"><span>  <span style="color:#75715e"># LiteLLM 설정</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">LITELLM_HOST</span>: <span style="color:#e6db74">&#34;litellm-service.litellm.svc.cluster.local&#34;</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">LITELLM_PORT</span>: <span style="color:#e6db74">&#34;4000&#34;</span>
+</span></span><span style="display:flex;"><span>  
+</span></span><span style="display:flex;"><span>  <span style="color:#75715e"># OpenWebUI 설정</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">WEBUI_SECRET_KEY</span>: <span style="color:#e6db74">&#34;your-secret-key-here&#34;</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">WEBUI_JWT_SECRET_KEY</span>: <span style="color:#e6db74">&#34;your-jwt-secret-here&#34;</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">DEFAULT_LOCALE</span>: <span style="color:#e6db74">&#34;ko-KR&#34;</span>
+</span></span><span style="display:flex;"><span>  
+</span></span><span style="display:flex;"><span>  <span style="color:#75715e"># 기본 설정</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">LOG_LEVEL</span>: <span style="color:#e6db74">&#34;INFO&#34;</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">ENVIRONMENT</span>: <span style="color:#e6db74">&#34;development&#34;</span>
+</span></span><span style="display:flex;"><span>---
+</span></span><span style="display:flex;"><span><span style="color:#f92672">apiVersion</span>: <span style="color:#ae81ff">v1</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">kind</span>: <span style="color:#ae81ff">ConfigMap</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">metadata</span>:
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">name</span>: <span style="color:#ae81ff">litellm-config</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">namespace</span>: <span style="color:#ae81ff">litellm</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">data</span>:
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">config.yaml</span>: |<span style="color:#e6db74">
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">    model_list:
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">      - model_name: gpt-3.5-turbo
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">        litellm_params:
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">          model: gpt-3.5-turbo
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">          api_key: os.environ/OPENAI_API_KEY
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">      - model_name: gpt-4
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">        litellm_params:
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">          model: gpt-4
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">          api_key: os.environ/OPENAI_API_KEY
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">      - model_name: claude-3-sonnet
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">        litellm_params:
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">          model: anthropic/claude-3-sonnet-20240229
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">          api_key: os.environ/ANTHROPIC_API_KEY
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">    
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">    general_settings:
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">      master_key: os.environ/LITELLM_MASTER_KEY
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">      database_url: os.environ/DATABASE_URL</span>
+</span></span></code></pre></div><h3 id="secret-생성">Secret 생성<a hidden class="anchor" aria-hidden="true" href="#secret-생성">#</a></h3>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-yaml" data-lang="yaml"><span style="display:flex;"><span><span style="color:#75715e"># kubernetes/base/secrets/app-secrets.yaml</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">apiVersion</span>: <span style="color:#ae81ff">v1</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">kind</span>: <span style="color:#ae81ff">Secret</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">metadata</span>:
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">name</span>: <span style="color:#ae81ff">app-secrets</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">namespace</span>: <span style="color:#ae81ff">openwebui</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">type</span>: <span style="color:#ae81ff">Opaque</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">data</span>:
+</span></span><span style="display:flex;"><span>  <span style="color:#75715e"># Base64로 인코딩된 값들</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">POSTGRES_USER</span>: <span style="color:#ae81ff">b3BlbndlYnVp </span> <span style="color:#75715e"># openwebui</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">POSTGRES_PASSWORD</span>: <span style="color:#ae81ff">cGFzc3dvcmQxMjM= </span> <span style="color:#75715e"># password123</span>
+</span></span><span style="display:flex;"><span>---
+</span></span><span style="display:flex;"><span><span style="color:#f92672">apiVersion</span>: <span style="color:#ae81ff">v1</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">kind</span>: <span style="color:#ae81ff">Secret</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">metadata</span>:
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">name</span>: <span style="color:#ae81ff">api-keys</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">namespace</span>: <span style="color:#ae81ff">litellm</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">type</span>: <span style="color:#ae81ff">Opaque</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">data</span>:
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">OPENAI_API_KEY</span>: <span style="color:#ae81ff">eW91ci1vcGVuYWktYXBpLWtleQ== </span> <span style="color:#75715e"># your-openai-api-key</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">ANTHROPIC_API_KEY</span>: <span style="color:#ae81ff">eW91ci1hbnRocm9waWMtYXBpLWtleQ== </span> <span style="color:#75715e"># your-anthropic-api-key</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">LITELLM_MASTER_KEY</span>: <span style="color:#ae81ff">bGl0ZWxsbS1tYXN0ZXIta2V5 </span> <span style="color:#75715e"># litellm-master-key</span>
+</span></span></code></pre></div><h3 id="실제-secret-생성-명령어">실제 Secret 생성 (명령어)<a hidden class="anchor" aria-hidden="true" href="#실제-secret-생성-명령어">#</a></h3>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span><span style="color:#75715e"># PostgreSQL 인증 정보</span>
+</span></span><span style="display:flex;"><span>kubectl create secret generic app-secrets <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  --from-literal<span style="color:#f92672">=</span>POSTGRES_USER<span style="color:#f92672">=</span>openwebui <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  --from-literal<span style="color:#f92672">=</span>POSTGRES_PASSWORD<span style="color:#f92672">=</span>password123 <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  -n openwebui
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># API 키들</span>
+</span></span><span style="display:flex;"><span>kubectl create secret generic api-keys <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  --from-literal<span style="color:#f92672">=</span>OPENAI_API_KEY<span style="color:#f92672">=</span>your-actual-openai-key <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  --from-literal<span style="color:#f92672">=</span>ANTHROPIC_API_KEY<span style="color:#f92672">=</span>your-actual-anthropic-key <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  --from-literal<span style="color:#f92672">=</span>LITELLM_MASTER_KEY<span style="color:#f92672">=</span>your-master-key <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  -n litellm
+</span></span></code></pre></div><hr>
+<h2 id="-2단계-postgresql-데이터베이스-배포">🗃️ 2단계: PostgreSQL 데이터베이스 배포<a hidden class="anchor" aria-hidden="true" href="#-2단계-postgresql-데이터베이스-배포">#</a></h2>
+<h3 id="pvc-생성">PVC 생성<a hidden class="anchor" aria-hidden="true" href="#pvc-생성">#</a></h3>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-yaml" data-lang="yaml"><span style="display:flex;"><span><span style="color:#75715e"># kubernetes/base/postgres/pvc.yaml</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">apiVersion</span>: <span style="color:#ae81ff">v1</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">kind</span>: <span style="color:#ae81ff">PersistentVolumeClaim</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">metadata</span>:
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">name</span>: <span style="color:#ae81ff">postgres-pvc</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">namespace</span>: <span style="color:#ae81ff">openwebui</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">spec</span>:
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">accessModes</span>:
+</span></span><span style="display:flex;"><span>    - <span style="color:#ae81ff">ReadWriteOnce</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">storageClassName</span>: <span style="color:#ae81ff">gp3-encrypted</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">resources</span>:
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">requests</span>:
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">storage</span>: <span style="color:#ae81ff">10Gi</span>
+</span></span></code></pre></div><h3 id="postgresql-deployment">PostgreSQL Deployment<a hidden class="anchor" aria-hidden="true" href="#postgresql-deployment">#</a></h3>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-yaml" data-lang="yaml"><span style="display:flex;"><span><span style="color:#75715e"># kubernetes/base/postgres/deployment.yaml</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">apiVersion</span>: <span style="color:#ae81ff">apps/v1</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">kind</span>: <span style="color:#ae81ff">Deployment</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">metadata</span>:
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">name</span>: <span style="color:#ae81ff">postgres</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">namespace</span>: <span style="color:#ae81ff">openwebui</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">spec</span>:
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">replicas</span>: <span style="color:#ae81ff">1</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">selector</span>:
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">matchLabels</span>:
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">app</span>: <span style="color:#ae81ff">postgres</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">template</span>:
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">metadata</span>:
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">labels</span>:
+</span></span><span style="display:flex;"><span>        <span style="color:#f92672">app</span>: <span style="color:#ae81ff">postgres</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">spec</span>:
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">containers</span>:
+</span></span><span style="display:flex;"><span>      - <span style="color:#f92672">name</span>: <span style="color:#ae81ff">postgres</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#f92672">image</span>: <span style="color:#ae81ff">postgres:15</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#f92672">ports</span>:
+</span></span><span style="display:flex;"><span>        - <span style="color:#f92672">containerPort</span>: <span style="color:#ae81ff">5432</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#f92672">env</span>:
+</span></span><span style="display:flex;"><span>        - <span style="color:#f92672">name</span>: <span style="color:#ae81ff">POSTGRES_DB</span>
+</span></span><span style="display:flex;"><span>          <span style="color:#f92672">valueFrom</span>:
+</span></span><span style="display:flex;"><span>            <span style="color:#f92672">configMapKeyRef</span>:
+</span></span><span style="display:flex;"><span>              <span style="color:#f92672">name</span>: <span style="color:#ae81ff">app-config</span>
+</span></span><span style="display:flex;"><span>              <span style="color:#f92672">key</span>: <span style="color:#ae81ff">POSTGRES_DB</span>
+</span></span><span style="display:flex;"><span>        - <span style="color:#f92672">name</span>: <span style="color:#ae81ff">POSTGRES_USER</span>
+</span></span><span style="display:flex;"><span>          <span style="color:#f92672">valueFrom</span>:
+</span></span><span style="display:flex;"><span>            <span style="color:#f92672">secretKeyRef</span>:
+</span></span><span style="display:flex;"><span>              <span style="color:#f92672">name</span>: <span style="color:#ae81ff">app-secrets</span>
+</span></span><span style="display:flex;"><span>              <span style="color:#f92672">key</span>: <span style="color:#ae81ff">POSTGRES_USER</span>
+</span></span><span style="display:flex;"><span>        - <span style="color:#f92672">name</span>: <span style="color:#ae81ff">POSTGRES_PASSWORD</span>
+</span></span><span style="display:flex;"><span>          <span style="color:#f92672">valueFrom</span>:
+</span></span><span style="display:flex;"><span>            <span style="color:#f92672">secretKeyRef</span>:
+</span></span><span style="display:flex;"><span>              <span style="color:#f92672">name</span>: <span style="color:#ae81ff">app-secrets</span>
+</span></span><span style="display:flex;"><span>              <span style="color:#f92672">key</span>: <span style="color:#ae81ff">POSTGRES_PASSWORD</span>
+</span></span><span style="display:flex;"><span>        - <span style="color:#f92672">name</span>: <span style="color:#ae81ff">PGDATA</span>
+</span></span><span style="display:flex;"><span>          <span style="color:#f92672">value</span>: <span style="color:#ae81ff">/var/lib/postgresql/data/pgdata</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#f92672">volumeMounts</span>:
+</span></span><span style="display:flex;"><span>        - <span style="color:#f92672">name</span>: <span style="color:#ae81ff">postgres-storage</span>
+</span></span><span style="display:flex;"><span>          <span style="color:#f92672">mountPath</span>: <span style="color:#ae81ff">/var/lib/postgresql/data</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#f92672">resources</span>:
+</span></span><span style="display:flex;"><span>          <span style="color:#f92672">requests</span>:
+</span></span><span style="display:flex;"><span>            <span style="color:#f92672">memory</span>: <span style="color:#e6db74">&#34;256Mi&#34;</span>
+</span></span><span style="display:flex;"><span>            <span style="color:#f92672">cpu</span>: <span style="color:#e6db74">&#34;250m&#34;</span>
+</span></span><span style="display:flex;"><span>          <span style="color:#f92672">limits</span>:
+</span></span><span style="display:flex;"><span>            <span style="color:#f92672">memory</span>: <span style="color:#e6db74">&#34;512Mi&#34;</span>
+</span></span><span style="display:flex;"><span>            <span style="color:#f92672">cpu</span>: <span style="color:#e6db74">&#34;500m&#34;</span>
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">volumes</span>:
+</span></span><span style="display:flex;"><span>      - <span style="color:#f92672">name</span>: <span style="color:#ae81ff">postgres-storage</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#f92672">persistentVolumeClaim</span>:
+</span></span><span style="display:flex;"><span>          <span style="color:#f92672">claimName</span>: <span style="color:#ae81ff">postgres-pvc</span>
+</span></span></code></pre></div><h3 id="postgresql-service">PostgreSQL Service<a hidden class="anchor" aria-hidden="true" href="#postgresql-service">#</a></h3>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-yaml" data-lang="yaml"><span style="display:flex;"><span><span style="color:#75715e"># kubernetes/base/postgres/service.yaml</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">apiVersion</span>: <span style="color:#ae81ff">v1</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">kind</span>: <span style="color:#ae81ff">Service</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">metadata</span>:
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">name</span>: <span style="color:#ae81ff">postgres-service</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">namespace</span>: <span style="color:#ae81ff">openwebui</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">spec</span>:
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">selector</span>:
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">app</span>: <span style="color:#ae81ff">postgres</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">ports</span>:
+</span></span><span style="display:flex;"><span>  - <span style="color:#f92672">port</span>: <span style="color:#ae81ff">5432</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">targetPort</span>: <span style="color:#ae81ff">5432</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">type</span>: <span style="color:#ae81ff">ClusterIP</span>
+</span></span></code></pre></div><hr>
+<h2 id="-3단계-litellm-서비스-배포">🤖 3단계: LiteLLM 서비스 배포<a hidden class="anchor" aria-hidden="true" href="#-3단계-litellm-서비스-배포">#</a></h2>
+<h3 id="litellm-deployment">LiteLLM Deployment<a hidden class="anchor" aria-hidden="true" href="#litellm-deployment">#</a></h3>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-yaml" data-lang="yaml"><span style="display:flex;"><span><span style="color:#75715e"># kubernetes/base/litellm/deployment.yaml</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">apiVersion</span>: <span style="color:#ae81ff">apps/v1</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">kind</span>: <span style="color:#ae81ff">Deployment</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">metadata</span>:
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">name</span>: <span style="color:#ae81ff">litellm</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">namespace</span>: <span style="color:#ae81ff">litellm</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">spec</span>:
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">replicas</span>: <span style="color:#ae81ff">2</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">selector</span>:
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">matchLabels</span>:
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">app</span>: <span style="color:#ae81ff">litellm</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">template</span>:
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">metadata</span>:
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">labels</span>:
+</span></span><span style="display:flex;"><span>        <span style="color:#f92672">app</span>: <span style="color:#ae81ff">litellm</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">spec</span>:
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">containers</span>:
+</span></span><span style="display:flex;"><span>      - <span style="color:#f92672">name</span>: <span style="color:#ae81ff">litellm</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#f92672">image</span>: <span style="color:#ae81ff">ghcr.io/berriai/litellm:main-latest</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#f92672">ports</span>:
+</span></span><span style="display:flex;"><span>        - <span style="color:#f92672">containerPort</span>: <span style="color:#ae81ff">4000</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#f92672">env</span>:
+</span></span><span style="display:flex;"><span>        - <span style="color:#f92672">name</span>: <span style="color:#ae81ff">OPENAI_API_KEY</span>
+</span></span><span style="display:flex;"><span>          <span style="color:#f92672">valueFrom</span>:
+</span></span><span style="display:flex;"><span>            <span style="color:#f92672">secretKeyRef</span>:
+</span></span><span style="display:flex;"><span>              <span style="color:#f92672">name</span>: <span style="color:#ae81ff">api-keys</span>
+</span></span><span style="display:flex;"><span>              <span style="color:#f92672">key</span>: <span style="color:#ae81ff">OPENAI_API_KEY</span>
+</span></span><span style="display:flex;"><span>        - <span style="color:#f92672">name</span>: <span style="color:#ae81ff">ANTHROPIC_API_KEY</span>
+</span></span><span style="display:flex;"><span>          <span style="color:#f92672">valueFrom</span>:
+</span></span><span style="display:flex;"><span>            <span style="color:#f92672">secretKeyRef</span>:
+</span></span><span style="display:flex;"><span>              <span style="color:#f92672">name</span>: <span style="color:#ae81ff">api-keys</span>
+</span></span><span style="display:flex;"><span>              <span style="color:#f92672">key</span>: <span style="color:#ae81ff">ANTHROPIC_API_KEY</span>
+</span></span><span style="display:flex;"><span>        - <span style="color:#f92672">name</span>: <span style="color:#ae81ff">LITELLM_MASTER_KEY</span>
+</span></span><span style="display:flex;"><span>          <span style="color:#f92672">valueFrom</span>:
+</span></span><span style="display:flex;"><span>            <span style="color:#f92672">secretKeyRef</span>:
+</span></span><span style="display:flex;"><span>              <span style="color:#f92672">name</span>: <span style="color:#ae81ff">api-keys</span>
+</span></span><span style="display:flex;"><span>              <span style="color:#f92672">key</span>: <span style="color:#ae81ff">LITELLM_MASTER_KEY</span>
+</span></span><span style="display:flex;"><span>        - <span style="color:#f92672">name</span>: <span style="color:#ae81ff">DATABASE_URL</span>
+</span></span><span style="display:flex;"><span>          <span style="color:#f92672">value</span>: <span style="color:#e6db74">&#34;postgresql://$(POSTGRES_USER):$(POSTGRES_PASSWORD)@postgres-service.openwebui.svc.cluster.local:5432/litellm&#34;</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#f92672">envFrom</span>:
+</span></span><span style="display:flex;"><span>        - <span style="color:#f92672">secretRef</span>:
+</span></span><span style="display:flex;"><span>            <span style="color:#f92672">name</span>: <span style="color:#ae81ff">app-secrets</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#f92672">volumeMounts</span>:
+</span></span><span style="display:flex;"><span>        - <span style="color:#f92672">name</span>: <span style="color:#ae81ff">config</span>
+</span></span><span style="display:flex;"><span>          <span style="color:#f92672">mountPath</span>: <span style="color:#ae81ff">/app/config.yaml</span>
+</span></span><span style="display:flex;"><span>          <span style="color:#f92672">subPath</span>: <span style="color:#ae81ff">config.yaml</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#f92672">command</span>: [<span style="color:#e6db74">&#34;litellm&#34;</span>, <span style="color:#e6db74">&#34;--config&#34;</span>, <span style="color:#e6db74">&#34;/app/config.yaml&#34;</span>, <span style="color:#e6db74">&#34;--port&#34;</span>, <span style="color:#e6db74">&#34;4000&#34;</span>, <span style="color:#e6db74">&#34;--num_workers&#34;</span>, <span style="color:#e6db74">&#34;8&#34;</span>]
+</span></span><span style="display:flex;"><span>        <span style="color:#f92672">resources</span>:
+</span></span><span style="display:flex;"><span>          <span style="color:#f92672">requests</span>:
+</span></span><span style="display:flex;"><span>            <span style="color:#f92672">memory</span>: <span style="color:#e6db74">&#34;512Mi&#34;</span>
+</span></span><span style="display:flex;"><span>            <span style="color:#f92672">cpu</span>: <span style="color:#e6db74">&#34;250m&#34;</span>
+</span></span><span style="display:flex;"><span>          <span style="color:#f92672">limits</span>:
+</span></span><span style="display:flex;"><span>            <span style="color:#f92672">memory</span>: <span style="color:#e6db74">&#34;1Gi&#34;</span>
+</span></span><span style="display:flex;"><span>            <span style="color:#f92672">cpu</span>: <span style="color:#e6db74">&#34;500m&#34;</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#f92672">readinessProbe</span>:
+</span></span><span style="display:flex;"><span>          <span style="color:#f92672">httpGet</span>:
+</span></span><span style="display:flex;"><span>            <span style="color:#f92672">path</span>: <span style="color:#ae81ff">/health/readiness</span>
+</span></span><span style="display:flex;"><span>            <span style="color:#f92672">port</span>: <span style="color:#ae81ff">4000</span>
+</span></span><span style="display:flex;"><span>          <span style="color:#f92672">initialDelaySeconds</span>: <span style="color:#ae81ff">30</span>
+</span></span><span style="display:flex;"><span>          <span style="color:#f92672">periodSeconds</span>: <span style="color:#ae81ff">10</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#f92672">livenessProbe</span>:
+</span></span><span style="display:flex;"><span>          <span style="color:#f92672">httpGet</span>:
+</span></span><span style="display:flex;"><span>            <span style="color:#f92672">path</span>: <span style="color:#ae81ff">/health/liveliness</span>
+</span></span><span style="display:flex;"><span>            <span style="color:#f92672">port</span>: <span style="color:#ae81ff">4000</span>
+</span></span><span style="display:flex;"><span>          <span style="color:#f92672">initialDelaySeconds</span>: <span style="color:#ae81ff">60</span>
+</span></span><span style="display:flex;"><span>          <span style="color:#f92672">periodSeconds</span>: <span style="color:#ae81ff">30</span>
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">volumes</span>:
+</span></span><span style="display:flex;"><span>      - <span style="color:#f92672">name</span>: <span style="color:#ae81ff">config</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#f92672">configMap</span>:
+</span></span><span style="display:flex;"><span>          <span style="color:#f92672">name</span>: <span style="color:#ae81ff">litellm-config</span>
+</span></span></code></pre></div><h3 id="litellm-service">LiteLLM Service<a hidden class="anchor" aria-hidden="true" href="#litellm-service">#</a></h3>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-yaml" data-lang="yaml"><span style="display:flex;"><span><span style="color:#75715e"># kubernetes/base/litellm/service.yaml</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">apiVersion</span>: <span style="color:#ae81ff">v1</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">kind</span>: <span style="color:#ae81ff">Service</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">metadata</span>:
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">name</span>: <span style="color:#ae81ff">litellm-service</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">namespace</span>: <span style="color:#ae81ff">litellm</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">spec</span>:
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">selector</span>:
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">app</span>: <span style="color:#ae81ff">litellm</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">ports</span>:
+</span></span><span style="display:flex;"><span>  - <span style="color:#f92672">port</span>: <span style="color:#ae81ff">4000</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">targetPort</span>: <span style="color:#ae81ff">4000</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">type</span>: <span style="color:#ae81ff">ClusterIP</span>
+</span></span></code></pre></div><hr>
+<h2 id="-4단계-openwebui-애플리케이션-배포">🌐 4단계: OpenWebUI 애플리케이션 배포<a hidden class="anchor" aria-hidden="true" href="#-4단계-openwebui-애플리케이션-배포">#</a></h2>
+<h3 id="openwebui-deployment">OpenWebUI Deployment<a hidden class="anchor" aria-hidden="true" href="#openwebui-deployment">#</a></h3>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-yaml" data-lang="yaml"><span style="display:flex;"><span><span style="color:#75715e"># kubernetes/base/openwebui/deployment.yaml</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">apiVersion</span>: <span style="color:#ae81ff">apps/v1</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">kind</span>: <span style="color:#ae81ff">Deployment</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">metadata</span>:
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">name</span>: <span style="color:#ae81ff">openwebui</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">namespace</span>: <span style="color:#ae81ff">openwebui</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">spec</span>:
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">replicas</span>: <span style="color:#ae81ff">2</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">selector</span>:
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">matchLabels</span>:
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">app</span>: <span style="color:#ae81ff">openwebui</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">template</span>:
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">metadata</span>:
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">labels</span>:
+</span></span><span style="display:flex;"><span>        <span style="color:#f92672">app</span>: <span style="color:#ae81ff">openwebui</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">spec</span>:
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">containers</span>:
+</span></span><span style="display:flex;"><span>      - <span style="color:#f92672">name</span>: <span style="color:#ae81ff">openwebui</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#f92672">image</span>: <span style="color:#ae81ff">ghcr.io/open-webui/open-webui:main</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#f92672">ports</span>:
+</span></span><span style="display:flex;"><span>        - <span style="color:#f92672">containerPort</span>: <span style="color:#ae81ff">8080</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#f92672">env</span>:
+</span></span><span style="display:flex;"><span>        - <span style="color:#f92672">name</span>: <span style="color:#ae81ff">OLLAMA_BASE_URL</span>
+</span></span><span style="display:flex;"><span>          <span style="color:#f92672">value</span>: <span style="color:#e6db74">&#34;http://litellm-service.litellm.svc.cluster.local:4000&#34;</span>
+</span></span><span style="display:flex;"><span>        - <span style="color:#f92672">name</span>: <span style="color:#ae81ff">WEBUI_SECRET_KEY</span>
+</span></span><span style="display:flex;"><span>          <span style="color:#f92672">valueFrom</span>:
+</span></span><span style="display:flex;"><span>            <span style="color:#f92672">configMapKeyRef</span>:
+</span></span><span style="display:flex;"><span>              <span style="color:#f92672">name</span>: <span style="color:#ae81ff">app-config</span>
+</span></span><span style="display:flex;"><span>              <span style="color:#f92672">key</span>: <span style="color:#ae81ff">WEBUI_SECRET_KEY</span>
+</span></span><span style="display:flex;"><span>        - <span style="color:#f92672">name</span>: <span style="color:#ae81ff">DATABASE_URL</span>
+</span></span><span style="display:flex;"><span>          <span style="color:#f92672">value</span>: <span style="color:#e6db74">&#34;postgresql://$(POSTGRES_USER):$(POSTGRES_PASSWORD)@postgres-service:5432/openwebui&#34;</span>
+</span></span><span style="display:flex;"><span>        - <span style="color:#f92672">name</span>: <span style="color:#ae81ff">DEFAULT_LOCALE</span>
+</span></span><span style="display:flex;"><span>          <span style="color:#f92672">valueFrom</span>:
+</span></span><span style="display:flex;"><span>            <span style="color:#f92672">configMapKeyRef</span>:
+</span></span><span style="display:flex;"><span>              <span style="color:#f92672">name</span>: <span style="color:#ae81ff">app-config</span>
+</span></span><span style="display:flex;"><span>              <span style="color:#f92672">key</span>: <span style="color:#ae81ff">DEFAULT_LOCALE</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#f92672">envFrom</span>:
+</span></span><span style="display:flex;"><span>        - <span style="color:#f92672">secretRef</span>:
+</span></span><span style="display:flex;"><span>            <span style="color:#f92672">name</span>: <span style="color:#ae81ff">app-secrets</span>
+</span></span><span style="display:flex;"><span>        - <span style="color:#f92672">configMapRef</span>:
+</span></span><span style="display:flex;"><span>            <span style="color:#f92672">name</span>: <span style="color:#ae81ff">app-config</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#f92672">volumeMounts</span>:
+</span></span><span style="display:flex;"><span>        - <span style="color:#f92672">name</span>: <span style="color:#ae81ff">data</span>
+</span></span><span style="display:flex;"><span>          <span style="color:#f92672">mountPath</span>: <span style="color:#ae81ff">/app/backend/data</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#f92672">resources</span>:
+</span></span><span style="display:flex;"><span>          <span style="color:#f92672">requests</span>:
+</span></span><span style="display:flex;"><span>            <span style="color:#f92672">memory</span>: <span style="color:#e6db74">&#34;512Mi&#34;</span>
+</span></span><span style="display:flex;"><span>            <span style="color:#f92672">cpu</span>: <span style="color:#e6db74">&#34;250m&#34;</span>
+</span></span><span style="display:flex;"><span>          <span style="color:#f92672">limits</span>:
+</span></span><span style="display:flex;"><span>            <span style="color:#f92672">memory</span>: <span style="color:#e6db74">&#34;1Gi&#34;</span>
+</span></span><span style="display:flex;"><span>            <span style="color:#f92672">cpu</span>: <span style="color:#e6db74">&#34;500m&#34;</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#f92672">readinessProbe</span>:
+</span></span><span style="display:flex;"><span>          <span style="color:#f92672">httpGet</span>:
+</span></span><span style="display:flex;"><span>            <span style="color:#f92672">path</span>: <span style="color:#ae81ff">/health</span>
+</span></span><span style="display:flex;"><span>            <span style="color:#f92672">port</span>: <span style="color:#ae81ff">8080</span>
+</span></span><span style="display:flex;"><span>          <span style="color:#f92672">initialDelaySeconds</span>: <span style="color:#ae81ff">30</span>
+</span></span><span style="display:flex;"><span>          <span style="color:#f92672">periodSeconds</span>: <span style="color:#ae81ff">10</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#f92672">livenessProbe</span>:
+</span></span><span style="display:flex;"><span>          <span style="color:#f92672">httpGet</span>:
+</span></span><span style="display:flex;"><span>            <span style="color:#f92672">path</span>: <span style="color:#ae81ff">/health</span>
+</span></span><span style="display:flex;"><span>            <span style="color:#f92672">port</span>: <span style="color:#ae81ff">8080</span>
+</span></span><span style="display:flex;"><span>          <span style="color:#f92672">initialDelaySeconds</span>: <span style="color:#ae81ff">60</span>
+</span></span><span style="display:flex;"><span>          <span style="color:#f92672">periodSeconds</span>: <span style="color:#ae81ff">30</span>
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">volumes</span>:
+</span></span><span style="display:flex;"><span>      - <span style="color:#f92672">name</span>: <span style="color:#ae81ff">data</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#f92672">persistentVolumeClaim</span>:
+</span></span><span style="display:flex;"><span>          <span style="color:#f92672">claimName</span>: <span style="color:#ae81ff">openwebui-pvc</span>
+</span></span></code></pre></div><h3 id="openwebui-pvc">OpenWebUI PVC<a hidden class="anchor" aria-hidden="true" href="#openwebui-pvc">#</a></h3>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-yaml" data-lang="yaml"><span style="display:flex;"><span><span style="color:#75715e"># kubernetes/base/openwebui/pvc.yaml</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">apiVersion</span>: <span style="color:#ae81ff">v1</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">kind</span>: <span style="color:#ae81ff">PersistentVolumeClaim</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">metadata</span>:
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">name</span>: <span style="color:#ae81ff">openwebui-pvc</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">namespace</span>: <span style="color:#ae81ff">openwebui</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">spec</span>:
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">accessModes</span>:
+</span></span><span style="display:flex;"><span>    - <span style="color:#ae81ff">ReadWriteOnce</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">storageClassName</span>: <span style="color:#ae81ff">gp3-encrypted</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">resources</span>:
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">requests</span>:
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">storage</span>: <span style="color:#ae81ff">5Gi</span>
+</span></span></code></pre></div><h3 id="openwebui-service">OpenWebUI Service<a hidden class="anchor" aria-hidden="true" href="#openwebui-service">#</a></h3>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-yaml" data-lang="yaml"><span style="display:flex;"><span><span style="color:#75715e"># kubernetes/base/openwebui/service.yaml</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">apiVersion</span>: <span style="color:#ae81ff">v1</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">kind</span>: <span style="color:#ae81ff">Service</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">metadata</span>:
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">name</span>: <span style="color:#ae81ff">openwebui-service</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">namespace</span>: <span style="color:#ae81ff">openwebui</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">spec</span>:
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">selector</span>:
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">app</span>: <span style="color:#ae81ff">openwebui</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">ports</span>:
+</span></span><span style="display:flex;"><span>  - <span style="color:#f92672">port</span>: <span style="color:#ae81ff">8080</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">targetPort</span>: <span style="color:#ae81ff">8080</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">type</span>: <span style="color:#ae81ff">ClusterIP</span>
+</span></span></code></pre></div><hr>
+<h2 id="-5단계-ingress-및-loadbalancer-설정">🌍 5단계: Ingress 및 LoadBalancer 설정<a hidden class="anchor" aria-hidden="true" href="#-5단계-ingress-및-loadbalancer-설정">#</a></h2>
+<h3 id="application-load-balancer-alb-설정">Application Load Balancer (ALB) 설정<a hidden class="anchor" aria-hidden="true" href="#application-load-balancer-alb-설정">#</a></h3>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-yaml" data-lang="yaml"><span style="display:flex;"><span><span style="color:#75715e"># kubernetes/base/ingress/ingress.yaml</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">apiVersion</span>: <span style="color:#ae81ff">networking.k8s.io/v1</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">kind</span>: <span style="color:#ae81ff">Ingress</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">metadata</span>:
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">name</span>: <span style="color:#ae81ff">openwebui-ingress</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">namespace</span>: <span style="color:#ae81ff">openwebui</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">annotations</span>:
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e"># ALB 설정</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">kubernetes.io/ingress.class</span>: <span style="color:#ae81ff">alb</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">alb.ingress.kubernetes.io/scheme</span>: <span style="color:#ae81ff">internet-facing</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">alb.ingress.kubernetes.io/target-type</span>: <span style="color:#ae81ff">ip</span>
+</span></span><span style="display:flex;"><span>    
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e"># SSL 설정</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">alb.ingress.kubernetes.io/listen-ports</span>: <span style="color:#e6db74">&#39;[{&#34;HTTP&#34;: 80}, {&#34;HTTPS&#34;: 443}]&#39;</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">alb.ingress.kubernetes.io/ssl-redirect</span>: <span style="color:#e6db74">&#39;443&#39;</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">alb.ingress.kubernetes.io/certificate-arn</span>: <span style="color:#ae81ff">arn:aws:acm:ap-northeast-2:ACCOUNT_ID:certificate/CERT_ID</span>
+</span></span><span style="display:flex;"><span>    
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e"># 헬스체크 설정</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">alb.ingress.kubernetes.io/healthcheck-path</span>: <span style="color:#ae81ff">/health</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">alb.ingress.kubernetes.io/healthcheck-interval-seconds</span>: <span style="color:#e6db74">&#39;30&#39;</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">alb.ingress.kubernetes.io/healthcheck-timeout-seconds</span>: <span style="color:#e6db74">&#39;5&#39;</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">alb.ingress.kubernetes.io/healthy-threshold-count</span>: <span style="color:#e6db74">&#39;2&#39;</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">alb.ingress.kubernetes.io/unhealthy-threshold-count</span>: <span style="color:#e6db74">&#39;3&#39;</span>
+</span></span><span style="display:flex;"><span>    
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e"># 기타 설정</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">alb.ingress.kubernetes.io/load-balancer-name</span>: <span style="color:#ae81ff">openwebui-alb</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">alb.ingress.kubernetes.io/tags</span>: <span style="color:#ae81ff">Environment=dev,Project=openwebui</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">spec</span>:
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">rules</span>:
+</span></span><span style="display:flex;"><span>  - <span style="color:#f92672">host</span>: <span style="color:#ae81ff">openwebui.yourdomain.com</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">http</span>:
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">paths</span>:
+</span></span><span style="display:flex;"><span>      - <span style="color:#f92672">path</span>: <span style="color:#ae81ff">/</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#f92672">pathType</span>: <span style="color:#ae81ff">Prefix</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#f92672">backend</span>:
+</span></span><span style="display:flex;"><span>          <span style="color:#f92672">service</span>:
+</span></span><span style="display:flex;"><span>            <span style="color:#f92672">name</span>: <span style="color:#ae81ff">openwebui-service</span>
+</span></span><span style="display:flex;"><span>            <span style="color:#f92672">port</span>:
+</span></span><span style="display:flex;"><span>              <span style="color:#f92672">number</span>: <span style="color:#ae81ff">8080</span>
+</span></span></code></pre></div><h3 id="loadbalancer-service-대안">LoadBalancer Service (대안)<a hidden class="anchor" aria-hidden="true" href="#loadbalancer-service-대안">#</a></h3>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-yaml" data-lang="yaml"><span style="display:flex;"><span><span style="color:#75715e"># kubernetes/base/ingress/loadbalancer.yaml</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">apiVersion</span>: <span style="color:#ae81ff">v1</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">kind</span>: <span style="color:#ae81ff">Service</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">metadata</span>:
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">name</span>: <span style="color:#ae81ff">openwebui-loadbalancer</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">namespace</span>: <span style="color:#ae81ff">openwebui</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">annotations</span>:
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">service.beta.kubernetes.io/aws-load-balancer-type</span>: <span style="color:#e6db74">&#34;nlb&#34;</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">service.beta.kubernetes.io/aws-load-balancer-scheme</span>: <span style="color:#e6db74">&#34;internet-facing&#34;</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">service.beta.kubernetes.io/aws-load-balancer-name</span>: <span style="color:#e6db74">&#34;openwebui-nlb&#34;</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">spec</span>:
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">type</span>: <span style="color:#ae81ff">LoadBalancer</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">selector</span>:
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">app</span>: <span style="color:#ae81ff">openwebui</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">ports</span>:
+</span></span><span style="display:flex;"><span>  - <span style="color:#f92672">port</span>: <span style="color:#ae81ff">80</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">targetPort</span>: <span style="color:#ae81ff">8080</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">protocol</span>: <span style="color:#ae81ff">TCP</span>
+</span></span></code></pre></div><hr>
+<h2 id="-6단계-모니터링-설정">📊 6단계: 모니터링 설정<a hidden class="anchor" aria-hidden="true" href="#-6단계-모니터링-설정">#</a></h2>
+<h3 id="prometheus-servicemonitor">Prometheus ServiceMonitor<a hidden class="anchor" aria-hidden="true" href="#prometheus-servicemonitor">#</a></h3>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-yaml" data-lang="yaml"><span style="display:flex;"><span><span style="color:#75715e"># kubernetes/base/monitoring/servicemonitor.yaml</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">apiVersion</span>: <span style="color:#ae81ff">monitoring.coreos.com/v1</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">kind</span>: <span style="color:#ae81ff">ServiceMonitor</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">metadata</span>:
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">name</span>: <span style="color:#ae81ff">openwebui-monitor</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">namespace</span>: <span style="color:#ae81ff">monitoring</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">spec</span>:
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">selector</span>:
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">matchLabels</span>:
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">app</span>: <span style="color:#ae81ff">openwebui</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">endpoints</span>:
+</span></span><span style="display:flex;"><span>  - <span style="color:#f92672">port</span>: <span style="color:#ae81ff">http</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">path</span>: <span style="color:#ae81ff">/metrics</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">interval</span>: <span style="color:#ae81ff">30s</span>
+</span></span><span style="display:flex;"><span>---
+</span></span><span style="display:flex;"><span><span style="color:#f92672">apiVersion</span>: <span style="color:#ae81ff">monitoring.coreos.com/v1</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">kind</span>: <span style="color:#ae81ff">ServiceMonitor</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">metadata</span>:
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">name</span>: <span style="color:#ae81ff">litellm-monitor</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">namespace</span>: <span style="color:#ae81ff">monitoring</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">spec</span>:
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">selector</span>:
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">matchLabels</span>:
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">app</span>: <span style="color:#ae81ff">litellm</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">endpoints</span>:
+</span></span><span style="display:flex;"><span>  - <span style="color:#f92672">port</span>: <span style="color:#ae81ff">http</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">path</span>: <span style="color:#ae81ff">/metrics</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">interval</span>: <span style="color:#ae81ff">30s</span>
+</span></span></code></pre></div><hr>
+<h2 id="-7단계-배포-실행">🚀 7단계: 배포 실행<a hidden class="anchor" aria-hidden="true" href="#-7단계-배포-실행">#</a></h2>
+<h3 id="배포-순서">배포 순서<a hidden class="anchor" aria-hidden="true" href="#배포-순서">#</a></h3>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span><span style="color:#75715e"># 1. 네임스페이스 생성 (이미 완료됨)</span>
+</span></span><span style="display:flex;"><span>kubectl get namespaces
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># 2. ConfigMap 및 Secret 적용</span>
+</span></span><span style="display:flex;"><span>kubectl apply -f kubernetes/base/configmaps/
+</span></span><span style="display:flex;"><span>kubectl apply -f kubernetes/base/secrets/
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># 3. PostgreSQL 배포</span>
+</span></span><span style="display:flex;"><span>kubectl apply -f kubernetes/base/postgres/
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># PostgreSQL 준비 완료 대기</span>
+</span></span><span style="display:flex;"><span>kubectl wait --for<span style="color:#f92672">=</span>condition<span style="color:#f92672">=</span>ready pod -l app<span style="color:#f92672">=</span>postgres -n openwebui --timeout<span style="color:#f92672">=</span>300s
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># 4. LiteLLM 배포</span>
+</span></span><span style="display:flex;"><span>kubectl apply -f kubernetes/base/litellm/
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># LiteLLM 준비 완료 대기</span>
+</span></span><span style="display:flex;"><span>kubectl wait --for<span style="color:#f92672">=</span>condition<span style="color:#f92672">=</span>ready pod -l app<span style="color:#f92672">=</span>litellm -n litellm --timeout<span style="color:#f92672">=</span>300s
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># 5. OpenWebUI 배포</span>
+</span></span><span style="display:flex;"><span>kubectl apply -f kubernetes/base/openwebui/
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># OpenWebUI 준비 완료 대기</span>
+</span></span><span style="display:flex;"><span>kubectl wait --for<span style="color:#f92672">=</span>condition<span style="color:#f92672">=</span>ready pod -l app<span style="color:#f92672">=</span>openwebui -n openwebui --timeout<span style="color:#f92672">=</span>300s
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># 6. Ingress 설정</span>
+</span></span><span style="display:flex;"><span>kubectl apply -f kubernetes/base/ingress/
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># 7. 모니터링 설정 (선택사항)</span>
+</span></span><span style="display:flex;"><span>kubectl apply -f kubernetes/base/monitoring/
+</span></span></code></pre></div><h3 id="배포-스크립트">배포 스크립트<a hidden class="anchor" aria-hidden="true" href="#배포-스크립트">#</a></h3>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span><span style="color:#75715e">#!/bin/bash
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span><span style="color:#75715e"># deploy.sh</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>set -e
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>echo <span style="color:#e6db74">&#34;🚀 OpenWebUI 애플리케이션 배포 시작...&#34;</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># 환경 확인</span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">if</span> ! kubectl get nodes &gt; /dev/null 2&gt;&amp;1; <span style="color:#66d9ef">then</span>
+</span></span><span style="display:flex;"><span>    echo <span style="color:#e6db74">&#34;❌ kubectl이 클러스터에 연결되지 않았습니다.&#34;</span>
+</span></span><span style="display:flex;"><span>    exit <span style="color:#ae81ff">1</span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">fi</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>echo <span style="color:#e6db74">&#34;📁 1. ConfigMap 및 Secret 적용...&#34;</span>
+</span></span><span style="display:flex;"><span>kubectl apply -f kubernetes/base/configmaps/
+</span></span><span style="display:flex;"><span>kubectl apply -f kubernetes/base/secrets/
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>echo <span style="color:#e6db74">&#34;🗃️ 2. PostgreSQL 배포...&#34;</span>
+</span></span><span style="display:flex;"><span>kubectl apply -f kubernetes/base/postgres/
+</span></span><span style="display:flex;"><span>echo <span style="color:#e6db74">&#34;⏳ PostgreSQL 준비 대기...&#34;</span>
+</span></span><span style="display:flex;"><span>kubectl wait --for<span style="color:#f92672">=</span>condition<span style="color:#f92672">=</span>ready pod -l app<span style="color:#f92672">=</span>postgres -n openwebui --timeout<span style="color:#f92672">=</span>300s
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>echo <span style="color:#e6db74">&#34;🤖 3. LiteLLM 배포...&#34;</span>
+</span></span><span style="display:flex;"><span>kubectl apply -f kubernetes/base/litellm/
+</span></span><span style="display:flex;"><span>echo <span style="color:#e6db74">&#34;⏳ LiteLLM 준비 대기...&#34;</span>
+</span></span><span style="display:flex;"><span>kubectl wait --for<span style="color:#f92672">=</span>condition<span style="color:#f92672">=</span>ready pod -l app<span style="color:#f92672">=</span>litellm -n litellm --timeout<span style="color:#f92672">=</span>300s
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>echo <span style="color:#e6db74">&#34;🌐 4. OpenWebUI 배포...&#34;</span>
+</span></span><span style="display:flex;"><span>kubectl apply -f kubernetes/base/openwebui/
+</span></span><span style="display:flex;"><span>echo <span style="color:#e6db74">&#34;⏳ OpenWebUI 준비 대기...&#34;</span>
+</span></span><span style="display:flex;"><span>kubectl wait --for<span style="color:#f92672">=</span>condition<span style="color:#f92672">=</span>ready pod -l app<span style="color:#f92672">=</span>openwebui -n openwebui --timeout<span style="color:#f92672">=</span>300s
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>echo <span style="color:#e6db74">&#34;🌍 5. Ingress 설정...&#34;</span>
+</span></span><span style="display:flex;"><span>kubectl apply -f kubernetes/base/ingress/
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>echo <span style="color:#e6db74">&#34;📊 6. 모니터링 설정...&#34;</span>
+</span></span><span style="display:flex;"><span>kubectl apply -f kubernetes/base/monitoring/ <span style="color:#f92672">||</span> echo <span style="color:#e6db74">&#34;⚠️ 모니터링 설정 실패 (선택사항)&#34;</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>echo <span style="color:#e6db74">&#34;✅ 배포 완료!&#34;</span>
+</span></span><span style="display:flex;"><span>echo <span style="color:#e6db74">&#34;🔗 LoadBalancer URL 확인:&#34;</span>
+</span></span><span style="display:flex;"><span>kubectl get ingress -n openwebui
+</span></span><span style="display:flex;"><span>kubectl get svc -n openwebui
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>echo <span style="color:#e6db74">&#34;📋 파드 상태 확인:&#34;</span>
+</span></span><span style="display:flex;"><span>kubectl get pods -n openwebui
+</span></span><span style="display:flex;"><span>kubectl get pods -n litellm
+</span></span></code></pre></div><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>chmod +x deploy.sh
+</span></span><span style="display:flex;"><span>./deploy.sh
+</span></span></code></pre></div><hr>
+<h2 id="-상태-확인">🔍 상태 확인<a hidden class="anchor" aria-hidden="true" href="#-상태-확인">#</a></h2>
+<h3 id="배포-상태-확인">배포 상태 확인<a hidden class="anchor" aria-hidden="true" href="#배포-상태-확인">#</a></h3>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span><span style="color:#75715e"># 전체 파드 상태</span>
+</span></span><span style="display:flex;"><span>kubectl get pods -A
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># 서비스 상태</span>
+</span></span><span style="display:flex;"><span>kubectl get svc -A
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># Ingress 상태</span>
+</span></span><span style="display:flex;"><span>kubectl get ingress -A
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># 로그 확인</span>
+</span></span><span style="display:flex;"><span>kubectl logs -f deployment/openwebui -n openwebui
+</span></span><span style="display:flex;"><span>kubectl logs -f deployment/litellm -n litellm
+</span></span><span style="display:flex;"><span>kubectl logs -f deployment/postgres -n openwebui
+</span></span></code></pre></div><h3 id="서비스-접근-테스트">서비스 접근 테스트<a hidden class="anchor" aria-hidden="true" href="#서비스-접근-테스트">#</a></h3>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span><span style="color:#75715e"># 포트 포워딩으로 로컬 테스트</span>
+</span></span><span style="display:flex;"><span>kubectl port-forward svc/openwebui-service 8080:8080 -n openwebui
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># 브라우저에서 http://localhost:8080 접속</span>
+</span></span></code></pre></div><hr>
+<h2 id="-설정-업데이트">🔧 설정 업데이트<a hidden class="anchor" aria-hidden="true" href="#-설정-업데이트">#</a></h2>
+<h3 id="configmap-업데이트">ConfigMap 업데이트<a hidden class="anchor" aria-hidden="true" href="#configmap-업데이트">#</a></h3>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span><span style="color:#75715e"># ConfigMap 수정 후 파드 재시작</span>
+</span></span><span style="display:flex;"><span>kubectl apply -f kubernetes/base/configmaps/
+</span></span><span style="display:flex;"><span>kubectl rollout restart deployment/openwebui -n openwebui
+</span></span><span style="display:flex;"><span>kubectl rollout restart deployment/litellm -n litellm
+</span></span></code></pre></div><h3 id="secret-업데이트">Secret 업데이트<a hidden class="anchor" aria-hidden="true" href="#secret-업데이트">#</a></h3>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span><span style="color:#75715e"># 새 API 키 추가</span>
+</span></span><span style="display:flex;"><span>kubectl create secret generic api-keys <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  --from-literal<span style="color:#f92672">=</span>OPENAI_API_KEY<span style="color:#f92672">=</span>new-key <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  --from-literal<span style="color:#f92672">=</span>ANTHROPIC_API_KEY<span style="color:#f92672">=</span>new-key <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  --dry-run<span style="color:#f92672">=</span>client -o yaml | kubectl apply -f -
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>kubectl rollout restart deployment/litellm -n litellm
+</span></span></code></pre></div><hr>
+<h2 id="-스케일링">📈 스케일링<a hidden class="anchor" aria-hidden="true" href="#-스케일링">#</a></h2>
+<h3 id="수동-스케일링">수동 스케일링<a hidden class="anchor" aria-hidden="true" href="#수동-스케일링">#</a></h3>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span><span style="color:#75715e"># OpenWebUI 파드 개수 조정</span>
+</span></span><span style="display:flex;"><span>kubectl scale deployment openwebui --replicas<span style="color:#f92672">=</span><span style="color:#ae81ff">3</span> -n openwebui
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># LiteLLM 파드 개수 조정</span>
+</span></span><span style="display:flex;"><span>kubectl scale deployment litellm --replicas<span style="color:#f92672">=</span><span style="color:#ae81ff">4</span> -n litellm
+</span></span></code></pre></div><h3 id="hpa-horizontal-pod-autoscaler-설정">HPA (Horizontal Pod Autoscaler) 설정<a hidden class="anchor" aria-hidden="true" href="#hpa-horizontal-pod-autoscaler-설정">#</a></h3>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-yaml" data-lang="yaml"><span style="display:flex;"><span><span style="color:#75715e"># kubernetes/base/openwebui/hpa.yaml</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">apiVersion</span>: <span style="color:#ae81ff">autoscaling/v2</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">kind</span>: <span style="color:#ae81ff">HorizontalPodAutoscaler</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">metadata</span>:
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">name</span>: <span style="color:#ae81ff">openwebui-hpa</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">namespace</span>: <span style="color:#ae81ff">openwebui</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">spec</span>:
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">scaleTargetRef</span>:
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">apiVersion</span>: <span style="color:#ae81ff">apps/v1</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">kind</span>: <span style="color:#ae81ff">Deployment</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">name</span>: <span style="color:#ae81ff">openwebui</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">minReplicas</span>: <span style="color:#ae81ff">2</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">maxReplicas</span>: <span style="color:#ae81ff">10</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">metrics</span>:
+</span></span><span style="display:flex;"><span>  - <span style="color:#f92672">type</span>: <span style="color:#ae81ff">Resource</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">resource</span>:
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">name</span>: <span style="color:#ae81ff">cpu</span>
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">target</span>:
+</span></span><span style="display:flex;"><span>        <span style="color:#f92672">type</span>: <span style="color:#ae81ff">Utilization</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#f92672">averageUtilization</span>: <span style="color:#ae81ff">70</span>
+</span></span><span style="display:flex;"><span>  - <span style="color:#f92672">type</span>: <span style="color:#ae81ff">Resource</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">resource</span>:
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">name</span>: <span style="color:#ae81ff">memory</span>
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">target</span>:
+</span></span><span style="display:flex;"><span>        <span style="color:#f92672">type</span>: <span style="color:#ae81ff">Utilization</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#f92672">averageUtilization</span>: <span style="color:#ae81ff">80</span>
+</span></span></code></pre></div><hr>
+<h2 id="-다음-단계">⏭️ 다음 단계<a hidden class="anchor" aria-hidden="true" href="#-다음-단계">#</a></h2>
+<p>애플리케이션 배포가 완료되었다면:</p>
+<ul>
+<li><strong>[06-verification.md]</strong> - 배포 검증 및 테스트</li>
+</ul>
+
+
+  </div>
+
+  <footer class="post-footer">
+    <ul class="post-tags">
+    </ul>
+<nav class="paginav">
+  <a class="prev" href="http://localhost:65390/backend/%EC%82%AC%EC%A0%84%EC%A4%80%EB%B9%84%EC%82%AC%ED%95%AD/">
+    <span class="title">« Prev</span>
+    <br>
+    <span></span>
+  </a>
+  <a class="next" href="http://localhost:65390/backend/%EC%9A%B4%EC%98%81-%EB%A9%94%EB%89%B4%EC%96%BC/">
+    <span class="title">Next »</span>
+    <br>
+    <span></span>
+  </a>
+</nav>
+
+  </footer>
+</article>
+    </main>
+    
+<footer class="footer">
+        <span>&copy; 2025 <a href="http://localhost:65390/">8dobibim Tech Blog</a></span> · 
+
+    <span>
+        Powered by
+        <a href="https://gohugo.io/" rel="noopener noreferrer" target="_blank">Hugo</a> &
+        <a href="https://github.com/adityatelange/hugo-PaperMod/" rel="noopener" target="_blank">PaperMod</a>
+    </span>
+</footer>
+<a href="#top" aria-label="go to top" title="Go to Top (Alt + G)" class="top-link" id="top-link" accesskey="g">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 12 6" fill="currentColor">
+        <path d="M12 6H0l6-6z" />
+    </svg>
+</a>
+
+<script>
+    let menu = document.getElementById('menu')
+    if (menu) {
+        menu.scrollLeft = localStorage.getItem("menu-scroll-position");
+        menu.onscroll = function () {
+            localStorage.setItem("menu-scroll-position", menu.scrollLeft);
+        }
+    }
+
+    document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+        anchor.addEventListener("click", function (e) {
+            e.preventDefault();
+            var id = this.getAttribute("href").substr(1);
+            if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+                document.querySelector(`[id='${decodeURIComponent(id)}']`).scrollIntoView({
+                    behavior: "smooth"
+                });
+            } else {
+                document.querySelector(`[id='${decodeURIComponent(id)}']`).scrollIntoView();
+            }
+            if (id === "top") {
+                history.replaceState(null, null, " ");
+            } else {
+                history.pushState(null, null, `#${id}`);
+            }
+        });
+    });
+
+</script>
+<script>
+    var mybutton = document.getElementById("top-link");
+    window.onscroll = function () {
+        if (document.body.scrollTop > 800 || document.documentElement.scrollTop > 800) {
+            mybutton.style.visibility = "visible";
+            mybutton.style.opacity = "1";
+        } else {
+            mybutton.style.visibility = "hidden";
+            mybutton.style.opacity = "0";
+        }
+    };
+
+</script>
+<script>
+    document.getElementById("theme-toggle").addEventListener("click", () => {
+        if (document.body.className.includes("dark")) {
+            document.body.classList.remove('dark');
+            localStorage.setItem("pref-theme", 'light');
+        } else {
+            document.body.classList.add('dark');
+            localStorage.setItem("pref-theme", 'dark');
+        }
+    })
+
+</script>
+<script>
+    document.querySelectorAll('pre > code').forEach((codeblock) => {
+        const container = codeblock.parentNode.parentNode;
+
+        const copybutton = document.createElement('button');
+        copybutton.classList.add('copy-code');
+        copybutton.innerHTML = 'copy';
+
+        function copyingDone() {
+            copybutton.innerHTML = 'copied!';
+            setTimeout(() => {
+                copybutton.innerHTML = 'copy';
+            }, 2000);
+        }
+
+        copybutton.addEventListener('click', (cb) => {
+            if ('clipboard' in navigator) {
+                navigator.clipboard.writeText(codeblock.textContent);
+                copyingDone();
+                return;
+            }
+
+            const range = document.createRange();
+            range.selectNodeContents(codeblock);
+            const selection = window.getSelection();
+            selection.removeAllRanges();
+            selection.addRange(range);
+            try {
+                document.execCommand('copy');
+                copyingDone();
+            } catch (e) { };
+            selection.removeRange(range);
+        });
+
+        if (container.classList.contains("highlight")) {
+            container.appendChild(copybutton);
+        } else if (container.parentNode.firstChild == container) {
+            
+        } else if (codeblock.parentNode.parentNode.parentNode.parentNode.parentNode.nodeName == "TABLE") {
+            
+            codeblock.parentNode.parentNode.parentNode.parentNode.parentNode.appendChild(copybutton);
+        } else {
+            
+            codeblock.parentNode.appendChild(copybutton);
+        }
+    });
+</script>
+</body>
+
+</html>

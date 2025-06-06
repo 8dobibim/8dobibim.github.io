@@ -1,0 +1,797 @@
+<!DOCTYPE html>
+<html lang="en" dir="auto">
+
+<head><script src="/livereload.js?mindelay=10&amp;v=2&amp;port=65390&amp;path=livereload" data-no-instant defer></script><meta charset="utf-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+<meta name="robots" content="noindex, nofollow">
+<title>8dobibim Tech Blog</title>
+<meta name="keywords" content="">
+<meta name="description" content="⚙️ EKS 클러스터 배포 가이드
+
+⏱️ 예상 소요시간: 30-45분
+💡 난이도: 중급
+📋 목표: Terraform으로 생성된 EKS 클러스터에 필수 컴포넌트를 설치하고 설정합니다.
+
+📋 배포 완료 체크리스트
+
+ kubectl 클러스터 연결 설정
+ AWS Load Balancer Controller 설치
+ EBS CSI Driver 설정
+ Cluster Autoscaler 설치
+ Metrics Server 설치
+ 네임스페이스 생성
+ RBAC 설정
+
+
+🔗 1단계: 클러스터 연결 설정
+kubectl 설정
+# EKS 클러스터에 연결
+aws eks update-kubeconfig --region ap-northeast-2 --name openwebui-eks-dev
+
+# 클러스터 연결 확인
+kubectl cluster-info
+kubectl get nodes
+예상 출력:">
+<meta name="author" content="">
+<link rel="canonical" href="http://localhost:65390/backend/eks-%ED%81%B4%EB%9F%AC%EC%8A%A4%ED%84%B0-%EB%B0%B0%ED%8F%AC-%EA%B0%80%EC%9D%B4%EB%93%9C/">
+<link crossorigin="anonymous" href="/assets/css/stylesheet.36819bea596090d8b48cf10d9831382996197aa7e4fc86f792f7c08c9ca4d23b.css" integrity="sha256-NoGb6llgkNi0jPENmDE4KZYZeqfk/Ib3kvfAjJyk0js=" rel="preload stylesheet" as="style">
+<link rel="icon" href="http://localhost:65390/favicon.ico">
+<link rel="icon" type="image/png" sizes="16x16" href="http://localhost:65390/favicon-16x16.png">
+<link rel="icon" type="image/png" sizes="32x32" href="http://localhost:65390/favicon-32x32.png">
+<link rel="apple-touch-icon" href="http://localhost:65390/apple-touch-icon.png">
+<link rel="mask-icon" href="http://localhost:65390/safari-pinned-tab.svg">
+<meta name="theme-color" content="#2e2e33">
+<meta name="msapplication-TileColor" content="#2e2e33">
+<link rel="alternate" hreflang="en" href="http://localhost:65390/backend/eks-%ED%81%B4%EB%9F%AC%EC%8A%A4%ED%84%B0-%EB%B0%B0%ED%8F%AC-%EA%B0%80%EC%9D%B4%EB%93%9C/">
+<noscript>
+    <style>
+        #theme-toggle,
+        .top-link {
+            display: none;
+        }
+
+    </style>
+    <style>
+        @media (prefers-color-scheme: dark) {
+            :root {
+                --theme: rgb(29, 30, 32);
+                --entry: rgb(46, 46, 51);
+                --primary: rgb(218, 218, 219);
+                --secondary: rgb(155, 156, 157);
+                --tertiary: rgb(65, 66, 68);
+                --content: rgb(196, 196, 197);
+                --code-block-bg: rgb(46, 46, 51);
+                --code-bg: rgb(55, 56, 62);
+                --border: rgb(51, 51, 51);
+            }
+
+            .list {
+                background: var(--theme);
+            }
+
+            .list:not(.dark)::-webkit-scrollbar-track {
+                background: 0 0;
+            }
+
+            .list:not(.dark)::-webkit-scrollbar-thumb {
+                border-color: var(--theme);
+            }
+        }
+
+    </style>
+</noscript>
+</head>
+
+<body class="" id="top">
+<script>
+    if (localStorage.getItem("pref-theme") === "dark") {
+        document.body.classList.add('dark');
+    } else if (localStorage.getItem("pref-theme") === "light") {
+        document.body.classList.remove('dark')
+    } else if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
+        document.body.classList.add('dark');
+    }
+
+</script>
+
+<header class="header">
+    <nav class="nav">
+        <div class="logo">
+            <a href="http://localhost:65390/" accesskey="h" title="8dobibim Tech Blog (Alt + H)">8dobibim Tech Blog</a>
+            <div class="logo-switches">
+                <button id="theme-toggle" accesskey="t" title="(Alt + T)" aria-label="Toggle theme">
+                    <svg id="moon" xmlns="http://www.w3.org/2000/svg" width="24" height="18" viewBox="0 0 24 24"
+                        fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                        stroke-linejoin="round">
+                        <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+                    </svg>
+                    <svg id="sun" xmlns="http://www.w3.org/2000/svg" width="24" height="18" viewBox="0 0 24 24"
+                        fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                        stroke-linejoin="round">
+                        <circle cx="12" cy="12" r="5"></circle>
+                        <line x1="12" y1="1" x2="12" y2="3"></line>
+                        <line x1="12" y1="21" x2="12" y2="23"></line>
+                        <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+                        <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+                        <line x1="1" y1="12" x2="3" y2="12"></line>
+                        <line x1="21" y1="12" x2="23" y2="12"></line>
+                        <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+                        <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+                    </svg>
+                </button>
+            </div>
+        </div>
+        <ul id="menu">
+            <li>
+                <a href="http://localhost:65390/frontend/" title="🖥 프론트엔드">
+                    <span>🖥 프론트엔드</span>
+                </a>
+            </li>
+            <li>
+                <a href="http://localhost:65390/backend/" title="💾 백엔드">
+                    <span>💾 백엔드</span>
+                </a>
+            </li>
+        </ul>
+    </nav>
+</header>
+<main class="main">
+
+<article class="post-single">
+  <header class="post-header">
+    <div class="breadcrumbs"><a href="http://localhost:65390/">Home</a>&nbsp;»&nbsp;<a href="http://localhost:65390/backend/">Backend 문서</a></div>
+    <h1 class="post-title entry-hint-parent">
+      
+    </h1>
+    <div class="post-meta">6 min&nbsp;·&nbsp;1106 words
+
+</div>
+  </header> <div class="toc">
+    <details  open>
+        <summary accesskey="c" title="(Alt + C)">
+            <span class="details">Table of Contents</span>
+        </summary>
+
+        <div class="inner"><ul>
+                <li>
+                    <a href="#-eks-%ed%81%b4%eb%9f%ac%ec%8a%a4%ed%84%b0-%eb%b0%b0%ed%8f%ac-%ea%b0%80%ec%9d%b4%eb%93%9c" aria-label="⚙️ EKS 클러스터 배포 가이드">⚙️ EKS 클러스터 배포 가이드</a><ul>
+                        
+                <li>
+                    <a href="#-%eb%b0%b0%ed%8f%ac-%ec%99%84%eb%a3%8c-%ec%b2%b4%ed%81%ac%eb%a6%ac%ec%8a%a4%ed%8a%b8" aria-label="📋 배포 완료 체크리스트">📋 배포 완료 체크리스트</a></li>
+                <li>
+                    <a href="#-1%eb%8b%a8%ea%b3%84-%ed%81%b4%eb%9f%ac%ec%8a%a4%ed%84%b0-%ec%97%b0%ea%b2%b0-%ec%84%a4%ec%a0%95" aria-label="🔗 1단계: 클러스터 연결 설정">🔗 1단계: 클러스터 연결 설정</a><ul>
+                        
+                <li>
+                    <a href="#kubectl-%ec%84%a4%ec%a0%95" aria-label="kubectl 설정">kubectl 설정</a></li>
+                <li>
+                    <a href="#%ed%81%b4%eb%9f%ac%ec%8a%a4%ed%84%b0-%ec%a0%95%eb%b3%b4-%ed%99%95%ec%9d%b8" aria-label="클러스터 정보 확인">클러스터 정보 확인</a></li></ul>
+                </li>
+                <li>
+                    <a href="#-2%eb%8b%a8%ea%b3%84-aws-load-balancer-controller-%ec%84%a4%ec%b9%98" aria-label="🌐 2단계: AWS Load Balancer Controller 설치">🌐 2단계: AWS Load Balancer Controller 설치</a><ul>
+                        
+                <li>
+                    <a href="#iam-%ec%97%ad%ed%95%a0-%ec%83%9d%ec%84%b1" aria-label="IAM 역할 생성">IAM 역할 생성</a></li>
+                <li>
+                    <a href="#helm%ec%9c%bc%eb%a1%9c-%ec%84%a4%ec%b9%98" aria-label="Helm으로 설치">Helm으로 설치</a></li></ul>
+                </li>
+                <li>
+                    <a href="#-3%eb%8b%a8%ea%b3%84-ebs-csi-driver-%ec%84%a4%ec%a0%95" aria-label="💾 3단계: EBS CSI Driver 설정">💾 3단계: EBS CSI Driver 설정</a><ul>
+                        
+                <li>
+                    <a href="#iam-%ec%97%ad%ed%95%a0-%ec%83%9d%ec%84%b1-1" aria-label="IAM 역할 생성">IAM 역할 생성</a></li>
+                <li>
+                    <a href="#add-on-%ed%99%9c%ec%84%b1%ed%99%94" aria-label="Add-on 활성화">Add-on 활성화</a></li>
+                <li>
+                    <a href="#storageclass-%ec%83%9d%ec%84%b1" aria-label="StorageClass 생성">StorageClass 생성</a></li></ul>
+                </li>
+                <li>
+                    <a href="#-4%eb%8b%a8%ea%b3%84-cluster-autoscaler-%ec%84%a4%ec%b9%98" aria-label="📈 4단계: Cluster Autoscaler 설치">📈 4단계: Cluster Autoscaler 설치</a><ul>
+                        
+                <li>
+                    <a href="#cluster-autoscaleryaml" aria-label="cluster-autoscaler.yaml">cluster-autoscaler.yaml</a></li>
+                <li>
+                    <a href="#iam-%ec%97%ad%ed%95%a0-%ec%83%9d%ec%84%b1-%eb%b0%8f-%eb%b0%b0%ed%8f%ac" aria-label="IAM 역할 생성 및 배포">IAM 역할 생성 및 배포</a></li></ul>
+                </li>
+                <li>
+                    <a href="#-5%eb%8b%a8%ea%b3%84-metrics-server-%ec%84%a4%ec%b9%98" aria-label="📊 5단계: Metrics Server 설치">📊 5단계: Metrics Server 설치</a></li>
+                <li>
+                    <a href="#-6%eb%8b%a8%ea%b3%84-%eb%84%a4%ec%9e%84%ec%8a%a4%ed%8e%98%ec%9d%b4%ec%8a%a4-%eb%b0%8f-rbac-%ec%84%a4%ec%a0%95" aria-label="🗂️ 6단계: 네임스페이스 및 RBAC 설정">🗂️ 6단계: 네임스페이스 및 RBAC 설정</a><ul>
+                        
+                <li>
+                    <a href="#%eb%84%a4%ec%9e%84%ec%8a%a4%ed%8e%98%ec%9d%b4%ec%8a%a4-%ec%83%9d%ec%84%b1" aria-label="네임스페이스 생성">네임스페이스 생성</a></li>
+                <li>
+                    <a href="#rbac-%ec%84%a4%ec%a0%95" aria-label="RBAC 설정">RBAC 설정</a></li></ul>
+                </li>
+                <li>
+                    <a href="#-7%eb%8b%a8%ea%b3%84-%ed%81%b4%eb%9f%ac%ec%8a%a4%ed%84%b0-%ec%84%a4%ec%a0%95-%ea%b2%80%ec%a6%9d" aria-label="🔧 7단계: 클러스터 설정 검증">🔧 7단계: 클러스터 설정 검증</a><ul>
+                        
+                <li>
+                    <a href="#%ec%a0%84%ec%b2%b4-%ec%83%81%ed%83%9c-%ed%99%95%ec%9d%b8-%ec%8a%a4%ed%81%ac%eb%a6%bd%ed%8a%b8" aria-label="전체 상태 확인 스크립트">전체 상태 확인 스크립트</a></li></ul>
+                </li>
+                <li>
+                    <a href="#-%eb%ac%b8%ec%a0%9c-%ed%95%b4%ea%b2%b0" aria-label="🚨 문제 해결">🚨 문제 해결</a><ul>
+                        
+                <li>
+                    <a href="#%ec%9e%90%ec%a3%bc-%eb%b0%9c%ec%83%9d%ed%95%98%eb%8a%94-%eb%ac%b8%ec%a0%9c" aria-label="자주 발생하는 문제">자주 발생하는 문제</a><ul>
+                        
+                <li>
+                    <a href="#1-load-balancer-controller-%ec%84%a4%ec%b9%98-%ec%8b%a4%ed%8c%a8" aria-label="1. Load Balancer Controller 설치 실패">1. Load Balancer Controller 설치 실패</a></li>
+                <li>
+                    <a href="#2-%eb%85%b8%eb%93%9c-%ea%b7%b8%eb%a3%b9%ec%9d%b4-ready-%ec%83%81%ed%83%9c%ea%b0%80-%ec%95%84%eb%8b%8c-%ea%b2%bd%ec%9a%b0" aria-label="2. 노드 그룹이 Ready 상태가 아닌 경우">2. 노드 그룹이 Ready 상태가 아닌 경우</a></li>
+                <li>
+                    <a href="#3-metrics-server-%ec%98%a4%eb%a5%98" aria-label="3. Metrics Server 오류">3. Metrics Server 오류</a></li></ul>
+                </li></ul>
+                </li>
+                <li>
+                    <a href="#-%eb%8b%a4%ec%9d%8c-%eb%8b%a8%ea%b3%84" aria-label="⏭️ 다음 단계">⏭️ 다음 단계</a>
+                </li>
+            </ul>
+            </li>
+            </ul>
+        </div>
+    </details>
+</div>
+
+  <div class="post-content"><h1 id="-eks-클러스터-배포-가이드">⚙️ EKS 클러스터 배포 가이드<a hidden class="anchor" aria-hidden="true" href="#-eks-클러스터-배포-가이드">#</a></h1>
+<blockquote>
+<p><strong>⏱️ 예상 소요시간</strong>: 30-45분<br>
+<strong>💡 난이도</strong>: 중급<br>
+<strong>📋 목표</strong>: Terraform으로 생성된 EKS 클러스터에 필수 컴포넌트를 설치하고 설정합니다.</p></blockquote>
+<hr>
+<h2 id="-배포-완료-체크리스트">📋 배포 완료 체크리스트<a hidden class="anchor" aria-hidden="true" href="#-배포-완료-체크리스트">#</a></h2>
+<ul>
+<li><input disabled="" type="checkbox"> kubectl 클러스터 연결 설정</li>
+<li><input disabled="" type="checkbox"> AWS Load Balancer Controller 설치</li>
+<li><input disabled="" type="checkbox"> EBS CSI Driver 설정</li>
+<li><input disabled="" type="checkbox"> Cluster Autoscaler 설치</li>
+<li><input disabled="" type="checkbox"> Metrics Server 설치</li>
+<li><input disabled="" type="checkbox"> 네임스페이스 생성</li>
+<li><input disabled="" type="checkbox"> RBAC 설정</li>
+</ul>
+<hr>
+<h2 id="-1단계-클러스터-연결-설정">🔗 1단계: 클러스터 연결 설정<a hidden class="anchor" aria-hidden="true" href="#-1단계-클러스터-연결-설정">#</a></h2>
+<h3 id="kubectl-설정">kubectl 설정<a hidden class="anchor" aria-hidden="true" href="#kubectl-설정">#</a></h3>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span><span style="color:#75715e"># EKS 클러스터에 연결</span>
+</span></span><span style="display:flex;"><span>aws eks update-kubeconfig --region ap-northeast-2 --name openwebui-eks-dev
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># 클러스터 연결 확인</span>
+</span></span><span style="display:flex;"><span>kubectl cluster-info
+</span></span><span style="display:flex;"><span>kubectl get nodes
+</span></span></code></pre></div><p><strong>예상 출력:</strong></p>
+<pre tabindex="0"><code>NAME                                        STATUS   ROLES    AGE   VERSION
+ip-10-0-10-xxx.ap-northeast-2.compute.internal   Ready    &lt;none&gt;   5m    v1.28.x
+ip-10-0-20-xxx.ap-northeast-2.compute.internal   Ready    &lt;none&gt;   5m    v1.28.x
+</code></pre><h3 id="클러스터-정보-확인">클러스터 정보 확인<a hidden class="anchor" aria-hidden="true" href="#클러스터-정보-확인">#</a></h3>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span><span style="color:#75715e"># 클러스터 상세 정보</span>
+</span></span><span style="display:flex;"><span>kubectl get nodes -o wide
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># 네임스페이스 확인</span>
+</span></span><span style="display:flex;"><span>kubectl get namespaces
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># 기본 파드 상태 확인</span>
+</span></span><span style="display:flex;"><span>kubectl get pods -n kube-system
+</span></span></code></pre></div><hr>
+<h2 id="-2단계-aws-load-balancer-controller-설치">🌐 2단계: AWS Load Balancer Controller 설치<a hidden class="anchor" aria-hidden="true" href="#-2단계-aws-load-balancer-controller-설치">#</a></h2>
+<h3 id="iam-역할-생성">IAM 역할 생성<a hidden class="anchor" aria-hidden="true" href="#iam-역할-생성">#</a></h3>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span><span style="color:#75715e"># OIDC 제공자 URL 확인</span>
+</span></span><span style="display:flex;"><span>aws eks describe-cluster --name openwebui-eks-dev --query <span style="color:#e6db74">&#34;cluster.identity.oidc.issuer&#34;</span> --output text
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># IAM OIDC 제공자 생성</span>
+</span></span><span style="display:flex;"><span>eksctl utils associate-iam-oidc-provider --cluster<span style="color:#f92672">=</span>openwebui-eks-dev --approve
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># Load Balancer Controller용 IAM 정책 다운로드</span>
+</span></span><span style="display:flex;"><span>curl -o iam_policy.json https://raw.githubusercontent.com/kubernetes-sigs/aws-load-balancer-controller/v2.7.2/docs/install/iam_policy.json
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># IAM 정책 생성</span>
+</span></span><span style="display:flex;"><span>aws iam create-policy <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>    --policy-name AWSLoadBalancerControllerIAMPolicy <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>    --policy-document file://iam_policy.json
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># 서비스 어카운트 생성</span>
+</span></span><span style="display:flex;"><span>eksctl create iamserviceaccount <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  --cluster<span style="color:#f92672">=</span>openwebui-eks-dev <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  --namespace<span style="color:#f92672">=</span>kube-system <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  --name<span style="color:#f92672">=</span>aws-load-balancer-controller <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  --role-name AmazonEKSLoadBalancerControllerRole <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  --attach-policy-arn<span style="color:#f92672">=</span>arn:aws:iam::<span style="color:#66d9ef">$(</span>aws sts get-caller-identity --query Account --output text<span style="color:#66d9ef">)</span>:policy/AWSLoadBalancerControllerIAMPolicy <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  --approve
+</span></span></code></pre></div><h3 id="helm으로-설치">Helm으로 설치<a hidden class="anchor" aria-hidden="true" href="#helm으로-설치">#</a></h3>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span><span style="color:#75715e"># Helm 저장소 추가</span>
+</span></span><span style="display:flex;"><span>helm repo add eks https://aws.github.io/eks-charts
+</span></span><span style="display:flex;"><span>helm repo update
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># AWS Load Balancer Controller 설치</span>
+</span></span><span style="display:flex;"><span>helm install aws-load-balancer-controller eks/aws-load-balancer-controller <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  -n kube-system <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  --set clusterName<span style="color:#f92672">=</span>openwebui-eks-dev <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  --set serviceAccount.create<span style="color:#f92672">=</span>false <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  --set serviceAccount.name<span style="color:#f92672">=</span>aws-load-balancer-controller
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># 설치 확인</span>
+</span></span><span style="display:flex;"><span>kubectl get deployment -n kube-system aws-load-balancer-controller
+</span></span></code></pre></div><hr>
+<h2 id="-3단계-ebs-csi-driver-설정">💾 3단계: EBS CSI Driver 설정<a hidden class="anchor" aria-hidden="true" href="#-3단계-ebs-csi-driver-설정">#</a></h2>
+<h3 id="iam-역할-생성-1">IAM 역할 생성<a hidden class="anchor" aria-hidden="true" href="#iam-역할-생성-1">#</a></h3>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span><span style="color:#75715e"># EBS CSI Driver용 서비스 어카운트 생성</span>
+</span></span><span style="display:flex;"><span>eksctl create iamserviceaccount <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  --name ebs-csi-controller-sa <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  --namespace kube-system <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  --cluster openwebui-eks-dev <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  --role-name AmazonEKS_EBS_CSI_DriverRole <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  --attach-policy-arn arn:aws:iam::aws:policy/service-role/AmazonEBSCSIDriverPolicy <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  --approve
+</span></span></code></pre></div><h3 id="add-on-활성화">Add-on 활성화<a hidden class="anchor" aria-hidden="true" href="#add-on-활성화">#</a></h3>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span><span style="color:#75715e"># EBS CSI Driver Add-on 설치</span>
+</span></span><span style="display:flex;"><span>aws eks create-addon <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  --cluster-name openwebui-eks-dev <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  --addon-name aws-ebs-csi-driver <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  --service-account-role-arn arn:aws:iam::<span style="color:#66d9ef">$(</span>aws sts get-caller-identity --query Account --output text<span style="color:#66d9ef">)</span>:role/AmazonEKS_EBS_CSI_DriverRole
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># 설치 확인</span>
+</span></span><span style="display:flex;"><span>kubectl get pods -n kube-system -l app<span style="color:#f92672">=</span>ebs-csi-controller
+</span></span></code></pre></div><h3 id="storageclass-생성">StorageClass 생성<a hidden class="anchor" aria-hidden="true" href="#storageclass-생성">#</a></h3>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-yaml" data-lang="yaml"><span style="display:flex;"><span><span style="color:#75715e"># storage-class.yaml</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">apiVersion</span>: <span style="color:#ae81ff">storage.k8s.io/v1</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">kind</span>: <span style="color:#ae81ff">StorageClass</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">metadata</span>:
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">name</span>: <span style="color:#ae81ff">gp3-encrypted</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">annotations</span>:
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">storageclass.kubernetes.io/is-default-class</span>: <span style="color:#e6db74">&#34;true&#34;</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">provisioner</span>: <span style="color:#ae81ff">ebs.csi.aws.com</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">parameters</span>:
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">type</span>: <span style="color:#ae81ff">gp3</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">encrypted</span>: <span style="color:#e6db74">&#34;true&#34;</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">fsType</span>: <span style="color:#ae81ff">ext4</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">volumeBindingMode</span>: <span style="color:#ae81ff">WaitForFirstConsumer</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">allowVolumeExpansion</span>: <span style="color:#66d9ef">true</span>
+</span></span></code></pre></div><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span><span style="color:#75715e"># 기본 StorageClass 제거</span>
+</span></span><span style="display:flex;"><span>kubectl patch storageclass gp2 -p <span style="color:#e6db74">&#39;{&#34;metadata&#34;: {&#34;annotations&#34;:{&#34;storageclass.kubernetes.io/is-default-class&#34;:&#34;false&#34;}}}&#39;</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># 새 StorageClass 적용</span>
+</span></span><span style="display:flex;"><span>kubectl apply -f storage-class.yaml
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># 확인</span>
+</span></span><span style="display:flex;"><span>kubectl get storageclass
+</span></span></code></pre></div><hr>
+<h2 id="-4단계-cluster-autoscaler-설치">📈 4단계: Cluster Autoscaler 설치<a hidden class="anchor" aria-hidden="true" href="#-4단계-cluster-autoscaler-설치">#</a></h2>
+<h3 id="cluster-autoscaleryaml">cluster-autoscaler.yaml<a hidden class="anchor" aria-hidden="true" href="#cluster-autoscaleryaml">#</a></h3>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-yaml" data-lang="yaml"><span style="display:flex;"><span><span style="color:#f92672">apiVersion</span>: <span style="color:#ae81ff">apps/v1</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">kind</span>: <span style="color:#ae81ff">Deployment</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">metadata</span>:
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">name</span>: <span style="color:#ae81ff">cluster-autoscaler</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">namespace</span>: <span style="color:#ae81ff">kube-system</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">labels</span>:
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">app</span>: <span style="color:#ae81ff">cluster-autoscaler</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">spec</span>:
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">selector</span>:
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">matchLabels</span>:
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">app</span>: <span style="color:#ae81ff">cluster-autoscaler</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">template</span>:
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">metadata</span>:
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">labels</span>:
+</span></span><span style="display:flex;"><span>        <span style="color:#f92672">app</span>: <span style="color:#ae81ff">cluster-autoscaler</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">spec</span>:
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">serviceAccountName</span>: <span style="color:#ae81ff">cluster-autoscaler</span>
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">containers</span>:
+</span></span><span style="display:flex;"><span>      - <span style="color:#f92672">image</span>: <span style="color:#ae81ff">registry.k8s.io/autoscaling/cluster-autoscaler:v1.28.2</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#f92672">name</span>: <span style="color:#ae81ff">cluster-autoscaler</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#f92672">resources</span>:
+</span></span><span style="display:flex;"><span>          <span style="color:#f92672">limits</span>:
+</span></span><span style="display:flex;"><span>            <span style="color:#f92672">cpu</span>: <span style="color:#ae81ff">100m</span>
+</span></span><span style="display:flex;"><span>            <span style="color:#f92672">memory</span>: <span style="color:#ae81ff">600Mi</span>
+</span></span><span style="display:flex;"><span>          <span style="color:#f92672">requests</span>:
+</span></span><span style="display:flex;"><span>            <span style="color:#f92672">cpu</span>: <span style="color:#ae81ff">100m</span>
+</span></span><span style="display:flex;"><span>            <span style="color:#f92672">memory</span>: <span style="color:#ae81ff">600Mi</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#f92672">command</span>:
+</span></span><span style="display:flex;"><span>        - <span style="color:#ae81ff">./cluster-autoscaler</span>
+</span></span><span style="display:flex;"><span>        - --<span style="color:#ae81ff">v=4</span>
+</span></span><span style="display:flex;"><span>        - --<span style="color:#ae81ff">stderrthreshold=info</span>
+</span></span><span style="display:flex;"><span>        - --<span style="color:#ae81ff">cloud-provider=aws</span>
+</span></span><span style="display:flex;"><span>        - --<span style="color:#ae81ff">skip-nodes-with-local-storage=false</span>
+</span></span><span style="display:flex;"><span>        - --<span style="color:#ae81ff">expander=least-waste</span>
+</span></span><span style="display:flex;"><span>        - --<span style="color:#ae81ff">node-group-auto-discovery=asg:tag=k8s.io/cluster-autoscaler/enabled,k8s.io/cluster-autoscaler/openwebui-eks-dev</span>
+</span></span><span style="display:flex;"><span>        - --<span style="color:#ae81ff">balance-similar-node-groups</span>
+</span></span><span style="display:flex;"><span>        - --<span style="color:#ae81ff">skip-nodes-with-system-pods=false</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#f92672">env</span>:
+</span></span><span style="display:flex;"><span>        - <span style="color:#f92672">name</span>: <span style="color:#ae81ff">AWS_REGION</span>
+</span></span><span style="display:flex;"><span>          <span style="color:#f92672">value</span>: <span style="color:#ae81ff">ap-northeast-2</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#f92672">volumeMounts</span>:
+</span></span><span style="display:flex;"><span>        - <span style="color:#f92672">name</span>: <span style="color:#ae81ff">ssl-certs</span>
+</span></span><span style="display:flex;"><span>          <span style="color:#f92672">mountPath</span>: <span style="color:#ae81ff">/etc/ssl/certs/ca-certificates.crt</span>
+</span></span><span style="display:flex;"><span>          <span style="color:#f92672">readOnly</span>: <span style="color:#66d9ef">true</span>
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">volumes</span>:
+</span></span><span style="display:flex;"><span>      - <span style="color:#f92672">name</span>: <span style="color:#ae81ff">ssl-certs</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#f92672">hostPath</span>:
+</span></span><span style="display:flex;"><span>          <span style="color:#f92672">path</span>: <span style="color:#e6db74">&#34;/etc/ssl/certs/ca-certificates.crt&#34;</span>
+</span></span><span style="display:flex;"><span>---
+</span></span><span style="display:flex;"><span><span style="color:#f92672">apiVersion</span>: <span style="color:#ae81ff">v1</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">kind</span>: <span style="color:#ae81ff">ServiceAccount</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">metadata</span>:
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">labels</span>:
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">k8s-addon</span>: <span style="color:#ae81ff">cluster-autoscaler.addons.k8s.io</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">k8s-app</span>: <span style="color:#ae81ff">cluster-autoscaler</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">name</span>: <span style="color:#ae81ff">cluster-autoscaler</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">namespace</span>: <span style="color:#ae81ff">kube-system</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">annotations</span>:
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">eks.amazonaws.com/role-arn</span>: <span style="color:#ae81ff">arn:aws:iam::$(aws sts get-caller-identity --query Account --output text):role/AmazonEKSClusterAutoscalerRole</span>
+</span></span><span style="display:flex;"><span>---
+</span></span><span style="display:flex;"><span><span style="color:#f92672">apiVersion</span>: <span style="color:#ae81ff">rbac.authorization.k8s.io/v1</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">kind</span>: <span style="color:#ae81ff">ClusterRole</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">metadata</span>:
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">name</span>: <span style="color:#ae81ff">cluster-autoscaler</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">labels</span>:
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">k8s-addon</span>: <span style="color:#ae81ff">cluster-autoscaler.addons.k8s.io</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">k8s-app</span>: <span style="color:#ae81ff">cluster-autoscaler</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">rules</span>:
+</span></span><span style="display:flex;"><span>- <span style="color:#f92672">apiGroups</span>: [<span style="color:#e6db74">&#34;&#34;</span>]
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">resources</span>: [<span style="color:#e6db74">&#34;events&#34;</span>, <span style="color:#e6db74">&#34;endpoints&#34;</span>]
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">verbs</span>: [<span style="color:#e6db74">&#34;create&#34;</span>, <span style="color:#e6db74">&#34;patch&#34;</span>]
+</span></span><span style="display:flex;"><span>- <span style="color:#f92672">apiGroups</span>: [<span style="color:#e6db74">&#34;&#34;</span>]
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">resources</span>: [<span style="color:#e6db74">&#34;pods/eviction&#34;</span>]
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">verbs</span>: [<span style="color:#e6db74">&#34;create&#34;</span>]
+</span></span><span style="display:flex;"><span>- <span style="color:#f92672">apiGroups</span>: [<span style="color:#e6db74">&#34;&#34;</span>]
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">resources</span>: [<span style="color:#e6db74">&#34;pods/status&#34;</span>]
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">verbs</span>: [<span style="color:#e6db74">&#34;update&#34;</span>]
+</span></span><span style="display:flex;"><span>- <span style="color:#f92672">apiGroups</span>: [<span style="color:#e6db74">&#34;&#34;</span>]
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">resources</span>: [<span style="color:#e6db74">&#34;endpoints&#34;</span>]
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">resourceNames</span>: [<span style="color:#e6db74">&#34;cluster-autoscaler&#34;</span>]
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">verbs</span>: [<span style="color:#e6db74">&#34;get&#34;</span>, <span style="color:#e6db74">&#34;update&#34;</span>]
+</span></span><span style="display:flex;"><span>- <span style="color:#f92672">apiGroups</span>: [<span style="color:#e6db74">&#34;&#34;</span>]
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">resources</span>: [<span style="color:#e6db74">&#34;nodes&#34;</span>]
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">verbs</span>: [<span style="color:#e6db74">&#34;watch&#34;</span>, <span style="color:#e6db74">&#34;list&#34;</span>, <span style="color:#e6db74">&#34;get&#34;</span>, <span style="color:#e6db74">&#34;update&#34;</span>]
+</span></span><span style="display:flex;"><span>- <span style="color:#f92672">apiGroups</span>: [<span style="color:#e6db74">&#34;&#34;</span>]
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">resources</span>: [<span style="color:#e6db74">&#34;namespaces&#34;</span>, <span style="color:#e6db74">&#34;pods&#34;</span>, <span style="color:#e6db74">&#34;services&#34;</span>, <span style="color:#e6db74">&#34;replicationcontrollers&#34;</span>, <span style="color:#e6db74">&#34;persistentvolumeclaims&#34;</span>, <span style="color:#e6db74">&#34;persistentvolumes&#34;</span>]
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">verbs</span>: [<span style="color:#e6db74">&#34;watch&#34;</span>, <span style="color:#e6db74">&#34;list&#34;</span>, <span style="color:#e6db74">&#34;get&#34;</span>]
+</span></span><span style="display:flex;"><span>- <span style="color:#f92672">apiGroups</span>: [<span style="color:#e6db74">&#34;extensions&#34;</span>]
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">resources</span>: [<span style="color:#e6db74">&#34;replicasets&#34;</span>, <span style="color:#e6db74">&#34;daemonsets&#34;</span>]
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">verbs</span>: [<span style="color:#e6db74">&#34;watch&#34;</span>, <span style="color:#e6db74">&#34;list&#34;</span>, <span style="color:#e6db74">&#34;get&#34;</span>]
+</span></span><span style="display:flex;"><span>- <span style="color:#f92672">apiGroups</span>: [<span style="color:#e6db74">&#34;policy&#34;</span>]
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">resources</span>: [<span style="color:#e6db74">&#34;poddisruptionbudgets&#34;</span>]
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">verbs</span>: [<span style="color:#e6db74">&#34;watch&#34;</span>, <span style="color:#e6db74">&#34;list&#34;</span>]
+</span></span><span style="display:flex;"><span>- <span style="color:#f92672">apiGroups</span>: [<span style="color:#e6db74">&#34;apps&#34;</span>]
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">resources</span>: [<span style="color:#e6db74">&#34;statefulsets&#34;</span>, <span style="color:#e6db74">&#34;replicasets&#34;</span>, <span style="color:#e6db74">&#34;daemonsets&#34;</span>]
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">verbs</span>: [<span style="color:#e6db74">&#34;watch&#34;</span>, <span style="color:#e6db74">&#34;list&#34;</span>, <span style="color:#e6db74">&#34;get&#34;</span>]
+</span></span><span style="display:flex;"><span>- <span style="color:#f92672">apiGroups</span>: [<span style="color:#e6db74">&#34;storage.k8s.io&#34;</span>]
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">resources</span>: [<span style="color:#e6db74">&#34;storageclasses&#34;</span>, <span style="color:#e6db74">&#34;csinodes&#34;</span>, <span style="color:#e6db74">&#34;csidrivers&#34;</span>, <span style="color:#e6db74">&#34;csistoragecapacities&#34;</span>]
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">verbs</span>: [<span style="color:#e6db74">&#34;watch&#34;</span>, <span style="color:#e6db74">&#34;list&#34;</span>, <span style="color:#e6db74">&#34;get&#34;</span>]
+</span></span><span style="display:flex;"><span>- <span style="color:#f92672">apiGroups</span>: [<span style="color:#e6db74">&#34;batch&#34;</span>, <span style="color:#e6db74">&#34;extensions&#34;</span>]
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">resources</span>: [<span style="color:#e6db74">&#34;jobs&#34;</span>]
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">verbs</span>: [<span style="color:#e6db74">&#34;get&#34;</span>, <span style="color:#e6db74">&#34;list&#34;</span>, <span style="color:#e6db74">&#34;watch&#34;</span>, <span style="color:#e6db74">&#34;patch&#34;</span>]
+</span></span><span style="display:flex;"><span>- <span style="color:#f92672">apiGroups</span>: [<span style="color:#e6db74">&#34;coordination.k8s.io&#34;</span>]
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">resources</span>: [<span style="color:#e6db74">&#34;leases&#34;</span>]
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">verbs</span>: [<span style="color:#e6db74">&#34;create&#34;</span>]
+</span></span><span style="display:flex;"><span>- <span style="color:#f92672">apiGroups</span>: [<span style="color:#e6db74">&#34;coordination.k8s.io&#34;</span>]
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">resourceNames</span>: [<span style="color:#e6db74">&#34;cluster-autoscaler&#34;</span>]
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">resources</span>: [<span style="color:#e6db74">&#34;leases&#34;</span>]
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">verbs</span>: [<span style="color:#e6db74">&#34;get&#34;</span>, <span style="color:#e6db74">&#34;update&#34;</span>]
+</span></span><span style="display:flex;"><span>---
+</span></span><span style="display:flex;"><span><span style="color:#f92672">apiVersion</span>: <span style="color:#ae81ff">rbac.authorization.k8s.io/v1</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">kind</span>: <span style="color:#ae81ff">ClusterRoleBinding</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">metadata</span>:
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">name</span>: <span style="color:#ae81ff">cluster-autoscaler</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">labels</span>:
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">k8s-addon</span>: <span style="color:#ae81ff">cluster-autoscaler.addons.k8s.io</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">k8s-app</span>: <span style="color:#ae81ff">cluster-autoscaler</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">roleRef</span>:
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">apiGroup</span>: <span style="color:#ae81ff">rbac.authorization.k8s.io</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">kind</span>: <span style="color:#ae81ff">ClusterRole</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">name</span>: <span style="color:#ae81ff">cluster-autoscaler</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">subjects</span>:
+</span></span><span style="display:flex;"><span>- <span style="color:#f92672">kind</span>: <span style="color:#ae81ff">ServiceAccount</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">name</span>: <span style="color:#ae81ff">cluster-autoscaler</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">namespace</span>: <span style="color:#ae81ff">kube-system</span>
+</span></span></code></pre></div><h3 id="iam-역할-생성-및-배포">IAM 역할 생성 및 배포<a hidden class="anchor" aria-hidden="true" href="#iam-역할-생성-및-배포">#</a></h3>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span><span style="color:#75715e"># Cluster Autoscaler용 IAM 정책 생성</span>
+</span></span><span style="display:flex;"><span>cat &gt; cluster-autoscaler-policy.json <span style="color:#e6db74">&lt;&lt; EOF
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">{
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">    &#34;Version&#34;: &#34;2012-10-17&#34;,
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">    &#34;Statement&#34;: [
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">        {
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">            &#34;Action&#34;: [
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">                &#34;autoscaling:DescribeAutoScalingGroups&#34;,
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">                &#34;autoscaling:DescribeAutoScalingInstances&#34;,
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">                &#34;autoscaling:DescribeLaunchConfigurations&#34;,
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">                &#34;autoscaling:DescribeTags&#34;,
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">                &#34;autoscaling:SetDesiredCapacity&#34;,
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">                &#34;autoscaling:TerminateInstanceInAutoScalingGroup&#34;,
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">                &#34;ec2:DescribeLaunchTemplateVersions&#34;
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">            ],
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">            &#34;Resource&#34;: &#34;*&#34;,
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">            &#34;Effect&#34;: &#34;Allow&#34;
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">        }
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">    ]
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">}
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">EOF</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># IAM 정책 생성</span>
+</span></span><span style="display:flex;"><span>aws iam create-policy <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>    --policy-name AmazonEKSClusterAutoscalerPolicy <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>    --policy-document file://cluster-autoscaler-policy.json
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># 서비스 어카운트 생성</span>
+</span></span><span style="display:flex;"><span>eksctl create iamserviceaccount <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  --cluster<span style="color:#f92672">=</span>openwebui-eks-dev <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  --namespace<span style="color:#f92672">=</span>kube-system <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  --name<span style="color:#f92672">=</span>cluster-autoscaler <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  --attach-policy-arn<span style="color:#f92672">=</span>arn:aws:iam::<span style="color:#66d9ef">$(</span>aws sts get-caller-identity --query Account --output text<span style="color:#66d9ef">)</span>:policy/AmazonEKSClusterAutoscalerPolicy <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  --override-existing-serviceaccounts <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  --approve
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># Cluster Autoscaler 배포</span>
+</span></span><span style="display:flex;"><span>kubectl apply -f cluster-autoscaler.yaml
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># 확인</span>
+</span></span><span style="display:flex;"><span>kubectl get pods -n kube-system -l app<span style="color:#f92672">=</span>cluster-autoscaler
+</span></span></code></pre></div><hr>
+<h2 id="-5단계-metrics-server-설치">📊 5단계: Metrics Server 설치<a hidden class="anchor" aria-hidden="true" href="#-5단계-metrics-server-설치">#</a></h2>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span><span style="color:#75715e"># Metrics Server 설치</span>
+</span></span><span style="display:flex;"><span>kubectl apply -f https://github.com/kubernetes-sigs/metrics-server/releases/latest/download/components.yaml
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># 확인</span>
+</span></span><span style="display:flex;"><span>kubectl get deployment metrics-server -n kube-system
+</span></span><span style="display:flex;"><span>kubectl top nodes
+</span></span></code></pre></div><hr>
+<h2 id="-6단계-네임스페이스-및-rbac-설정">🗂️ 6단계: 네임스페이스 및 RBAC 설정<a hidden class="anchor" aria-hidden="true" href="#-6단계-네임스페이스-및-rbac-설정">#</a></h2>
+<h3 id="네임스페이스-생성">네임스페이스 생성<a hidden class="anchor" aria-hidden="true" href="#네임스페이스-생성">#</a></h3>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-yaml" data-lang="yaml"><span style="display:flex;"><span><span style="color:#75715e"># namespaces.yaml</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">apiVersion</span>: <span style="color:#ae81ff">v1</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">kind</span>: <span style="color:#ae81ff">Namespace</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">metadata</span>:
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">name</span>: <span style="color:#ae81ff">openwebui</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">labels</span>:
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">name</span>: <span style="color:#ae81ff">openwebui</span>
+</span></span><span style="display:flex;"><span>---
+</span></span><span style="display:flex;"><span><span style="color:#f92672">apiVersion</span>: <span style="color:#ae81ff">v1</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">kind</span>: <span style="color:#ae81ff">Namespace</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">metadata</span>:
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">name</span>: <span style="color:#ae81ff">litellm</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">labels</span>:
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">name</span>: <span style="color:#ae81ff">litellm</span>
+</span></span><span style="display:flex;"><span>---
+</span></span><span style="display:flex;"><span><span style="color:#f92672">apiVersion</span>: <span style="color:#ae81ff">v1</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">kind</span>: <span style="color:#ae81ff">Namespace</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">metadata</span>:
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">name</span>: <span style="color:#ae81ff">monitoring</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">labels</span>:
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">name</span>: <span style="color:#ae81ff">monitoring</span>
+</span></span></code></pre></div><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>kubectl apply -f namespaces.yaml
+</span></span><span style="display:flex;"><span>kubectl get namespaces
+</span></span></code></pre></div><h3 id="rbac-설정">RBAC 설정<a hidden class="anchor" aria-hidden="true" href="#rbac-설정">#</a></h3>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-yaml" data-lang="yaml"><span style="display:flex;"><span><span style="color:#75715e"># rbac.yaml</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">apiVersion</span>: <span style="color:#ae81ff">v1</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">kind</span>: <span style="color:#ae81ff">ServiceAccount</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">metadata</span>:
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">name</span>: <span style="color:#ae81ff">openwebui-sa</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">namespace</span>: <span style="color:#ae81ff">openwebui</span>
+</span></span><span style="display:flex;"><span>---
+</span></span><span style="display:flex;"><span><span style="color:#f92672">apiVersion</span>: <span style="color:#ae81ff">rbac.authorization.k8s.io/v1</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">kind</span>: <span style="color:#ae81ff">ClusterRole</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">metadata</span>:
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">name</span>: <span style="color:#ae81ff">openwebui-role</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">rules</span>:
+</span></span><span style="display:flex;"><span>- <span style="color:#f92672">apiGroups</span>: [<span style="color:#e6db74">&#34;&#34;</span>]
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">resources</span>: [<span style="color:#e6db74">&#34;pods&#34;</span>, <span style="color:#e6db74">&#34;services&#34;</span>, <span style="color:#e6db74">&#34;configmaps&#34;</span>, <span style="color:#e6db74">&#34;secrets&#34;</span>]
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">verbs</span>: [<span style="color:#e6db74">&#34;get&#34;</span>, <span style="color:#e6db74">&#34;list&#34;</span>, <span style="color:#e6db74">&#34;watch&#34;</span>, <span style="color:#e6db74">&#34;create&#34;</span>, <span style="color:#e6db74">&#34;update&#34;</span>, <span style="color:#e6db74">&#34;patch&#34;</span>, <span style="color:#e6db74">&#34;delete&#34;</span>]
+</span></span><span style="display:flex;"><span>- <span style="color:#f92672">apiGroups</span>: [<span style="color:#e6db74">&#34;apps&#34;</span>]
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">resources</span>: [<span style="color:#e6db74">&#34;deployments&#34;</span>, <span style="color:#e6db74">&#34;replicasets&#34;</span>]
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">verbs</span>: [<span style="color:#e6db74">&#34;get&#34;</span>, <span style="color:#e6db74">&#34;list&#34;</span>, <span style="color:#e6db74">&#34;watch&#34;</span>, <span style="color:#e6db74">&#34;create&#34;</span>, <span style="color:#e6db74">&#34;update&#34;</span>, <span style="color:#e6db74">&#34;patch&#34;</span>, <span style="color:#e6db74">&#34;delete&#34;</span>]
+</span></span><span style="display:flex;"><span>---
+</span></span><span style="display:flex;"><span><span style="color:#f92672">apiVersion</span>: <span style="color:#ae81ff">rbac.authorization.k8s.io/v1</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">kind</span>: <span style="color:#ae81ff">ClusterRoleBinding</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">metadata</span>:
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">name</span>: <span style="color:#ae81ff">openwebui-binding</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">roleRef</span>:
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">apiGroup</span>: <span style="color:#ae81ff">rbac.authorization.k8s.io</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">kind</span>: <span style="color:#ae81ff">ClusterRole</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">name</span>: <span style="color:#ae81ff">openwebui-role</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">subjects</span>:
+</span></span><span style="display:flex;"><span>- <span style="color:#f92672">kind</span>: <span style="color:#ae81ff">ServiceAccount</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">name</span>: <span style="color:#ae81ff">openwebui-sa</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">namespace</span>: <span style="color:#ae81ff">openwebui</span>
+</span></span></code></pre></div><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>kubectl apply -f rbac.yaml
+</span></span></code></pre></div><hr>
+<h2 id="-7단계-클러스터-설정-검증">🔧 7단계: 클러스터 설정 검증<a hidden class="anchor" aria-hidden="true" href="#-7단계-클러스터-설정-검증">#</a></h2>
+<h3 id="전체-상태-확인-스크립트">전체 상태 확인 스크립트<a hidden class="anchor" aria-hidden="true" href="#전체-상태-확인-스크립트">#</a></h3>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span><span style="color:#75715e">#!/bin/bash
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span><span style="color:#75715e"># verify-cluster.sh</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>echo <span style="color:#e6db74">&#34;🔍 EKS 클러스터 검증 시작...&#34;</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>echo <span style="color:#e6db74">&#34;📋 1. 노드 상태 확인&#34;</span>
+</span></span><span style="display:flex;"><span>kubectl get nodes -o wide
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>echo <span style="color:#e6db74">&#34;📋 2. 시스템 파드 상태 확인&#34;</span>
+</span></span><span style="display:flex;"><span>kubectl get pods -n kube-system
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>echo <span style="color:#e6db74">&#34;📋 3. StorageClass 확인&#34;</span>
+</span></span><span style="display:flex;"><span>kubectl get storageclass
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>echo <span style="color:#e6db74">&#34;📋 4. 네임스페이스 확인&#34;</span>
+</span></span><span style="display:flex;"><span>kubectl get namespaces
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>echo <span style="color:#e6db74">&#34;📋 5. Load Balancer Controller 확인&#34;</span>
+</span></span><span style="display:flex;"><span>kubectl get deployment -n kube-system aws-load-balancer-controller
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>echo <span style="color:#e6db74">&#34;📋 6. Cluster Autoscaler 확인&#34;</span>
+</span></span><span style="display:flex;"><span>kubectl get pods -n kube-system -l app<span style="color:#f92672">=</span>cluster-autoscaler
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>echo <span style="color:#e6db74">&#34;📋 7. Metrics Server 확인&#34;</span>
+</span></span><span style="display:flex;"><span>kubectl top nodes
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>echo <span style="color:#e6db74">&#34;✅ 클러스터 검증 완료!&#34;</span>
+</span></span></code></pre></div><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>chmod +x verify-cluster.sh
+</span></span><span style="display:flex;"><span>./verify-cluster.sh
+</span></span></code></pre></div><hr>
+<h2 id="-문제-해결">🚨 문제 해결<a hidden class="anchor" aria-hidden="true" href="#-문제-해결">#</a></h2>
+<h3 id="자주-발생하는-문제">자주 발생하는 문제<a hidden class="anchor" aria-hidden="true" href="#자주-발생하는-문제">#</a></h3>
+<h4 id="1-load-balancer-controller-설치-실패">1. Load Balancer Controller 설치 실패<a hidden class="anchor" aria-hidden="true" href="#1-load-balancer-controller-설치-실패">#</a></h4>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span><span style="color:#75715e"># OIDC 제공자 확인</span>
+</span></span><span style="display:flex;"><span>aws eks describe-cluster --name openwebui-eks-dev --query <span style="color:#e6db74">&#34;cluster.identity.oidc.issuer&#34;</span> --output text
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># 서비스 어카운트 재생성</span>
+</span></span><span style="display:flex;"><span>eksctl delete iamserviceaccount --cluster<span style="color:#f92672">=</span>openwebui-eks-dev --name<span style="color:#f92672">=</span>aws-load-balancer-controller --namespace<span style="color:#f92672">=</span>kube-system
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># 다시 생성...</span>
+</span></span></code></pre></div><h4 id="2-노드-그룹이-ready-상태가-아닌-경우">2. 노드 그룹이 Ready 상태가 아닌 경우<a hidden class="anchor" aria-hidden="true" href="#2-노드-그룹이-ready-상태가-아닌-경우">#</a></h4>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span><span style="color:#75715e"># 노드 상세 정보 확인</span>
+</span></span><span style="display:flex;"><span>kubectl describe nodes
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># 로그 확인</span>
+</span></span><span style="display:flex;"><span>kubectl logs -n kube-system -l k8s-app<span style="color:#f92672">=</span>aws-node
+</span></span></code></pre></div><h4 id="3-metrics-server-오류">3. Metrics Server 오류<a hidden class="anchor" aria-hidden="true" href="#3-metrics-server-오류">#</a></h4>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span><span style="color:#75715e"># Metrics Server 로그 확인</span>
+</span></span><span style="display:flex;"><span>kubectl logs -n kube-system -l k8s-app<span style="color:#f92672">=</span>metrics-server
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># 재설치</span>
+</span></span><span style="display:flex;"><span>kubectl delete -f https://github.com/kubernetes-sigs/metrics-server/releases/latest/download/components.yaml
+</span></span><span style="display:flex;"><span>kubectl apply -f https://github.com/kubernetes-sigs/metrics-server/releases/latest/download/components.yaml
+</span></span></code></pre></div><hr>
+<h2 id="-다음-단계">⏭️ 다음 단계<a hidden class="anchor" aria-hidden="true" href="#-다음-단계">#</a></h2>
+<p>EKS 클러스터 설정이 완료되었다면:</p>
+<ul>
+<li><strong>[05-application-deployment.md]</strong> - OpenWebUI 애플리케이션 배포</li>
+<li><strong>[06-verification.md]</strong> - 배포 검증 및 테스트</li>
+</ul>
+
+
+  </div>
+
+  <footer class="post-footer">
+    <ul class="post-tags">
+    </ul>
+<nav class="paginav">
+  <a class="prev" href="http://localhost:65390/backend/ci_cd-%ED%8C%8C%EC%9D%B4%ED%94%84%EB%9D%BC%EC%9D%B8-%EA%B0%80%EC%9D%B4%EB%93%9C%EB%9D%BC%EC%9D%B8/">
+    <span class="title">« Prev</span>
+    <br>
+    <span></span>
+  </a>
+  <a class="next" href="http://localhost:65390/backend/terraform-%EC%84%A4%EC%A0%95/">
+    <span class="title">Next »</span>
+    <br>
+    <span></span>
+  </a>
+</nav>
+
+  </footer>
+</article>
+    </main>
+    
+<footer class="footer">
+        <span>&copy; 2025 <a href="http://localhost:65390/">8dobibim Tech Blog</a></span> · 
+
+    <span>
+        Powered by
+        <a href="https://gohugo.io/" rel="noopener noreferrer" target="_blank">Hugo</a> &
+        <a href="https://github.com/adityatelange/hugo-PaperMod/" rel="noopener" target="_blank">PaperMod</a>
+    </span>
+</footer>
+<a href="#top" aria-label="go to top" title="Go to Top (Alt + G)" class="top-link" id="top-link" accesskey="g">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 12 6" fill="currentColor">
+        <path d="M12 6H0l6-6z" />
+    </svg>
+</a>
+
+<script>
+    let menu = document.getElementById('menu')
+    if (menu) {
+        menu.scrollLeft = localStorage.getItem("menu-scroll-position");
+        menu.onscroll = function () {
+            localStorage.setItem("menu-scroll-position", menu.scrollLeft);
+        }
+    }
+
+    document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+        anchor.addEventListener("click", function (e) {
+            e.preventDefault();
+            var id = this.getAttribute("href").substr(1);
+            if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+                document.querySelector(`[id='${decodeURIComponent(id)}']`).scrollIntoView({
+                    behavior: "smooth"
+                });
+            } else {
+                document.querySelector(`[id='${decodeURIComponent(id)}']`).scrollIntoView();
+            }
+            if (id === "top") {
+                history.replaceState(null, null, " ");
+            } else {
+                history.pushState(null, null, `#${id}`);
+            }
+        });
+    });
+
+</script>
+<script>
+    var mybutton = document.getElementById("top-link");
+    window.onscroll = function () {
+        if (document.body.scrollTop > 800 || document.documentElement.scrollTop > 800) {
+            mybutton.style.visibility = "visible";
+            mybutton.style.opacity = "1";
+        } else {
+            mybutton.style.visibility = "hidden";
+            mybutton.style.opacity = "0";
+        }
+    };
+
+</script>
+<script>
+    document.getElementById("theme-toggle").addEventListener("click", () => {
+        if (document.body.className.includes("dark")) {
+            document.body.classList.remove('dark');
+            localStorage.setItem("pref-theme", 'light');
+        } else {
+            document.body.classList.add('dark');
+            localStorage.setItem("pref-theme", 'dark');
+        }
+    })
+
+</script>
+<script>
+    document.querySelectorAll('pre > code').forEach((codeblock) => {
+        const container = codeblock.parentNode.parentNode;
+
+        const copybutton = document.createElement('button');
+        copybutton.classList.add('copy-code');
+        copybutton.innerHTML = 'copy';
+
+        function copyingDone() {
+            copybutton.innerHTML = 'copied!';
+            setTimeout(() => {
+                copybutton.innerHTML = 'copy';
+            }, 2000);
+        }
+
+        copybutton.addEventListener('click', (cb) => {
+            if ('clipboard' in navigator) {
+                navigator.clipboard.writeText(codeblock.textContent);
+                copyingDone();
+                return;
+            }
+
+            const range = document.createRange();
+            range.selectNodeContents(codeblock);
+            const selection = window.getSelection();
+            selection.removeAllRanges();
+            selection.addRange(range);
+            try {
+                document.execCommand('copy');
+                copyingDone();
+            } catch (e) { };
+            selection.removeRange(range);
+        });
+
+        if (container.classList.contains("highlight")) {
+            container.appendChild(copybutton);
+        } else if (container.parentNode.firstChild == container) {
+            
+        } else if (codeblock.parentNode.parentNode.parentNode.parentNode.parentNode.nodeName == "TABLE") {
+            
+            codeblock.parentNode.parentNode.parentNode.parentNode.parentNode.appendChild(copybutton);
+        } else {
+            
+            codeblock.parentNode.appendChild(copybutton);
+        }
+    });
+</script>
+</body>
+
+</html>

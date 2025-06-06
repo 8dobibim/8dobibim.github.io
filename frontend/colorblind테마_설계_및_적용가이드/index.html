@@ -1,0 +1,485 @@
+<!DOCTYPE html>
+<html lang="en" dir="auto">
+
+<head><script src="/livereload.js?mindelay=10&amp;v=2&amp;port=65390&amp;path=livereload" data-no-instant defer></script><meta charset="utf-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+<meta name="robots" content="noindex, nofollow">
+<title>8dobibim Tech Blog</title>
+<meta name="keywords" content="">
+<meta name="description" content="👁️OpenWebUI Colorblind 테마 설계 및 적용 가이드
+📌 설명
+Colorblind 테마는 단순한 색상 테마 변경이 아니라, 모든 사용자가 정보에 동등하게 접근할 수 있도록 설계된 고명도 대비 다크 테마입니다.
+저시력·색각 이상 사용자뿐 아니라 장시간 사용하는 일반 사용자에게도 피로를 줄이는 UX를 목표로 하였습니다.
+
+🎯 테마 디자인 고려 사항
+
+
+접근성은 일부 사용자를 위한 것이 아닌, 모두를 위한 보편적 기준
+
+저시력, 색각 이상 등 다양한 사용자를 고려하였습니다.
+색상의 인식보다, 밝기(명도) 차이에 의한 정보 구분이 더 중요하다고 판단했습니다.
+
+
+
+WCAG AAA 등급을 준수하는 명도 대비">
+<meta name="author" content="">
+<link rel="canonical" href="http://localhost:65390/frontend/colorblind%ED%85%8C%EB%A7%88_%EC%84%A4%EA%B3%84_%EB%B0%8F_%EC%A0%81%EC%9A%A9%EA%B0%80%EC%9D%B4%EB%93%9C/">
+<link crossorigin="anonymous" href="/assets/css/stylesheet.36819bea596090d8b48cf10d9831382996197aa7e4fc86f792f7c08c9ca4d23b.css" integrity="sha256-NoGb6llgkNi0jPENmDE4KZYZeqfk/Ib3kvfAjJyk0js=" rel="preload stylesheet" as="style">
+<link rel="icon" href="http://localhost:65390/favicon.ico">
+<link rel="icon" type="image/png" sizes="16x16" href="http://localhost:65390/favicon-16x16.png">
+<link rel="icon" type="image/png" sizes="32x32" href="http://localhost:65390/favicon-32x32.png">
+<link rel="apple-touch-icon" href="http://localhost:65390/apple-touch-icon.png">
+<link rel="mask-icon" href="http://localhost:65390/safari-pinned-tab.svg">
+<meta name="theme-color" content="#2e2e33">
+<meta name="msapplication-TileColor" content="#2e2e33">
+<link rel="alternate" hreflang="en" href="http://localhost:65390/frontend/colorblind%ED%85%8C%EB%A7%88_%EC%84%A4%EA%B3%84_%EB%B0%8F_%EC%A0%81%EC%9A%A9%EA%B0%80%EC%9D%B4%EB%93%9C/">
+<noscript>
+    <style>
+        #theme-toggle,
+        .top-link {
+            display: none;
+        }
+
+    </style>
+    <style>
+        @media (prefers-color-scheme: dark) {
+            :root {
+                --theme: rgb(29, 30, 32);
+                --entry: rgb(46, 46, 51);
+                --primary: rgb(218, 218, 219);
+                --secondary: rgb(155, 156, 157);
+                --tertiary: rgb(65, 66, 68);
+                --content: rgb(196, 196, 197);
+                --code-block-bg: rgb(46, 46, 51);
+                --code-bg: rgb(55, 56, 62);
+                --border: rgb(51, 51, 51);
+            }
+
+            .list {
+                background: var(--theme);
+            }
+
+            .list:not(.dark)::-webkit-scrollbar-track {
+                background: 0 0;
+            }
+
+            .list:not(.dark)::-webkit-scrollbar-thumb {
+                border-color: var(--theme);
+            }
+        }
+
+    </style>
+</noscript>
+</head>
+
+<body class="" id="top">
+<script>
+    if (localStorage.getItem("pref-theme") === "dark") {
+        document.body.classList.add('dark');
+    } else if (localStorage.getItem("pref-theme") === "light") {
+        document.body.classList.remove('dark')
+    } else if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
+        document.body.classList.add('dark');
+    }
+
+</script>
+
+<header class="header">
+    <nav class="nav">
+        <div class="logo">
+            <a href="http://localhost:65390/" accesskey="h" title="8dobibim Tech Blog (Alt + H)">8dobibim Tech Blog</a>
+            <div class="logo-switches">
+                <button id="theme-toggle" accesskey="t" title="(Alt + T)" aria-label="Toggle theme">
+                    <svg id="moon" xmlns="http://www.w3.org/2000/svg" width="24" height="18" viewBox="0 0 24 24"
+                        fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                        stroke-linejoin="round">
+                        <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+                    </svg>
+                    <svg id="sun" xmlns="http://www.w3.org/2000/svg" width="24" height="18" viewBox="0 0 24 24"
+                        fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                        stroke-linejoin="round">
+                        <circle cx="12" cy="12" r="5"></circle>
+                        <line x1="12" y1="1" x2="12" y2="3"></line>
+                        <line x1="12" y1="21" x2="12" y2="23"></line>
+                        <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+                        <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+                        <line x1="1" y1="12" x2="3" y2="12"></line>
+                        <line x1="21" y1="12" x2="23" y2="12"></line>
+                        <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+                        <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+                    </svg>
+                </button>
+            </div>
+        </div>
+        <ul id="menu">
+            <li>
+                <a href="http://localhost:65390/frontend/" title="🖥 프론트엔드">
+                    <span>🖥 프론트엔드</span>
+                </a>
+            </li>
+            <li>
+                <a href="http://localhost:65390/backend/" title="💾 백엔드">
+                    <span>💾 백엔드</span>
+                </a>
+            </li>
+        </ul>
+    </nav>
+</header>
+<main class="main">
+
+<article class="post-single">
+  <header class="post-header">
+    <div class="breadcrumbs"><a href="http://localhost:65390/">Home</a>&nbsp;»&nbsp;<a href="http://localhost:65390/frontend/">Frontend 문서</a></div>
+    <h1 class="post-title entry-hint-parent">
+      
+    </h1>
+    <div class="post-meta">3 min&nbsp;·&nbsp;472 words
+
+</div>
+  </header> <div class="toc">
+    <details  open>
+        <summary accesskey="c" title="(Alt + C)">
+            <span class="details">Table of Contents</span>
+        </summary>
+
+        <div class="inner"><ul>
+                <li>
+                    <a href="#openwebui-colorblind-%ed%85%8c%eb%a7%88-%ec%84%a4%ea%b3%84-%eb%b0%8f-%ec%a0%81%ec%9a%a9-%ea%b0%80%ec%9d%b4%eb%93%9c" aria-label="👁️OpenWebUI Colorblind 테마 설계 및 적용 가이드">👁️OpenWebUI Colorblind 테마 설계 및 적용 가이드</a><ul>
+                        
+                <li>
+                    <a href="#-%ec%84%a4%eb%aa%85" aria-label="📌 설명">📌 설명</a></li>
+                <li>
+                    <a href="#-%ed%85%8c%eb%a7%88-%eb%94%94%ec%9e%90%ec%9d%b8-%ea%b3%a0%eb%a0%a4-%ec%82%ac%ed%95%ad" aria-label="🎯 테마 디자인 고려 사항">🎯 테마 디자인 고려 사항</a></li>
+                <li>
+                    <a href="#-wcag-aaa-%eb%aa%85%eb%8f%84-%eb%8c%80%eb%b9%84-%ea%b8%b0%ec%a4%80" aria-label="📐 WCAG AAA 명도 대비 기준">📐 WCAG AAA 명도 대비 기준</a></li>
+                <li>
+                    <a href="#-%ea%b8%b0%eb%b3%b8-%ec%83%89%ec%83%81%ec%95%88" aria-label="🎨 기본 색상안">🎨 기본 색상안</a></li>
+                <li>
+                    <a href="#-%ed%8f%ac%ec%9d%b8%ed%8a%b8-%ec%bb%ac%eb%9f%ac-%eb%a6%ac%eb%94%94%ec%9e%90%ec%9d%b8" aria-label="🟦 포인트 컬러 리디자인">🟦 포인트 컬러 리디자인</a></li>
+                <li>
+                    <a href="#-colorblind-%ed%85%8c%eb%a7%88-%ec%a0%81%ec%9a%a9-%ed%99%94%eb%a9%b4" aria-label="📸 Colorblind 테마 적용 화면">📸 Colorblind 테마 적용 화면</a></li>
+                <li>
+                    <a href="#-openwebui-%ec%8b%a4%ec%a0%9c-%ec%a0%81%ec%9a%a9-%eb%b0%a9%ec%8b%9d" aria-label="🧩 OpenWebUI 실제 적용 방식">🧩 OpenWebUI 실제 적용 방식</a></li>
+                <li>
+                    <a href="#-%ec%b0%b8%ea%b3%a0-%eb%ac%b8%ed%97%8c-%eb%b0%8f-%ea%b7%bc%ea%b1%b0-%ec%9e%90%eb%a3%8c" aria-label="📚 참고 문헌 및 근거 자료">📚 참고 문헌 및 근거 자료</a>
+                </li>
+            </ul>
+            </li>
+            </ul>
+        </div>
+    </details>
+</div>
+
+  <div class="post-content"><h1 id="openwebui-colorblind-테마-설계-및-적용-가이드">👁️OpenWebUI Colorblind 테마 설계 및 적용 가이드<a hidden class="anchor" aria-hidden="true" href="#openwebui-colorblind-테마-설계-및-적용-가이드">#</a></h1>
+<h2 id="-설명"><strong>📌 설명</strong><a hidden class="anchor" aria-hidden="true" href="#-설명">#</a></h2>
+<p><strong>Colorblind 테마</strong>는 단순한 색상 테마 변경이 아니라, <strong>모든 사용자</strong>가 정보에 동등하게 접근할 수 있도록 설계된 <strong>고명도 대비 다크 테마입니</strong>다.</p>
+<p>저시력·색각 이상 사용자뿐 아니라 장시간 사용하는 일반 사용자에게도 피로를 줄이는 UX를 목표로 하였습니다.</p>
+<hr>
+<h2 id="-테마-디자인-고려-사항">🎯 테마 디자인 고려 사항<a hidden class="anchor" aria-hidden="true" href="#-테마-디자인-고려-사항">#</a></h2>
+<ol>
+<li>
+<p><strong>접근성은 일부 사용자를 위한 것이 아닌, 모두를 위한 보편적 기준</strong></p>
+<ul>
+<li>저시력, 색각 이상 등 다양한 사용자를 고려하였습니다.</li>
+<li>색상의 인식보다, <strong>밝기(명도) 차이에 의한 정보 구분</strong>이 더 중요하다고 판단했습니다.</li>
+</ul>
+</li>
+<li>
+<p><strong>WCAG AAA 등급을 준수하는 명도 대비</strong></p>
+<ul>
+<li>WCAG의 핵심인 <strong>텍스트와 배경 간의 대비를 확보했습니다.</strong></li>
+<li>AAA 등급(7:1 이상)을 목표로 하여 다양한 시각 조건에서도 가독성을 유지하도록 디자인하였습니다.</li>
+<li><a href="https://www.getcolorlab.com/color-contrast-checker">명도 체크 도구</a></li>
+</ul>
+</li>
+<li>
+<p><strong>배경 색상을 다크모드로 선택한 이유</strong></p>
+<ul>
+<li>어두운 환경에서 <strong>눈부심을 줄이고</strong>, 장시간 사용 시 <strong>시각적 피로를 감소</strong>시킬 수 있습니다. (2025년 국제 환경 연구 및 공중 보건 저널에 발표된 연구에 따르면, 사용자들이 다크 모드를 사용할 때 시각적 피로와 안구 건조 증상이 감소하는 경향이 있다는 연구가 있습니다. 또한, 깜박임 빈도와 동공 조절이 증가하여 시각적 피로가 감소하는 것으로 나타났습니다.<a href="https://pubmed.ncbi.nlm.nih.gov/40283833/">[1]</a>)</li>
+<li>다크모드는 <strong>기기 배터리 절약</strong>(OLED 디스플레이)과 <strong>세련된 시각 스타일</strong> 측면에서도 사용자 선호도가 높습니다.<a href="https://arxiv.org/pdf/2409.10895">[2]</a></li>
+<li>다만 다크모드에서도 <strong>명도 대비가 충분히 확보되지 않으면</strong> 오히려 인식성이 떨어지므로, 반드시 대비 기준을 우선하였습니다.</li>
+</ul>
+</li>
+</ol>
+<hr>
+<h2 id="-wcag-aaa-명도-대비-기준">📐 WCAG AAA 명도 대비 기준<a hidden class="anchor" aria-hidden="true" href="#-wcag-aaa-명도-대비-기준">#</a></h2>
+<table>
+  <thead>
+      <tr>
+          <th>요소</th>
+          <th>AAA 기준 대비 비율</th>
+      </tr>
+  </thead>
+  <tbody>
+      <tr>
+          <td>일반 텍스트</td>
+          <td><strong>7:1 이상</strong></td>
+      </tr>
+      <tr>
+          <td>큰/굵은 텍스트 (18pt 이상 등)</td>
+          <td><strong>4.5:1 이상</strong></td>
+      </tr>
+      <tr>
+          <td>아이콘 등 비텍스트 요소</td>
+          <td><strong>3:1 이상</strong></td>
+      </tr>
+      <tr>
+          <td>텍스트적 기능 겸할 경우</td>
+          <td><strong>7:1 권장</strong></td>
+      </tr>
+  </tbody>
+</table>
+<hr>
+<h2 id="-기본-색상안">🎨 기본 색상안<a hidden class="anchor" aria-hidden="true" href="#-기본-색상안">#</a></h2>
+<table>
+  <thead>
+      <tr>
+          <th>역할</th>
+          <th>색상 코드</th>
+          <th>설명</th>
+      </tr>
+  </thead>
+  <tbody>
+      <tr>
+          <td><strong>기본 배경 색상</strong></td>
+          <td><code>#0B1824</code></td>
+          <td>어두운 다크모드 배경, 눈부심 최소화, 95%의 색각이상자는 적록색약에 해당하며<a href="https://www.kci.go.kr/kciportal/landing/article.kci?arti_id=ART001705754">[3]</a> 블루 베이스의 색상은 잘 인식되는 색상에 해당</td>
+      </tr>
+      <tr>
+          <td><strong>레이어 색상</strong></td>
+          <td><code>#263945</code></td>
+          <td>배경 대비 약 1.5:1텍스트 대비 약 12:1 이상 ※ 다크모드에서는 배경보다 소폭 밝은 색상으로 시각 계층 표현</td>
+      </tr>
+      <tr>
+          <td><strong>텍스트 색상</strong></td>
+          <td><code>#FFFFFF</code></td>
+          <td>레이어 및 배경과 모두 AAA 대비(7:1 이상) 만족</td>
+      </tr>
+  </tbody>
+</table>
+<ul>
+<li>기본 배경 색상 - 레이어(왼쪽 탭) 색상</li>
+</ul>
+<p><img alt="배경_레이어" loading="lazy" src="https://github.com/user-attachments/assets/f351f1de-fdc8-4f0c-a6bb-2b8966736e01"></p>
+<ul>
+<li>기본 배경 색상- 텍스트 색상</li>
+</ul>
+<p><img alt="배경_텍스트" loading="lazy" src="https://github.com/user-attachments/assets/321b6eea-d922-470c-b117-387bb676d062"></p>
+<ul>
+<li>레이어 색상 - 텍스트 색상</li>
+</ul>
+<p><img alt="레이어_텍스트" loading="lazy" src="https://github.com/user-attachments/assets/2df70df9-e951-4e8e-8052-41cf26c5fdab"></p>
+<hr>
+<h2 id="-포인트-컬러-리디자인">🟦 포인트 컬러 리디자인<a hidden class="anchor" aria-hidden="true" href="#-포인트-컬러-리디자인">#</a></h2>
+<table>
+  <thead>
+      <tr>
+          <th>역할</th>
+          <th>기존 색상</th>
+          <th>수정 색상</th>
+          <th>AAA 대비 7:1 만족 여부</th>
+          <th>설명</th>
+      </tr>
+  </thead>
+  <tbody>
+      <tr>
+          <td>파랑색</td>
+          <td><code>#26ABED</code></td>
+          <td><code>#41A7FF</code></td>
+          <td>✅ 만족 (수정 후)</td>
+          <td>대비 부족 → 수정</td>
+      </tr>
+      <tr>
+          <td>노랑색</td>
+          <td><code>#F5D742</code></td>
+          <td>유지</td>
+          <td>✅ 만족</td>
+          <td>유지</td>
+      </tr>
+      <tr>
+          <td>주황색</td>
+          <td><code>#F5D742</code></td>
+          <td>유지</td>
+          <td>✅ 만족</td>
+          <td>유지</td>
+      </tr>
+      <tr>
+          <td>보라색</td>
+          <td><code>#9E44C4</code></td>
+          <td><code>#EF6EF3</code></td>
+          <td>✅ 만족 (수정 후)</td>
+          <td>대비 개선됨</td>
+      </tr>
+  </tbody>
+</table>
+<ul>
+<li><strong>파랑색</strong> #26ABED(기존값) → #41a7ff(수정값) : 7:1 기준 만족하도록 수정</li>
+</ul>
+<p><img alt="포인트(블루)" loading="lazy" src="https://github.com/user-attachments/assets/880a3d44-68ca-4b97-afdb-e4c4e231d6d2"></p>
+<ul>
+<li><strong>노랑색</strong> #f5d742 이미 만족</li>
+</ul>
+<p><img alt="포인트(옐로)" loading="lazy" src="https://github.com/user-attachments/assets/6c0c255e-7c05-424f-af62-70ad556cb067"></p>
+<ul>
+<li><strong>주황색</strong></li>
+</ul>
+<p><img alt="image" loading="lazy" src="https://github.com/user-attachments/assets/c0127f44-335f-446e-8f52-4b009a66e689"></p>
+<ul>
+<li><strong>보라색</strong> #9E44C4(기존값) → #ef6ef3(수정값) : 7:1 기준 만족하도록 수정</li>
+</ul>
+<p><img alt="포인트(퍼플)" loading="lazy" src="https://github.com/user-attachments/assets/fcac965c-31a0-47f0-9660-bd9c8611af69"></p>
+<hr>
+<h2 id="-colorblind-테마-적용-화면">📸 Colorblind 테마 적용 화면<a hidden class="anchor" aria-hidden="true" href="#-colorblind-테마-적용-화면">#</a></h2>
+<ul>
+<li>
+<p>접속 화면
+<!-- raw HTML omitted --></p>
+</li>
+<li>
+<p>기본 채팅 화면 UI
+<!-- raw HTML omitted --></p>
+</li>
+</ul>
+<hr>
+<h2 id="-openwebui-실제-적용-방식">🧩 OpenWebUI 실제 적용 방식<a hidden class="anchor" aria-hidden="true" href="#-openwebui-실제-적용-방식">#</a></h2>
+<ul>
+<li>설정 &gt; 일반 &gt; WebUI설정 &gt; 테마에서 <strong>👁️Colorblind</strong> 테마 선택 시, 적용이 가능합니다.
+<!-- raw HTML omitted --></li>
+</ul>
+<hr>
+<h2 id="-참고-문헌-및-근거-자료">📚 참고 문헌 및 근거 자료<a hidden class="anchor" aria-hidden="true" href="#-참고-문헌-및-근거-자료">#</a></h2>
+<p>[1] Sengsoon P, Intaruk R. <em>Immediate Effects of Light Mode and Dark Mode Features on Visual Fatigue in Tablet Users</em>. Int J Environ Res Public Health. 2025 Apr 12;22(4):609. <a href="https://doi.org/10.3390/ijerph22040609">https://doi.org/10.3390/ijerph22040609</a></p>
+<p>[2] Rahman, M. M., Sultana, S., &amp; Hossain, M. S. <em>Dark Mode in e-Learning: Perception, Preferences, and Fatigue</em>. arXiv:2409.10895</p>
+<p>[3] Lee, M. G., &amp; Jin, W. <em>Improvements in the Color Universal Design of Mobile Web Sites for Colorblind People</em>. J. Korean Society of Design Science, 25(3), 118–127. <a href="https://doi.org/10.17280/jdd.2012.12.4.019">https://doi.org/10.17280/jdd.2012.12.4.019</a></p>
+
+
+  </div>
+
+  <footer class="post-footer">
+    <ul class="post-tags">
+    </ul>
+
+  </footer>
+</article>
+    </main>
+    
+<footer class="footer">
+        <span>&copy; 2025 <a href="http://localhost:65390/">8dobibim Tech Blog</a></span> · 
+
+    <span>
+        Powered by
+        <a href="https://gohugo.io/" rel="noopener noreferrer" target="_blank">Hugo</a> &
+        <a href="https://github.com/adityatelange/hugo-PaperMod/" rel="noopener" target="_blank">PaperMod</a>
+    </span>
+</footer>
+<a href="#top" aria-label="go to top" title="Go to Top (Alt + G)" class="top-link" id="top-link" accesskey="g">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 12 6" fill="currentColor">
+        <path d="M12 6H0l6-6z" />
+    </svg>
+</a>
+
+<script>
+    let menu = document.getElementById('menu')
+    if (menu) {
+        menu.scrollLeft = localStorage.getItem("menu-scroll-position");
+        menu.onscroll = function () {
+            localStorage.setItem("menu-scroll-position", menu.scrollLeft);
+        }
+    }
+
+    document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+        anchor.addEventListener("click", function (e) {
+            e.preventDefault();
+            var id = this.getAttribute("href").substr(1);
+            if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+                document.querySelector(`[id='${decodeURIComponent(id)}']`).scrollIntoView({
+                    behavior: "smooth"
+                });
+            } else {
+                document.querySelector(`[id='${decodeURIComponent(id)}']`).scrollIntoView();
+            }
+            if (id === "top") {
+                history.replaceState(null, null, " ");
+            } else {
+                history.pushState(null, null, `#${id}`);
+            }
+        });
+    });
+
+</script>
+<script>
+    var mybutton = document.getElementById("top-link");
+    window.onscroll = function () {
+        if (document.body.scrollTop > 800 || document.documentElement.scrollTop > 800) {
+            mybutton.style.visibility = "visible";
+            mybutton.style.opacity = "1";
+        } else {
+            mybutton.style.visibility = "hidden";
+            mybutton.style.opacity = "0";
+        }
+    };
+
+</script>
+<script>
+    document.getElementById("theme-toggle").addEventListener("click", () => {
+        if (document.body.className.includes("dark")) {
+            document.body.classList.remove('dark');
+            localStorage.setItem("pref-theme", 'light');
+        } else {
+            document.body.classList.add('dark');
+            localStorage.setItem("pref-theme", 'dark');
+        }
+    })
+
+</script>
+<script>
+    document.querySelectorAll('pre > code').forEach((codeblock) => {
+        const container = codeblock.parentNode.parentNode;
+
+        const copybutton = document.createElement('button');
+        copybutton.classList.add('copy-code');
+        copybutton.innerHTML = 'copy';
+
+        function copyingDone() {
+            copybutton.innerHTML = 'copied!';
+            setTimeout(() => {
+                copybutton.innerHTML = 'copy';
+            }, 2000);
+        }
+
+        copybutton.addEventListener('click', (cb) => {
+            if ('clipboard' in navigator) {
+                navigator.clipboard.writeText(codeblock.textContent);
+                copyingDone();
+                return;
+            }
+
+            const range = document.createRange();
+            range.selectNodeContents(codeblock);
+            const selection = window.getSelection();
+            selection.removeAllRanges();
+            selection.addRange(range);
+            try {
+                document.execCommand('copy');
+                copyingDone();
+            } catch (e) { };
+            selection.removeRange(range);
+        });
+
+        if (container.classList.contains("highlight")) {
+            container.appendChild(copybutton);
+        } else if (container.parentNode.firstChild == container) {
+            
+        } else if (codeblock.parentNode.parentNode.parentNode.parentNode.parentNode.nodeName == "TABLE") {
+            
+            codeblock.parentNode.parentNode.parentNode.parentNode.parentNode.appendChild(copybutton);
+        } else {
+            
+            codeblock.parentNode.appendChild(copybutton);
+        }
+    });
+</script>
+</body>
+
+</html>

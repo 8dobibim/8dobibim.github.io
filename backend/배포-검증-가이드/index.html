@@ -1,0 +1,1530 @@
+<!DOCTYPE html>
+<html lang="en" dir="auto">
+
+<head><script src="/livereload.js?mindelay=10&amp;v=2&amp;port=65390&amp;path=livereload" data-no-instant defer></script><meta charset="utf-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+<meta name="robots" content="noindex, nofollow">
+<title>8dobibim Tech Blog</title>
+<meta name="keywords" content="">
+<meta name="description" content="✅ 배포 검증 가이드
+
+⏱️ 예상 소요시간: 30-45분
+💡 난이도: 초급-중급
+📋 목표: 배포된 OpenWebUI 시스템의 정상 작동을 검증하고 테스트합니다.
+
+📋 검증 완료 체크리스트
+
+ 인프라 상태 확인
+ 데이터베이스 연결 테스트
+ LiteLLM API 테스트
+ OpenWebUI 웹 인터페이스 테스트
+ 로드밸런서 및 네트워킹 테스트
+ 로그 및 모니터링 확인
+ 부하 테스트 실행
+ 장애 복구 테스트
+
+
+🏗️ 1단계: 인프라 상태 확인
+클러스터 전체 상태
+#!/bin/bash
+# infrastructure-check.sh
+
+echo &#34;🔍 인프라 상태 검증 시작...&#34;
+
+echo &#34;📋 1. 클러스터 노드 상태&#34;
+kubectl get nodes -o wide
+
+echo &#34;📋 2. 네임스페이스 확인&#34;
+kubectl get namespaces
+
+echo &#34;📋 3. 전체 파드 상태&#34;
+kubectl get pods -A -o wide
+
+echo &#34;📋 4. 서비스 상태&#34;
+kubectl get svc -A
+
+echo &#34;📋 5. Ingress 상태&#34;
+kubectl get ingress -A
+
+echo &#34;📋 6. PVC 상태&#34;
+kubectl get pvc -A
+
+echo &#34;📋 7. 시크릿 확인&#34;
+kubectl get secrets -A
+
+echo &#34;✅ 인프라 상태 확인 완료&#34;
+리소스 사용량 확인
+# 노드 리소스 사용량
+kubectl top nodes
+
+# 파드 리소스 사용량
+kubectl top pods -A
+
+# 네임스페이스별 리소스 사용량
+kubectl top pods -n openwebui
+kubectl top pods -n litellm
+
+🗃️ 2단계: 데이터베이스 연결 테스트
+PostgreSQL 연결 테스트
+# PostgreSQL 파드에 직접 접속
+kubectl exec -it deployment/postgres -n openwebui -- psql -U openwebui -d openwebui
+
+# SQL 명령어로 테스트
+\l                          # 데이터베이스 목록
+\dt                         # 테이블 목록
+SELECT version();           # PostgreSQL 버전 확인
+SELECT now();               # 현재 시간
+\q                          # 종료
+데이터베이스 연결 스크립트
+#!/bin/bash
+# db-connection-test.sh
+
+echo &#34;🗃️ 데이터베이스 연결 테스트...&#34;
+
+# PostgreSQL 파드 상태 확인
+if ! kubectl get pod -l app=postgres -n openwebui | grep -q &#34;Running&#34;; then
+    echo &#34;❌ PostgreSQL 파드가 실행 중이 아닙니다.&#34;
+    exit 1
+fi
+
+# 연결 테스트
+echo &#34;📡 데이터베이스 연결 테스트 중...&#34;
+kubectl exec deployment/postgres -n openwebui -- pg_isready -U openwebui
+
+if [ $? -eq 0 ]; then
+    echo &#34;✅ PostgreSQL 연결 성공&#34;
+else
+    echo &#34;❌ PostgreSQL 연결 실패&#34;
+    exit 1
+fi
+
+# 데이터베이스 쿼리 테스트
+echo &#34;🔍 기본 쿼리 테스트...&#34;
+kubectl exec deployment/postgres -n openwebui -- psql -U openwebui -d openwebui -c &#34;SELECT 1 as test;&#34;
+
+echo &#34;✅ 데이터베이스 테스트 완료&#34;
+
+🤖 3단계: LiteLLM API 테스트
+LiteLLM 서비스 상태 확인
+# LiteLLM 파드 상태
+kubectl get pods -l app=litellm -n litellm
+
+# LiteLLM 서비스 엔드포인트 확인
+kubectl get endpoints -n litellm
+
+# LiteLLM 로그 확인
+kubectl logs deployment/litellm -n litellm --tail=50
+API 엔드포인트 테스트
+#!/bin/bash
+# litellm-api-test.sh
+
+echo &#34;🤖 LiteLLM API 테스트...&#34;
+
+# 포트 포워딩 설정
+kubectl port-forward svc/litellm-service 4000:4000 -n litellm &amp;
+PORT_FORWARD_PID=$!
+sleep 5
+
+# Health check
+echo &#34;📡 헬스체크 테스트...&#34;
+curl -s http://localhost:4000/health
+
+# 모델 목록 확인
+echo &#34;📝 모델 목록 확인...&#34;
+curl -s http://localhost:4000/v1/models | jq &#39;.&#39;
+
+# 간단한 채팅 완료 테스트
+echo &#34;💬 채팅 완료 API 테스트...&#34;
+curl -X POST http://localhost:4000/v1/chat/completions \
+  -H &#34;Content-Type: application/json&#34; \
+  -H &#34;Authorization: Bearer your-master-key&#34; \
+  -d &#39;{
+    &#34;model&#34;: &#34;gpt-3.5-turbo&#34;,
+    &#34;messages&#34;: [{&#34;role&#34;: &#34;user&#34;, &#34;content&#34;: &#34;Hello, this is a test.&#34;}],
+    &#34;max_tokens&#34;: 50
+  }&#39; | jq &#39;.&#39;
+
+# 포트 포워딩 종료
+kill $PORT_FORWARD_PID
+
+echo &#34;✅ LiteLLM API 테스트 완료&#34;
+
+🌐 4단계: OpenWebUI 웹 인터페이스 테스트
+웹 인터페이스 접근 테스트
+#!/bin/bash
+# webui-access-test.sh
+
+echo &#34;🌐 OpenWebUI 접근 테스트...&#34;
+
+# OpenWebUI 파드 상태 확인
+kubectl get pods -l app=openwebui -n openwebui
+
+# 포트 포워딩으로 로컬 접근 테스트
+kubectl port-forward svc/openwebui-service 8080:8080 -n openwebui &amp;
+PORT_FORWARD_PID=$!
+sleep 10
+
+# HTTP 상태 코드 확인
+echo &#34;📡 HTTP 상태 확인...&#34;
+HTTP_STATUS=$(curl -s -o /dev/null -w &#34;%{http_code}&#34; http://localhost:8080)
+
+if [ &#34;$HTTP_STATUS&#34; = &#34;200&#34; ]; then
+    echo &#34;✅ OpenWebUI 접근 성공 (HTTP $HTTP_STATUS)&#34;
+else
+    echo &#34;❌ OpenWebUI 접근 실패 (HTTP $HTTP_STATUS)&#34;
+fi
+
+# HTML 응답 확인
+echo &#34;📄 HTML 응답 확인...&#34;
+curl -s http://localhost:8080 | head -20
+
+# 포트 포워딩 종료
+kill $PORT_FORWARD_PID
+
+echo &#34;✅ OpenWebUI 접근 테스트 완료&#34;
+브라우저 테스트 체크리스트
+수동 테스트 항목:
+□ 메인 페이지 로딩
+□ 회원가입 페이지
+□ 로그인 기능
+□ 채팅 인터페이스
+□ 모델 선택 기능
+□ 파일 업로드 기능
+□ 설정 페이지 접근
+
+🌍 5단계: 로드밸런서 및 네트워킹 테스트
+Ingress/LoadBalancer 상태 확인
+#!/bin/bash
+# networking-test.sh
+
+echo &#34;🌍 네트워킹 테스트...&#34;
+
+# Ingress 상태 확인
+echo &#34;📡 Ingress 상태:&#34;
+kubectl get ingress -n openwebui -o wide
+
+# LoadBalancer 상태 확인
+echo &#34;⚖️ LoadBalancer 상태:&#34;
+kubectl get svc -n openwebui -o wide
+
+# DNS 해상도 테스트
+echo &#34;🔍 DNS 해상도 테스트:&#34;
+INGRESS_HOST=$(kubectl get ingress openwebui-ingress -n openwebui -o jsonpath=&#39;{.status.loadBalancer.ingress[0].hostname}&#39;)
+
+if [ -n &#34;$INGRESS_HOST&#34; ]; then
+    echo &#34;Ingress 호스트: $INGRESS_HOST&#34;
+    nslookup $INGRESS_HOST
+    
+    # HTTP 테스트
+    echo &#34;🔗 외부 접근 테스트:&#34;
+    curl -I http://$INGRESS_HOST --connect-timeout 10
+else
+    echo &#34;⚠️ Ingress 호스트를 찾을 수 없습니다.&#34;
+fi
+
+echo &#34;✅ 네트워킹 테스트 완료&#34;
+서비스 간 통신 테스트
+#!/bin/bash
+# service-communication-test.sh
+
+echo &#34;🔄 서비스 간 통신 테스트...&#34;
+
+# OpenWebUI에서 LiteLLM 연결 테스트
+echo &#34;📡 OpenWebUI → LiteLLM 연결 테스트:&#34;
+kubectl exec deployment/openwebui -n openwebui -- \
+  curl -s http://litellm-service.litellm.svc.cluster.local:4000/health
+
+# OpenWebUI에서 PostgreSQL 연결 테스트
+echo &#34;🗃️ OpenWebUI → PostgreSQL 연결 테스트:&#34;
+kubectl exec deployment/openwebui -n openwebui -- \
+  nc -zv postgres-service 5432
+
+# LiteLLM에서 PostgreSQL 연결 테스트
+echo &#34;🗃️ LiteLLM → PostgreSQL 연결 테스트:&#34;
+kubectl exec deployment/litellm -n litellm -- \
+  nc -zv postgres-service.openwebui.svc.cluster.local 5432
+
+echo &#34;✅ 서비스 간 통신 테스트 완료&#34;
+
+📊 6단계: 로그 및 모니터링 확인
+애플리케이션 로그 확인
+#!/bin/bash
+# log-check.sh
+
+echo &#34;📊 로그 확인...&#34;
+
+echo &#34;🗃️ PostgreSQL 로그:&#34;
+kubectl logs deployment/postgres -n openwebui --tail=20
+
+echo &#34;🤖 LiteLLM 로그:&#34;
+kubectl logs deployment/litellm -n litellm --tail=20
+
+echo &#34;🌐 OpenWebUI 로그:&#34;
+kubectl logs deployment/openwebui -n openwebui --tail=20
+
+# 에러 로그 검색
+echo &#34;❌ 에러 로그 검색:&#34;
+kubectl logs deployment/openwebui -n openwebui | grep -i error | tail -10
+kubectl logs deployment/litellm -n litellm | grep -i error | tail -10
+
+echo &#34;✅ 로그 확인 완료&#34;
+이벤트 확인
+# 클러스터 이벤트 확인
+kubectl get events -A --sort-by=&#39;.lastTimestamp&#39; | tail -20
+
+# 네임스페이스별 이벤트
+kubectl get events -n openwebui --sort-by=&#39;.lastTimestamp&#39;
+kubectl get events -n litellm --sort-by=&#39;.lastTimestamp&#39;
+메트릭 확인
+# 리소스 사용량 모니터링
+kubectl top pods -n openwebui --containers
+kubectl top pods -n litellm --containers
+
+# 파드별 상세 메트릭
+kubectl describe pod -l app=openwebui -n openwebui
+kubectl describe pod -l app=litellm -n litellm
+
+🚀 7단계: 부하 테스트
+간단한 부하 테스트
+#!/bin/bash
+# load-test.sh
+
+echo &#34;🚀 부하 테스트 시작...&#34;
+
+# 포트 포워딩 설정
+kubectl port-forward svc/openwebui-service 8080:8080 -n openwebui &amp;
+PORT_FORWARD_PID=$!
+sleep 5
+
+# Apache Bench를 사용한 부하 테스트
+echo &#34;⚡ HTTP 부하 테스트 (100 요청, 동시접속 10):&#34;
+ab -n 100 -c 10 http://localhost:8080/
+
+# curl을 사용한 반복 테스트
+echo &#34;🔄 반복 접속 테스트:&#34;
+for i in {1..10}; do
+    echo &#34;요청 $i:&#34;
+    curl -s -o /dev/null -w &#34;HTTP Status: %{http_code}, Time: %{time_total}s\n&#34; http://localhost:8080/
+    sleep 1
+done
+
+# 포트 포워딩 종료
+kill $PORT_FORWARD_PID
+
+echo &#34;✅ 부하 테스트 완료&#34;
+K6를 사용한 고급 부하 테스트
+// k6-load-test.js
+import http from &#39;k6/http&#39;;
+import { check, sleep } from &#39;k6&#39;;
+
+export let options = {
+  stages: [
+    { duration: &#39;2m&#39;, target: 10 }, // 2분간 10명 사용자로 증가
+    { duration: &#39;5m&#39;, target: 10 }, // 5분간 10명 사용자 유지
+    { duration: &#39;2m&#39;, target: 20 }, // 2분간 20명 사용자로 증가
+    { duration: &#39;5m&#39;, target: 20 }, // 5분간 20명 사용자 유지
+    { duration: &#39;2m&#39;, target: 0 },  // 2분간 0명으로 감소
+  ],
+};
+
+export default function () {
+  let response = http.get(&#39;http://localhost:8080&#39;);
+  
+  check(response, {
+    &#39;status is 200&#39;: (r) =&gt; r.status === 200,
+    &#39;response time &lt; 500ms&#39;: (r) =&gt; r.timings.duration &lt; 500,
+  });
+  
+  sleep(1);
+}
+# K6 설치 및 실행
+# 1. K6 설치 (macOS)
+brew install k6
+
+# 2. 부하 테스트 실행
+kubectl port-forward svc/openwebui-service 8080:8080 -n openwebui &amp;
+k6 run k6-load-test.js
+
+🔧 8단계: 장애 복구 테스트
+파드 장애 시뮬레이션
+#!/bin/bash
+# failure-recovery-test.sh
+
+echo &#34;🔧 장애 복구 테스트...&#34;
+
+echo &#34;💥 OpenWebUI 파드 삭제 (장애 시뮬레이션):&#34;
+kubectl delete pod -l app=openwebui -n openwebui
+
+echo &#34;⏳ 파드 재생성 대기 (30초):&#34;
+sleep 30
+
+echo &#34;✅ 파드 복구 상태 확인:&#34;
+kubectl get pods -l app=openwebui -n openwebui
+
+echo &#34;🔍 서비스 가용성 테스트:&#34;
+kubectl port-forward svc/openwebui-service 8080:8080 -n openwebui &amp;
+PORT_FORWARD_PID=$!
+sleep 10
+
+HTTP_STATUS=$(curl -s -o /dev/null -w &#34;%{http_code}&#34; http://localhost:8080)
+echo &#34;HTTP 상태: $HTTP_STATUS&#34;
+
+kill $PORT_FORWARD_PID
+
+if [ &#34;$HTTP_STATUS&#34; = &#34;200&#34; ]; then
+    echo &#34;✅ 장애 복구 성공&#34;
+else
+    echo &#34;❌ 장애 복구 실패&#34;
+fi
+
+echo &#34;✅ 장애 복구 테스트 완료&#34;
+데이터베이스 장애 테스트
+#!/bin/bash
+# db-failure-test.sh
+
+echo &#34;🗃️ 데이터베이스 장애 테스트...&#34;
+
+echo &#34;💥 PostgreSQL 파드 삭제:&#34;
+kubectl delete pod -l app=postgres -n openwebui
+
+echo &#34;⏳ 파드 재생성 및 데이터 복구 대기 (60초):&#34;
+sleep 60
+
+echo &#34;✅ PostgreSQL 복구 확인:&#34;
+kubectl wait --for=condition=ready pod -l app=postgres -n openwebui --timeout=300s
+
+echo &#34;🔍 데이터 무결성 확인:&#34;
+kubectl exec deployment/postgres -n openwebui -- psql -U openwebui -d openwebui -c &#34;SELECT 1 as test;&#34;
+
+echo &#34;✅ 데이터베이스 장애 테스트 완료&#34;
+
+📈 9단계: 성능 벤치마크
+애플리케이션 성능 측정
+#!/bin/bash
+# performance-benchmark.sh
+
+echo &#34;📈 성능 벤치마크 시작...&#34;
+
+# 포트 포워딩 설정
+kubectl port-forward svc/openwebui-service 8080:8080 -n openwebui &amp;
+PORT_FORWARD_PID=$!
+sleep 5
+
+echo &#34;⏱️ 응답 시간 측정 (10회):&#34;
+for i in {1..10}; do
+    curl -s -o /dev/null -w &#34;응답시간 $i: %{time_total}s\n&#34; http://localhost:8080/
+done
+
+echo &#34;📊 동시 접속 테스트:&#34;
+ab -n 50 -c 5 http://localhost:8080/ | grep -E &#34;(Requests per second|Time per request)&#34;
+
+# 포트 포워딩 종료
+kill $PORT_FORWARD_PID
+
+echo &#34;💾 리소스 사용량 기록:&#34;
+kubectl top pods -n openwebui --containers
+kubectl top pods -n litellm --containers
+
+echo &#34;✅ 성능 벤치마크 완료&#34;
+
+🔍 10단계: 종합 검증 리포트
+자동 검증 스크립트
+#!/bin/bash
+# comprehensive-verification.sh
+
+set -e
+
+REPORT_FILE=&#34;verification-report-$(date &#43;%Y%m%d-%H%M%S).txt&#34;
+
+echo &#34;📋 OpenWebUI 종합 검증 리포트&#34; | tee $REPORT_FILE
+echo &#34;생성 시간: $(date)&#34; | tee -a $REPORT_FILE
+echo &#34;======================================&#34; | tee -a $REPORT_FILE
+
+# 1. 인프라 상태
+echo &#34;🏗️ 1. 인프라 상태&#34; | tee -a $REPORT_FILE
+kubectl get nodes --no-headers | wc -l | xargs echo &#34;- 활성 노드 수:&#34; | tee -a $REPORT_FILE
+kubectl get pods -A --field-selector=status.phase=Running --no-headers | wc -l | xargs echo &#34;- 실행 중인 파드:&#34; | tee -a $REPORT_FILE
+
+# 2. 애플리케이션 상태
+echo &#34;🌐 2. 애플리케이션 상태&#34; | tee -a $REPORT_FILE
+kubectl get pods -n openwebui -l app=openwebui --no-headers | grep Running | wc -l | xargs echo &#34;- OpenWebUI 파드:&#34; | tee -a $REPORT_FILE
+kubectl get pods -n litellm -l app=litellm --no-headers | grep Running | wc -l | xargs echo &#34;- LiteLLM 파드:&#34; | tee -a $REPORT_FILE
+kubectl get pods -n openwebui -l app=postgres --no-headers | grep Running | wc -l | xargs echo &#34;- PostgreSQL 파드:&#34; | tee -a $REPORT_FILE
+
+# 3. 서비스 연결성
+echo &#34;🔗 3. 서비스 연결성&#34; | tee -a $REPORT_FILE
+if kubectl exec deployment/openwebui -n openwebui -- curl -s http://litellm-service.litellm.svc.cluster.local:4000/health &gt; /dev/null; then
+    echo &#34;- OpenWebUI → LiteLLM: ✅&#34; | tee -a $REPORT_FILE
+else
+    echo &#34;- OpenWebUI → LiteLLM: ❌&#34; | tee -a $REPORT_FILE
+fi
+
+if kubectl exec deployment/postgres -n openwebui -- pg_isready &gt; /dev/null; then
+    echo &#34;- PostgreSQL 연결: ✅&#34; | tee -a $REPORT_FILE
+else
+    echo &#34;- PostgreSQL 연결: ❌&#34; | tee -a $REPORT_FILE
+fi
+
+# 4. 외부 접근성
+echo &#34;🌍 4. 외부 접근성&#34; | tee -a $REPORT_FILE
+kubectl port-forward svc/openwebui-service 8080:8080 -n openwebui &amp;
+PORT_FORWARD_PID=$!
+sleep 5
+
+HTTP_STATUS=$(curl -s -o /dev/null -w &#34;%{http_code}&#34; http://localhost:8080 || echo &#34;000&#34;)
+if [ &#34;$HTTP_STATUS&#34; = &#34;200&#34; ]; then
+    echo &#34;- HTTP 접근: ✅ ($HTTP_STATUS)&#34; | tee -a $REPORT_FILE
+else
+    echo &#34;- HTTP 접근: ❌ ($HTTP_STATUS)&#34; | tee -a $REPORT_FILE
+fi
+
+kill $PORT_FORWARD_PID
+
+# 5. 리소스 사용량
+echo &#34;📊 5. 리소스 사용량&#34; | tee -a $REPORT_FILE
+kubectl top nodes --no-headers | awk &#39;{print &#34;- 노드 &#34; $1 &#34;: CPU &#34; $3 &#34;, Memory &#34; $5}&#39; | tee -a $REPORT_FILE
+
+# 6. 최근 에러 로그
+echo &#34;❌ 6. 최근 에러 (최근 10분)&#34; | tee -a $REPORT_FILE
+ERROR_COUNT=$(kubectl logs --since=10m -l app=openwebui -n openwebui | grep -i error | wc -l)
+echo &#34;- OpenWebUI 에러: $ERROR_COUNT 건&#34; | tee -a $REPORT_FILE
+
+echo &#34;======================================&#34; | tee -a $REPORT_FILE
+echo &#34;✅ 검증 완료 - 리포트 파일: $REPORT_FILE&#34; | tee -a $REPORT_FILE
+검증 체크리스트 확인
+#!/bin/bash
+# final-checklist.sh
+
+echo &#34;📋 최종 배포 검증 체크리스트&#34;
+echo &#34;===============================&#34;
+
+checks=(
+    &#34;모든 파드가 Running 상태인가?&#34;
+    &#34;데이터베이스 연결이 정상인가?&#34;
+    &#34;LiteLLM API가 응답하는가?&#34;
+    &#34;OpenWebUI 웹 페이지가 로드되는가?&#34;
+    &#34;외부에서 접근 가능한가?&#34;
+    &#34;파드 간 통신이 정상인가?&#34;
+    &#34;로그에 심각한 에러가 없는가?&#34;
+    &#34;리소스 사용량이 적정한가?&#34;
+    &#34;장애 복구가 정상 작동하는가?&#34;
+    &#34;성능이 요구사항을 만족하는가?&#34;
+)
+
+for check in &#34;${checks[@]}&#34;; do
+    echo &#34;□ $check&#34;
+done
+
+echo &#34;&#34;
+echo &#34;모든 항목이 체크되면 배포가 성공적으로 완료된 것입니다! 🎉&#34;
+
+🚨 문제 해결 가이드
+일반적인 문제들
+1. 파드가 Pending 상태
+# 원인 확인
+kubectl describe pod &lt;pod-name&gt; -n &lt;namespace&gt;
+
+# 일반적인 해결책
+# - 노드 리소스 부족: 스케일링 또는 리소스 조정
+# - PVC 마운트 실패: StorageClass 확인
+# - 이미지 Pull 실패: 이미지 레지스트리 접근 권한 확인
+2. 서비스 연결 실패
+# 서비스 엔드포인트 확인
+kubectl get endpoints -n &lt;namespace&gt;
+
+# DNS 해상도 테스트
+kubectl exec -it &lt;pod-name&gt; -n &lt;namespace&gt; -- nslookup &lt;service-name&gt;
+
+# 네트워크 정책 확인
+kubectl get networkpolicy -A
+3. 로드밸런서 접근 불가
+# ALB 상태 확인
+kubectl describe ingress &lt;ingress-name&gt; -n &lt;namespace&gt;
+
+# AWS 콘솔에서 로드밸런서 상태 확인
+aws elbv2 describe-load-balancers
+
+# 보안 그룹 규칙 확인
+aws ec2 describe-security-groups
+
+📚 성능 최적화 권장사항
+리소스 최적화
+# 권장 리소스 설정
+resources:
+  requests:
+    memory: &#34;256Mi&#34;
+    cpu: &#34;250m&#34;
+  limits:
+    memory: &#34;512Mi&#34;
+    cpu: &#34;500m&#34;
+캐싱 전략
+
+Redis 캐시 추가 고려
+CDN 설정 (정적 자원용)
+데이터베이스 쿼리 최적화
+
+모니터링 강화
+
+Prometheus &#43; Grafana 설치
+Alert Manager 설정
+로그 집계 시스템 구축
+
+
+⏭️ 다음 단계
+배포 검증이 완료되었다면:">
+<meta name="author" content="">
+<link rel="canonical" href="http://localhost:65390/backend/%EB%B0%B0%ED%8F%AC-%EA%B2%80%EC%A6%9D-%EA%B0%80%EC%9D%B4%EB%93%9C/">
+<link crossorigin="anonymous" href="/assets/css/stylesheet.36819bea596090d8b48cf10d9831382996197aa7e4fc86f792f7c08c9ca4d23b.css" integrity="sha256-NoGb6llgkNi0jPENmDE4KZYZeqfk/Ib3kvfAjJyk0js=" rel="preload stylesheet" as="style">
+<link rel="icon" href="http://localhost:65390/favicon.ico">
+<link rel="icon" type="image/png" sizes="16x16" href="http://localhost:65390/favicon-16x16.png">
+<link rel="icon" type="image/png" sizes="32x32" href="http://localhost:65390/favicon-32x32.png">
+<link rel="apple-touch-icon" href="http://localhost:65390/apple-touch-icon.png">
+<link rel="mask-icon" href="http://localhost:65390/safari-pinned-tab.svg">
+<meta name="theme-color" content="#2e2e33">
+<meta name="msapplication-TileColor" content="#2e2e33">
+<link rel="alternate" hreflang="en" href="http://localhost:65390/backend/%EB%B0%B0%ED%8F%AC-%EA%B2%80%EC%A6%9D-%EA%B0%80%EC%9D%B4%EB%93%9C/">
+<noscript>
+    <style>
+        #theme-toggle,
+        .top-link {
+            display: none;
+        }
+
+    </style>
+    <style>
+        @media (prefers-color-scheme: dark) {
+            :root {
+                --theme: rgb(29, 30, 32);
+                --entry: rgb(46, 46, 51);
+                --primary: rgb(218, 218, 219);
+                --secondary: rgb(155, 156, 157);
+                --tertiary: rgb(65, 66, 68);
+                --content: rgb(196, 196, 197);
+                --code-block-bg: rgb(46, 46, 51);
+                --code-bg: rgb(55, 56, 62);
+                --border: rgb(51, 51, 51);
+            }
+
+            .list {
+                background: var(--theme);
+            }
+
+            .list:not(.dark)::-webkit-scrollbar-track {
+                background: 0 0;
+            }
+
+            .list:not(.dark)::-webkit-scrollbar-thumb {
+                border-color: var(--theme);
+            }
+        }
+
+    </style>
+</noscript>
+</head>
+
+<body class="" id="top">
+<script>
+    if (localStorage.getItem("pref-theme") === "dark") {
+        document.body.classList.add('dark');
+    } else if (localStorage.getItem("pref-theme") === "light") {
+        document.body.classList.remove('dark')
+    } else if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
+        document.body.classList.add('dark');
+    }
+
+</script>
+
+<header class="header">
+    <nav class="nav">
+        <div class="logo">
+            <a href="http://localhost:65390/" accesskey="h" title="8dobibim Tech Blog (Alt + H)">8dobibim Tech Blog</a>
+            <div class="logo-switches">
+                <button id="theme-toggle" accesskey="t" title="(Alt + T)" aria-label="Toggle theme">
+                    <svg id="moon" xmlns="http://www.w3.org/2000/svg" width="24" height="18" viewBox="0 0 24 24"
+                        fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                        stroke-linejoin="round">
+                        <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+                    </svg>
+                    <svg id="sun" xmlns="http://www.w3.org/2000/svg" width="24" height="18" viewBox="0 0 24 24"
+                        fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                        stroke-linejoin="round">
+                        <circle cx="12" cy="12" r="5"></circle>
+                        <line x1="12" y1="1" x2="12" y2="3"></line>
+                        <line x1="12" y1="21" x2="12" y2="23"></line>
+                        <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+                        <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+                        <line x1="1" y1="12" x2="3" y2="12"></line>
+                        <line x1="21" y1="12" x2="23" y2="12"></line>
+                        <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+                        <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+                    </svg>
+                </button>
+            </div>
+        </div>
+        <ul id="menu">
+            <li>
+                <a href="http://localhost:65390/frontend/" title="🖥 프론트엔드">
+                    <span>🖥 프론트엔드</span>
+                </a>
+            </li>
+            <li>
+                <a href="http://localhost:65390/backend/" title="💾 백엔드">
+                    <span>💾 백엔드</span>
+                </a>
+            </li>
+        </ul>
+    </nav>
+</header>
+<main class="main">
+
+<article class="post-single">
+  <header class="post-header">
+    <div class="breadcrumbs"><a href="http://localhost:65390/">Home</a>&nbsp;»&nbsp;<a href="http://localhost:65390/backend/">Backend 문서</a></div>
+    <h1 class="post-title entry-hint-parent">
+      
+    </h1>
+    <div class="post-meta">11 min&nbsp;·&nbsp;2135 words
+
+</div>
+  </header> <div class="toc">
+    <details  open>
+        <summary accesskey="c" title="(Alt + C)">
+            <span class="details">Table of Contents</span>
+        </summary>
+
+        <div class="inner"><ul>
+                <li>
+                    <a href="#-%eb%b0%b0%ed%8f%ac-%ea%b2%80%ec%a6%9d-%ea%b0%80%ec%9d%b4%eb%93%9c" aria-label="✅ 배포 검증 가이드">✅ 배포 검증 가이드</a><ul>
+                        
+                <li>
+                    <a href="#-%ea%b2%80%ec%a6%9d-%ec%99%84%eb%a3%8c-%ec%b2%b4%ed%81%ac%eb%a6%ac%ec%8a%a4%ed%8a%b8" aria-label="📋 검증 완료 체크리스트">📋 검증 완료 체크리스트</a></li>
+                <li>
+                    <a href="#-1%eb%8b%a8%ea%b3%84-%ec%9d%b8%ed%94%84%eb%9d%bc-%ec%83%81%ed%83%9c-%ed%99%95%ec%9d%b8" aria-label="🏗️ 1단계: 인프라 상태 확인">🏗️ 1단계: 인프라 상태 확인</a><ul>
+                        
+                <li>
+                    <a href="#%ed%81%b4%eb%9f%ac%ec%8a%a4%ed%84%b0-%ec%a0%84%ec%b2%b4-%ec%83%81%ed%83%9c" aria-label="클러스터 전체 상태">클러스터 전체 상태</a></li>
+                <li>
+                    <a href="#%eb%a6%ac%ec%86%8c%ec%8a%a4-%ec%82%ac%ec%9a%a9%eb%9f%89-%ed%99%95%ec%9d%b8" aria-label="리소스 사용량 확인">리소스 사용량 확인</a></li></ul>
+                </li>
+                <li>
+                    <a href="#-2%eb%8b%a8%ea%b3%84-%eb%8d%b0%ec%9d%b4%ed%84%b0%eb%b2%a0%ec%9d%b4%ec%8a%a4-%ec%97%b0%ea%b2%b0-%ed%85%8c%ec%8a%a4%ed%8a%b8" aria-label="🗃️ 2단계: 데이터베이스 연결 테스트">🗃️ 2단계: 데이터베이스 연결 테스트</a><ul>
+                        
+                <li>
+                    <a href="#postgresql-%ec%97%b0%ea%b2%b0-%ed%85%8c%ec%8a%a4%ed%8a%b8" aria-label="PostgreSQL 연결 테스트">PostgreSQL 연결 테스트</a></li>
+                <li>
+                    <a href="#%eb%8d%b0%ec%9d%b4%ed%84%b0%eb%b2%a0%ec%9d%b4%ec%8a%a4-%ec%97%b0%ea%b2%b0-%ec%8a%a4%ed%81%ac%eb%a6%bd%ed%8a%b8" aria-label="데이터베이스 연결 스크립트">데이터베이스 연결 스크립트</a></li></ul>
+                </li>
+                <li>
+                    <a href="#-3%eb%8b%a8%ea%b3%84-litellm-api-%ed%85%8c%ec%8a%a4%ed%8a%b8" aria-label="🤖 3단계: LiteLLM API 테스트">🤖 3단계: LiteLLM API 테스트</a><ul>
+                        
+                <li>
+                    <a href="#litellm-%ec%84%9c%eb%b9%84%ec%8a%a4-%ec%83%81%ed%83%9c-%ed%99%95%ec%9d%b8" aria-label="LiteLLM 서비스 상태 확인">LiteLLM 서비스 상태 확인</a></li>
+                <li>
+                    <a href="#api-%ec%97%94%eb%93%9c%ed%8f%ac%ec%9d%b8%ed%8a%b8-%ed%85%8c%ec%8a%a4%ed%8a%b8" aria-label="API 엔드포인트 테스트">API 엔드포인트 테스트</a></li></ul>
+                </li>
+                <li>
+                    <a href="#-4%eb%8b%a8%ea%b3%84-openwebui-%ec%9b%b9-%ec%9d%b8%ed%84%b0%ed%8e%98%ec%9d%b4%ec%8a%a4-%ed%85%8c%ec%8a%a4%ed%8a%b8" aria-label="🌐 4단계: OpenWebUI 웹 인터페이스 테스트">🌐 4단계: OpenWebUI 웹 인터페이스 테스트</a><ul>
+                        
+                <li>
+                    <a href="#%ec%9b%b9-%ec%9d%b8%ed%84%b0%ed%8e%98%ec%9d%b4%ec%8a%a4-%ec%a0%91%ea%b7%bc-%ed%85%8c%ec%8a%a4%ed%8a%b8" aria-label="웹 인터페이스 접근 테스트">웹 인터페이스 접근 테스트</a></li>
+                <li>
+                    <a href="#%eb%b8%8c%eb%9d%bc%ec%9a%b0%ec%a0%80-%ed%85%8c%ec%8a%a4%ed%8a%b8-%ec%b2%b4%ed%81%ac%eb%a6%ac%ec%8a%a4%ed%8a%b8" aria-label="브라우저 테스트 체크리스트">브라우저 테스트 체크리스트</a></li></ul>
+                </li>
+                <li>
+                    <a href="#-5%eb%8b%a8%ea%b3%84-%eb%a1%9c%eb%93%9c%eb%b0%b8%eb%9f%b0%ec%84%9c-%eb%b0%8f-%eb%84%a4%ed%8a%b8%ec%9b%8c%ed%82%b9-%ed%85%8c%ec%8a%a4%ed%8a%b8" aria-label="🌍 5단계: 로드밸런서 및 네트워킹 테스트">🌍 5단계: 로드밸런서 및 네트워킹 테스트</a><ul>
+                        
+                <li>
+                    <a href="#ingressloadbalancer-%ec%83%81%ed%83%9c-%ed%99%95%ec%9d%b8" aria-label="Ingress/LoadBalancer 상태 확인">Ingress/LoadBalancer 상태 확인</a></li>
+                <li>
+                    <a href="#%ec%84%9c%eb%b9%84%ec%8a%a4-%ea%b0%84-%ed%86%b5%ec%8b%a0-%ed%85%8c%ec%8a%a4%ed%8a%b8" aria-label="서비스 간 통신 테스트">서비스 간 통신 테스트</a></li></ul>
+                </li>
+                <li>
+                    <a href="#-6%eb%8b%a8%ea%b3%84-%eb%a1%9c%ea%b7%b8-%eb%b0%8f-%eb%aa%a8%eb%8b%88%ed%84%b0%eb%a7%81-%ed%99%95%ec%9d%b8" aria-label="📊 6단계: 로그 및 모니터링 확인">📊 6단계: 로그 및 모니터링 확인</a><ul>
+                        
+                <li>
+                    <a href="#%ec%95%a0%ed%94%8c%eb%a6%ac%ec%bc%80%ec%9d%b4%ec%85%98-%eb%a1%9c%ea%b7%b8-%ed%99%95%ec%9d%b8" aria-label="애플리케이션 로그 확인">애플리케이션 로그 확인</a></li>
+                <li>
+                    <a href="#%ec%9d%b4%eb%b2%a4%ed%8a%b8-%ed%99%95%ec%9d%b8" aria-label="이벤트 확인">이벤트 확인</a></li>
+                <li>
+                    <a href="#%eb%a9%94%ed%8a%b8%eb%a6%ad-%ed%99%95%ec%9d%b8" aria-label="메트릭 확인">메트릭 확인</a></li></ul>
+                </li>
+                <li>
+                    <a href="#-7%eb%8b%a8%ea%b3%84-%eb%b6%80%ed%95%98-%ed%85%8c%ec%8a%a4%ed%8a%b8" aria-label="🚀 7단계: 부하 테스트">🚀 7단계: 부하 테스트</a><ul>
+                        
+                <li>
+                    <a href="#%ea%b0%84%eb%8b%a8%ed%95%9c-%eb%b6%80%ed%95%98-%ed%85%8c%ec%8a%a4%ed%8a%b8" aria-label="간단한 부하 테스트">간단한 부하 테스트</a></li>
+                <li>
+                    <a href="#k6%eb%a5%bc-%ec%82%ac%ec%9a%a9%ed%95%9c-%ea%b3%a0%ea%b8%89-%eb%b6%80%ed%95%98-%ed%85%8c%ec%8a%a4%ed%8a%b8" aria-label="K6를 사용한 고급 부하 테스트">K6를 사용한 고급 부하 테스트</a></li></ul>
+                </li>
+                <li>
+                    <a href="#-8%eb%8b%a8%ea%b3%84-%ec%9e%a5%ec%95%a0-%eb%b3%b5%ea%b5%ac-%ed%85%8c%ec%8a%a4%ed%8a%b8" aria-label="🔧 8단계: 장애 복구 테스트">🔧 8단계: 장애 복구 테스트</a><ul>
+                        
+                <li>
+                    <a href="#%ed%8c%8c%eb%93%9c-%ec%9e%a5%ec%95%a0-%ec%8b%9c%eb%ae%ac%eb%a0%88%ec%9d%b4%ec%85%98" aria-label="파드 장애 시뮬레이션">파드 장애 시뮬레이션</a></li>
+                <li>
+                    <a href="#%eb%8d%b0%ec%9d%b4%ed%84%b0%eb%b2%a0%ec%9d%b4%ec%8a%a4-%ec%9e%a5%ec%95%a0-%ed%85%8c%ec%8a%a4%ed%8a%b8" aria-label="데이터베이스 장애 테스트">데이터베이스 장애 테스트</a></li></ul>
+                </li>
+                <li>
+                    <a href="#-9%eb%8b%a8%ea%b3%84-%ec%84%b1%eb%8a%a5-%eb%b2%a4%ec%b9%98%eb%a7%88%ed%81%ac" aria-label="📈 9단계: 성능 벤치마크">📈 9단계: 성능 벤치마크</a><ul>
+                        
+                <li>
+                    <a href="#%ec%95%a0%ed%94%8c%eb%a6%ac%ec%bc%80%ec%9d%b4%ec%85%98-%ec%84%b1%eb%8a%a5-%ec%b8%a1%ec%a0%95" aria-label="애플리케이션 성능 측정">애플리케이션 성능 측정</a></li></ul>
+                </li>
+                <li>
+                    <a href="#-10%eb%8b%a8%ea%b3%84-%ec%a2%85%ed%95%a9-%ea%b2%80%ec%a6%9d-%eb%a6%ac%ed%8f%ac%ed%8a%b8" aria-label="🔍 10단계: 종합 검증 리포트">🔍 10단계: 종합 검증 리포트</a><ul>
+                        
+                <li>
+                    <a href="#%ec%9e%90%eb%8f%99-%ea%b2%80%ec%a6%9d-%ec%8a%a4%ed%81%ac%eb%a6%bd%ed%8a%b8" aria-label="자동 검증 스크립트">자동 검증 스크립트</a></li>
+                <li>
+                    <a href="#%ea%b2%80%ec%a6%9d-%ec%b2%b4%ed%81%ac%eb%a6%ac%ec%8a%a4%ed%8a%b8-%ed%99%95%ec%9d%b8" aria-label="검증 체크리스트 확인">검증 체크리스트 확인</a></li></ul>
+                </li>
+                <li>
+                    <a href="#-%eb%ac%b8%ec%a0%9c-%ed%95%b4%ea%b2%b0-%ea%b0%80%ec%9d%b4%eb%93%9c" aria-label="🚨 문제 해결 가이드">🚨 문제 해결 가이드</a><ul>
+                        
+                <li>
+                    <a href="#%ec%9d%bc%eb%b0%98%ec%a0%81%ec%9d%b8-%eb%ac%b8%ec%a0%9c%eb%93%a4" aria-label="일반적인 문제들">일반적인 문제들</a><ul>
+                        
+                <li>
+                    <a href="#1-%ed%8c%8c%eb%93%9c%ea%b0%80-pending-%ec%83%81%ed%83%9c" aria-label="1. 파드가 Pending 상태">1. 파드가 Pending 상태</a></li>
+                <li>
+                    <a href="#2-%ec%84%9c%eb%b9%84%ec%8a%a4-%ec%97%b0%ea%b2%b0-%ec%8b%a4%ed%8c%a8" aria-label="2. 서비스 연결 실패">2. 서비스 연결 실패</a></li>
+                <li>
+                    <a href="#3-%eb%a1%9c%eb%93%9c%eb%b0%b8%eb%9f%b0%ec%84%9c-%ec%a0%91%ea%b7%bc-%eb%b6%88%ea%b0%80" aria-label="3. 로드밸런서 접근 불가">3. 로드밸런서 접근 불가</a></li></ul>
+                </li></ul>
+                </li>
+                <li>
+                    <a href="#-%ec%84%b1%eb%8a%a5-%ec%b5%9c%ec%a0%81%ed%99%94-%ea%b6%8c%ec%9e%a5%ec%82%ac%ed%95%ad" aria-label="📚 성능 최적화 권장사항">📚 성능 최적화 권장사항</a><ul>
+                        
+                <li>
+                    <a href="#%eb%a6%ac%ec%86%8c%ec%8a%a4-%ec%b5%9c%ec%a0%81%ed%99%94" aria-label="리소스 최적화">리소스 최적화</a></li>
+                <li>
+                    <a href="#%ec%ba%90%ec%8b%b1-%ec%a0%84%eb%9e%b5" aria-label="캐싱 전략">캐싱 전략</a></li>
+                <li>
+                    <a href="#%eb%aa%a8%eb%8b%88%ed%84%b0%eb%a7%81-%ea%b0%95%ed%99%94" aria-label="모니터링 강화">모니터링 강화</a></li></ul>
+                </li>
+                <li>
+                    <a href="#-%eb%8b%a4%ec%9d%8c-%eb%8b%a8%ea%b3%84" aria-label="⏭️ 다음 단계">⏭️ 다음 단계</a>
+                </li>
+            </ul>
+            </li>
+            </ul>
+        </div>
+    </details>
+</div>
+
+  <div class="post-content"><h1 id="-배포-검증-가이드">✅ 배포 검증 가이드<a hidden class="anchor" aria-hidden="true" href="#-배포-검증-가이드">#</a></h1>
+<blockquote>
+<p><strong>⏱️ 예상 소요시간</strong>: 30-45분<br>
+<strong>💡 난이도</strong>: 초급-중급<br>
+<strong>📋 목표</strong>: 배포된 OpenWebUI 시스템의 정상 작동을 검증하고 테스트합니다.</p></blockquote>
+<hr>
+<h2 id="-검증-완료-체크리스트">📋 검증 완료 체크리스트<a hidden class="anchor" aria-hidden="true" href="#-검증-완료-체크리스트">#</a></h2>
+<ul>
+<li><input disabled="" type="checkbox"> 인프라 상태 확인</li>
+<li><input disabled="" type="checkbox"> 데이터베이스 연결 테스트</li>
+<li><input disabled="" type="checkbox"> LiteLLM API 테스트</li>
+<li><input disabled="" type="checkbox"> OpenWebUI 웹 인터페이스 테스트</li>
+<li><input disabled="" type="checkbox"> 로드밸런서 및 네트워킹 테스트</li>
+<li><input disabled="" type="checkbox"> 로그 및 모니터링 확인</li>
+<li><input disabled="" type="checkbox"> 부하 테스트 실행</li>
+<li><input disabled="" type="checkbox"> 장애 복구 테스트</li>
+</ul>
+<hr>
+<h2 id="-1단계-인프라-상태-확인">🏗️ 1단계: 인프라 상태 확인<a hidden class="anchor" aria-hidden="true" href="#-1단계-인프라-상태-확인">#</a></h2>
+<h3 id="클러스터-전체-상태">클러스터 전체 상태<a hidden class="anchor" aria-hidden="true" href="#클러스터-전체-상태">#</a></h3>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span><span style="color:#75715e">#!/bin/bash
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span><span style="color:#75715e"># infrastructure-check.sh</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>echo <span style="color:#e6db74">&#34;🔍 인프라 상태 검증 시작...&#34;</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>echo <span style="color:#e6db74">&#34;📋 1. 클러스터 노드 상태&#34;</span>
+</span></span><span style="display:flex;"><span>kubectl get nodes -o wide
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>echo <span style="color:#e6db74">&#34;📋 2. 네임스페이스 확인&#34;</span>
+</span></span><span style="display:flex;"><span>kubectl get namespaces
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>echo <span style="color:#e6db74">&#34;📋 3. 전체 파드 상태&#34;</span>
+</span></span><span style="display:flex;"><span>kubectl get pods -A -o wide
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>echo <span style="color:#e6db74">&#34;📋 4. 서비스 상태&#34;</span>
+</span></span><span style="display:flex;"><span>kubectl get svc -A
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>echo <span style="color:#e6db74">&#34;📋 5. Ingress 상태&#34;</span>
+</span></span><span style="display:flex;"><span>kubectl get ingress -A
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>echo <span style="color:#e6db74">&#34;📋 6. PVC 상태&#34;</span>
+</span></span><span style="display:flex;"><span>kubectl get pvc -A
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>echo <span style="color:#e6db74">&#34;📋 7. 시크릿 확인&#34;</span>
+</span></span><span style="display:flex;"><span>kubectl get secrets -A
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>echo <span style="color:#e6db74">&#34;✅ 인프라 상태 확인 완료&#34;</span>
+</span></span></code></pre></div><h3 id="리소스-사용량-확인">리소스 사용량 확인<a hidden class="anchor" aria-hidden="true" href="#리소스-사용량-확인">#</a></h3>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span><span style="color:#75715e"># 노드 리소스 사용량</span>
+</span></span><span style="display:flex;"><span>kubectl top nodes
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># 파드 리소스 사용량</span>
+</span></span><span style="display:flex;"><span>kubectl top pods -A
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># 네임스페이스별 리소스 사용량</span>
+</span></span><span style="display:flex;"><span>kubectl top pods -n openwebui
+</span></span><span style="display:flex;"><span>kubectl top pods -n litellm
+</span></span></code></pre></div><hr>
+<h2 id="-2단계-데이터베이스-연결-테스트">🗃️ 2단계: 데이터베이스 연결 테스트<a hidden class="anchor" aria-hidden="true" href="#-2단계-데이터베이스-연결-테스트">#</a></h2>
+<h3 id="postgresql-연결-테스트">PostgreSQL 연결 테스트<a hidden class="anchor" aria-hidden="true" href="#postgresql-연결-테스트">#</a></h3>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span><span style="color:#75715e"># PostgreSQL 파드에 직접 접속</span>
+</span></span><span style="display:flex;"><span>kubectl exec -it deployment/postgres -n openwebui -- psql -U openwebui -d openwebui
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># SQL 명령어로 테스트</span>
+</span></span><span style="display:flex;"><span><span style="color:#ae81ff">\l</span>                          <span style="color:#75715e"># 데이터베이스 목록</span>
+</span></span><span style="display:flex;"><span><span style="color:#ae81ff">\d</span>t                         <span style="color:#75715e"># 테이블 목록</span>
+</span></span><span style="display:flex;"><span>SELECT version<span style="color:#f92672">()</span>;           <span style="color:#75715e"># PostgreSQL 버전 확인</span>
+</span></span><span style="display:flex;"><span>SELECT now<span style="color:#f92672">()</span>;               <span style="color:#75715e"># 현재 시간</span>
+</span></span><span style="display:flex;"><span><span style="color:#ae81ff">\q</span>                          <span style="color:#75715e"># 종료</span>
+</span></span></code></pre></div><h3 id="데이터베이스-연결-스크립트">데이터베이스 연결 스크립트<a hidden class="anchor" aria-hidden="true" href="#데이터베이스-연결-스크립트">#</a></h3>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span><span style="color:#75715e">#!/bin/bash
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span><span style="color:#75715e"># db-connection-test.sh</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>echo <span style="color:#e6db74">&#34;🗃️ 데이터베이스 연결 테스트...&#34;</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># PostgreSQL 파드 상태 확인</span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">if</span> ! kubectl get pod -l app<span style="color:#f92672">=</span>postgres -n openwebui | grep -q <span style="color:#e6db74">&#34;Running&#34;</span>; <span style="color:#66d9ef">then</span>
+</span></span><span style="display:flex;"><span>    echo <span style="color:#e6db74">&#34;❌ PostgreSQL 파드가 실행 중이 아닙니다.&#34;</span>
+</span></span><span style="display:flex;"><span>    exit <span style="color:#ae81ff">1</span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">fi</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># 연결 테스트</span>
+</span></span><span style="display:flex;"><span>echo <span style="color:#e6db74">&#34;📡 데이터베이스 연결 테스트 중...&#34;</span>
+</span></span><span style="display:flex;"><span>kubectl exec deployment/postgres -n openwebui -- pg_isready -U openwebui
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">if</span> <span style="color:#f92672">[</span> $? -eq <span style="color:#ae81ff">0</span> <span style="color:#f92672">]</span>; <span style="color:#66d9ef">then</span>
+</span></span><span style="display:flex;"><span>    echo <span style="color:#e6db74">&#34;✅ PostgreSQL 연결 성공&#34;</span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">else</span>
+</span></span><span style="display:flex;"><span>    echo <span style="color:#e6db74">&#34;❌ PostgreSQL 연결 실패&#34;</span>
+</span></span><span style="display:flex;"><span>    exit <span style="color:#ae81ff">1</span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">fi</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># 데이터베이스 쿼리 테스트</span>
+</span></span><span style="display:flex;"><span>echo <span style="color:#e6db74">&#34;🔍 기본 쿼리 테스트...&#34;</span>
+</span></span><span style="display:flex;"><span>kubectl exec deployment/postgres -n openwebui -- psql -U openwebui -d openwebui -c <span style="color:#e6db74">&#34;SELECT 1 as test;&#34;</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>echo <span style="color:#e6db74">&#34;✅ 데이터베이스 테스트 완료&#34;</span>
+</span></span></code></pre></div><hr>
+<h2 id="-3단계-litellm-api-테스트">🤖 3단계: LiteLLM API 테스트<a hidden class="anchor" aria-hidden="true" href="#-3단계-litellm-api-테스트">#</a></h2>
+<h3 id="litellm-서비스-상태-확인">LiteLLM 서비스 상태 확인<a hidden class="anchor" aria-hidden="true" href="#litellm-서비스-상태-확인">#</a></h3>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span><span style="color:#75715e"># LiteLLM 파드 상태</span>
+</span></span><span style="display:flex;"><span>kubectl get pods -l app<span style="color:#f92672">=</span>litellm -n litellm
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># LiteLLM 서비스 엔드포인트 확인</span>
+</span></span><span style="display:flex;"><span>kubectl get endpoints -n litellm
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># LiteLLM 로그 확인</span>
+</span></span><span style="display:flex;"><span>kubectl logs deployment/litellm -n litellm --tail<span style="color:#f92672">=</span><span style="color:#ae81ff">50</span>
+</span></span></code></pre></div><h3 id="api-엔드포인트-테스트">API 엔드포인트 테스트<a hidden class="anchor" aria-hidden="true" href="#api-엔드포인트-테스트">#</a></h3>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span><span style="color:#75715e">#!/bin/bash
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span><span style="color:#75715e"># litellm-api-test.sh</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>echo <span style="color:#e6db74">&#34;🤖 LiteLLM API 테스트...&#34;</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># 포트 포워딩 설정</span>
+</span></span><span style="display:flex;"><span>kubectl port-forward svc/litellm-service 4000:4000 -n litellm &amp;
+</span></span><span style="display:flex;"><span>PORT_FORWARD_PID<span style="color:#f92672">=</span>$!
+</span></span><span style="display:flex;"><span>sleep <span style="color:#ae81ff">5</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># Health check</span>
+</span></span><span style="display:flex;"><span>echo <span style="color:#e6db74">&#34;📡 헬스체크 테스트...&#34;</span>
+</span></span><span style="display:flex;"><span>curl -s http://localhost:4000/health
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># 모델 목록 확인</span>
+</span></span><span style="display:flex;"><span>echo <span style="color:#e6db74">&#34;📝 모델 목록 확인...&#34;</span>
+</span></span><span style="display:flex;"><span>curl -s http://localhost:4000/v1/models | jq <span style="color:#e6db74">&#39;.&#39;</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># 간단한 채팅 완료 테스트</span>
+</span></span><span style="display:flex;"><span>echo <span style="color:#e6db74">&#34;💬 채팅 완료 API 테스트...&#34;</span>
+</span></span><span style="display:flex;"><span>curl -X POST http://localhost:4000/v1/chat/completions <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  -H <span style="color:#e6db74">&#34;Content-Type: application/json&#34;</span> <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  -H <span style="color:#e6db74">&#34;Authorization: Bearer your-master-key&#34;</span> <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  -d <span style="color:#e6db74">&#39;{
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">    &#34;model&#34;: &#34;gpt-3.5-turbo&#34;,
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">    &#34;messages&#34;: [{&#34;role&#34;: &#34;user&#34;, &#34;content&#34;: &#34;Hello, this is a test.&#34;}],
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">    &#34;max_tokens&#34;: 50
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">  }&#39;</span> | jq <span style="color:#e6db74">&#39;.&#39;</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># 포트 포워딩 종료</span>
+</span></span><span style="display:flex;"><span>kill $PORT_FORWARD_PID
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>echo <span style="color:#e6db74">&#34;✅ LiteLLM API 테스트 완료&#34;</span>
+</span></span></code></pre></div><hr>
+<h2 id="-4단계-openwebui-웹-인터페이스-테스트">🌐 4단계: OpenWebUI 웹 인터페이스 테스트<a hidden class="anchor" aria-hidden="true" href="#-4단계-openwebui-웹-인터페이스-테스트">#</a></h2>
+<h3 id="웹-인터페이스-접근-테스트">웹 인터페이스 접근 테스트<a hidden class="anchor" aria-hidden="true" href="#웹-인터페이스-접근-테스트">#</a></h3>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span><span style="color:#75715e">#!/bin/bash
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span><span style="color:#75715e"># webui-access-test.sh</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>echo <span style="color:#e6db74">&#34;🌐 OpenWebUI 접근 테스트...&#34;</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># OpenWebUI 파드 상태 확인</span>
+</span></span><span style="display:flex;"><span>kubectl get pods -l app<span style="color:#f92672">=</span>openwebui -n openwebui
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># 포트 포워딩으로 로컬 접근 테스트</span>
+</span></span><span style="display:flex;"><span>kubectl port-forward svc/openwebui-service 8080:8080 -n openwebui &amp;
+</span></span><span style="display:flex;"><span>PORT_FORWARD_PID<span style="color:#f92672">=</span>$!
+</span></span><span style="display:flex;"><span>sleep <span style="color:#ae81ff">10</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># HTTP 상태 코드 확인</span>
+</span></span><span style="display:flex;"><span>echo <span style="color:#e6db74">&#34;📡 HTTP 상태 확인...&#34;</span>
+</span></span><span style="display:flex;"><span>HTTP_STATUS<span style="color:#f92672">=</span><span style="color:#66d9ef">$(</span>curl -s -o /dev/null -w <span style="color:#e6db74">&#34;%{http_code}&#34;</span> http://localhost:8080<span style="color:#66d9ef">)</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">if</span> <span style="color:#f92672">[</span> <span style="color:#e6db74">&#34;</span>$HTTP_STATUS<span style="color:#e6db74">&#34;</span> <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;200&#34;</span> <span style="color:#f92672">]</span>; <span style="color:#66d9ef">then</span>
+</span></span><span style="display:flex;"><span>    echo <span style="color:#e6db74">&#34;✅ OpenWebUI 접근 성공 (HTTP </span>$HTTP_STATUS<span style="color:#e6db74">)&#34;</span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">else</span>
+</span></span><span style="display:flex;"><span>    echo <span style="color:#e6db74">&#34;❌ OpenWebUI 접근 실패 (HTTP </span>$HTTP_STATUS<span style="color:#e6db74">)&#34;</span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">fi</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># HTML 응답 확인</span>
+</span></span><span style="display:flex;"><span>echo <span style="color:#e6db74">&#34;📄 HTML 응답 확인...&#34;</span>
+</span></span><span style="display:flex;"><span>curl -s http://localhost:8080 | head -20
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># 포트 포워딩 종료</span>
+</span></span><span style="display:flex;"><span>kill $PORT_FORWARD_PID
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>echo <span style="color:#e6db74">&#34;✅ OpenWebUI 접근 테스트 완료&#34;</span>
+</span></span></code></pre></div><h3 id="브라우저-테스트-체크리스트">브라우저 테스트 체크리스트<a hidden class="anchor" aria-hidden="true" href="#브라우저-테스트-체크리스트">#</a></h3>
+<pre tabindex="0"><code>수동 테스트 항목:
+□ 메인 페이지 로딩
+□ 회원가입 페이지
+□ 로그인 기능
+□ 채팅 인터페이스
+□ 모델 선택 기능
+□ 파일 업로드 기능
+□ 설정 페이지 접근
+</code></pre><hr>
+<h2 id="-5단계-로드밸런서-및-네트워킹-테스트">🌍 5단계: 로드밸런서 및 네트워킹 테스트<a hidden class="anchor" aria-hidden="true" href="#-5단계-로드밸런서-및-네트워킹-테스트">#</a></h2>
+<h3 id="ingressloadbalancer-상태-확인">Ingress/LoadBalancer 상태 확인<a hidden class="anchor" aria-hidden="true" href="#ingressloadbalancer-상태-확인">#</a></h3>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span><span style="color:#75715e">#!/bin/bash
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span><span style="color:#75715e"># networking-test.sh</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>echo <span style="color:#e6db74">&#34;🌍 네트워킹 테스트...&#34;</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># Ingress 상태 확인</span>
+</span></span><span style="display:flex;"><span>echo <span style="color:#e6db74">&#34;📡 Ingress 상태:&#34;</span>
+</span></span><span style="display:flex;"><span>kubectl get ingress -n openwebui -o wide
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># LoadBalancer 상태 확인</span>
+</span></span><span style="display:flex;"><span>echo <span style="color:#e6db74">&#34;⚖️ LoadBalancer 상태:&#34;</span>
+</span></span><span style="display:flex;"><span>kubectl get svc -n openwebui -o wide
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># DNS 해상도 테스트</span>
+</span></span><span style="display:flex;"><span>echo <span style="color:#e6db74">&#34;🔍 DNS 해상도 테스트:&#34;</span>
+</span></span><span style="display:flex;"><span>INGRESS_HOST<span style="color:#f92672">=</span><span style="color:#66d9ef">$(</span>kubectl get ingress openwebui-ingress -n openwebui -o jsonpath<span style="color:#f92672">=</span><span style="color:#e6db74">&#39;{.status.loadBalancer.ingress[0].hostname}&#39;</span><span style="color:#66d9ef">)</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">if</span> <span style="color:#f92672">[</span> -n <span style="color:#e6db74">&#34;</span>$INGRESS_HOST<span style="color:#e6db74">&#34;</span> <span style="color:#f92672">]</span>; <span style="color:#66d9ef">then</span>
+</span></span><span style="display:flex;"><span>    echo <span style="color:#e6db74">&#34;Ingress 호스트: </span>$INGRESS_HOST<span style="color:#e6db74">&#34;</span>
+</span></span><span style="display:flex;"><span>    nslookup $INGRESS_HOST
+</span></span><span style="display:flex;"><span>    
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e"># HTTP 테스트</span>
+</span></span><span style="display:flex;"><span>    echo <span style="color:#e6db74">&#34;🔗 외부 접근 테스트:&#34;</span>
+</span></span><span style="display:flex;"><span>    curl -I http://$INGRESS_HOST --connect-timeout <span style="color:#ae81ff">10</span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">else</span>
+</span></span><span style="display:flex;"><span>    echo <span style="color:#e6db74">&#34;⚠️ Ingress 호스트를 찾을 수 없습니다.&#34;</span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">fi</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>echo <span style="color:#e6db74">&#34;✅ 네트워킹 테스트 완료&#34;</span>
+</span></span></code></pre></div><h3 id="서비스-간-통신-테스트">서비스 간 통신 테스트<a hidden class="anchor" aria-hidden="true" href="#서비스-간-통신-테스트">#</a></h3>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span><span style="color:#75715e">#!/bin/bash
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span><span style="color:#75715e"># service-communication-test.sh</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>echo <span style="color:#e6db74">&#34;🔄 서비스 간 통신 테스트...&#34;</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># OpenWebUI에서 LiteLLM 연결 테스트</span>
+</span></span><span style="display:flex;"><span>echo <span style="color:#e6db74">&#34;📡 OpenWebUI → LiteLLM 연결 테스트:&#34;</span>
+</span></span><span style="display:flex;"><span>kubectl exec deployment/openwebui -n openwebui -- <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  curl -s http://litellm-service.litellm.svc.cluster.local:4000/health
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># OpenWebUI에서 PostgreSQL 연결 테스트</span>
+</span></span><span style="display:flex;"><span>echo <span style="color:#e6db74">&#34;🗃️ OpenWebUI → PostgreSQL 연결 테스트:&#34;</span>
+</span></span><span style="display:flex;"><span>kubectl exec deployment/openwebui -n openwebui -- <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  nc -zv postgres-service <span style="color:#ae81ff">5432</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># LiteLLM에서 PostgreSQL 연결 테스트</span>
+</span></span><span style="display:flex;"><span>echo <span style="color:#e6db74">&#34;🗃️ LiteLLM → PostgreSQL 연결 테스트:&#34;</span>
+</span></span><span style="display:flex;"><span>kubectl exec deployment/litellm -n litellm -- <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  nc -zv postgres-service.openwebui.svc.cluster.local <span style="color:#ae81ff">5432</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>echo <span style="color:#e6db74">&#34;✅ 서비스 간 통신 테스트 완료&#34;</span>
+</span></span></code></pre></div><hr>
+<h2 id="-6단계-로그-및-모니터링-확인">📊 6단계: 로그 및 모니터링 확인<a hidden class="anchor" aria-hidden="true" href="#-6단계-로그-및-모니터링-확인">#</a></h2>
+<h3 id="애플리케이션-로그-확인">애플리케이션 로그 확인<a hidden class="anchor" aria-hidden="true" href="#애플리케이션-로그-확인">#</a></h3>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span><span style="color:#75715e">#!/bin/bash
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span><span style="color:#75715e"># log-check.sh</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>echo <span style="color:#e6db74">&#34;📊 로그 확인...&#34;</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>echo <span style="color:#e6db74">&#34;🗃️ PostgreSQL 로그:&#34;</span>
+</span></span><span style="display:flex;"><span>kubectl logs deployment/postgres -n openwebui --tail<span style="color:#f92672">=</span><span style="color:#ae81ff">20</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>echo <span style="color:#e6db74">&#34;🤖 LiteLLM 로그:&#34;</span>
+</span></span><span style="display:flex;"><span>kubectl logs deployment/litellm -n litellm --tail<span style="color:#f92672">=</span><span style="color:#ae81ff">20</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>echo <span style="color:#e6db74">&#34;🌐 OpenWebUI 로그:&#34;</span>
+</span></span><span style="display:flex;"><span>kubectl logs deployment/openwebui -n openwebui --tail<span style="color:#f92672">=</span><span style="color:#ae81ff">20</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># 에러 로그 검색</span>
+</span></span><span style="display:flex;"><span>echo <span style="color:#e6db74">&#34;❌ 에러 로그 검색:&#34;</span>
+</span></span><span style="display:flex;"><span>kubectl logs deployment/openwebui -n openwebui | grep -i error | tail -10
+</span></span><span style="display:flex;"><span>kubectl logs deployment/litellm -n litellm | grep -i error | tail -10
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>echo <span style="color:#e6db74">&#34;✅ 로그 확인 완료&#34;</span>
+</span></span></code></pre></div><h3 id="이벤트-확인">이벤트 확인<a hidden class="anchor" aria-hidden="true" href="#이벤트-확인">#</a></h3>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span><span style="color:#75715e"># 클러스터 이벤트 확인</span>
+</span></span><span style="display:flex;"><span>kubectl get events -A --sort-by<span style="color:#f92672">=</span><span style="color:#e6db74">&#39;.lastTimestamp&#39;</span> | tail -20
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># 네임스페이스별 이벤트</span>
+</span></span><span style="display:flex;"><span>kubectl get events -n openwebui --sort-by<span style="color:#f92672">=</span><span style="color:#e6db74">&#39;.lastTimestamp&#39;</span>
+</span></span><span style="display:flex;"><span>kubectl get events -n litellm --sort-by<span style="color:#f92672">=</span><span style="color:#e6db74">&#39;.lastTimestamp&#39;</span>
+</span></span></code></pre></div><h3 id="메트릭-확인">메트릭 확인<a hidden class="anchor" aria-hidden="true" href="#메트릭-확인">#</a></h3>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span><span style="color:#75715e"># 리소스 사용량 모니터링</span>
+</span></span><span style="display:flex;"><span>kubectl top pods -n openwebui --containers
+</span></span><span style="display:flex;"><span>kubectl top pods -n litellm --containers
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># 파드별 상세 메트릭</span>
+</span></span><span style="display:flex;"><span>kubectl describe pod -l app<span style="color:#f92672">=</span>openwebui -n openwebui
+</span></span><span style="display:flex;"><span>kubectl describe pod -l app<span style="color:#f92672">=</span>litellm -n litellm
+</span></span></code></pre></div><hr>
+<h2 id="-7단계-부하-테스트">🚀 7단계: 부하 테스트<a hidden class="anchor" aria-hidden="true" href="#-7단계-부하-테스트">#</a></h2>
+<h3 id="간단한-부하-테스트">간단한 부하 테스트<a hidden class="anchor" aria-hidden="true" href="#간단한-부하-테스트">#</a></h3>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span><span style="color:#75715e">#!/bin/bash
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span><span style="color:#75715e"># load-test.sh</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>echo <span style="color:#e6db74">&#34;🚀 부하 테스트 시작...&#34;</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># 포트 포워딩 설정</span>
+</span></span><span style="display:flex;"><span>kubectl port-forward svc/openwebui-service 8080:8080 -n openwebui &amp;
+</span></span><span style="display:flex;"><span>PORT_FORWARD_PID<span style="color:#f92672">=</span>$!
+</span></span><span style="display:flex;"><span>sleep <span style="color:#ae81ff">5</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># Apache Bench를 사용한 부하 테스트</span>
+</span></span><span style="display:flex;"><span>echo <span style="color:#e6db74">&#34;⚡ HTTP 부하 테스트 (100 요청, 동시접속 10):&#34;</span>
+</span></span><span style="display:flex;"><span>ab -n <span style="color:#ae81ff">100</span> -c <span style="color:#ae81ff">10</span> http://localhost:8080/
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># curl을 사용한 반복 테스트</span>
+</span></span><span style="display:flex;"><span>echo <span style="color:#e6db74">&#34;🔄 반복 접속 테스트:&#34;</span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">for</span> i in <span style="color:#f92672">{</span>1..10<span style="color:#f92672">}</span>; <span style="color:#66d9ef">do</span>
+</span></span><span style="display:flex;"><span>    echo <span style="color:#e6db74">&#34;요청 </span>$i<span style="color:#e6db74">:&#34;</span>
+</span></span><span style="display:flex;"><span>    curl -s -o /dev/null -w <span style="color:#e6db74">&#34;HTTP Status: %{http_code}, Time: %{time_total}s\n&#34;</span> http://localhost:8080/
+</span></span><span style="display:flex;"><span>    sleep <span style="color:#ae81ff">1</span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">done</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># 포트 포워딩 종료</span>
+</span></span><span style="display:flex;"><span>kill $PORT_FORWARD_PID
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>echo <span style="color:#e6db74">&#34;✅ 부하 테스트 완료&#34;</span>
+</span></span></code></pre></div><h3 id="k6를-사용한-고급-부하-테스트">K6를 사용한 고급 부하 테스트<a hidden class="anchor" aria-hidden="true" href="#k6를-사용한-고급-부하-테스트">#</a></h3>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-javascript" data-lang="javascript"><span style="display:flex;"><span><span style="color:#75715e">// k6-load-test.js
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span><span style="color:#66d9ef">import</span> <span style="color:#a6e22e">http</span> <span style="color:#a6e22e">from</span> <span style="color:#e6db74">&#39;k6/http&#39;</span>;
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">import</span> { <span style="color:#a6e22e">check</span>, <span style="color:#a6e22e">sleep</span> } <span style="color:#a6e22e">from</span> <span style="color:#e6db74">&#39;k6&#39;</span>;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">export</span> <span style="color:#66d9ef">let</span> <span style="color:#a6e22e">options</span> <span style="color:#f92672">=</span> {
+</span></span><span style="display:flex;"><span>  <span style="color:#a6e22e">stages</span><span style="color:#f92672">:</span> [
+</span></span><span style="display:flex;"><span>    { <span style="color:#a6e22e">duration</span><span style="color:#f92672">:</span> <span style="color:#e6db74">&#39;2m&#39;</span>, <span style="color:#a6e22e">target</span><span style="color:#f92672">:</span> <span style="color:#ae81ff">10</span> }, <span style="color:#75715e">// 2분간 10명 사용자로 증가
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>    { <span style="color:#a6e22e">duration</span><span style="color:#f92672">:</span> <span style="color:#e6db74">&#39;5m&#39;</span>, <span style="color:#a6e22e">target</span><span style="color:#f92672">:</span> <span style="color:#ae81ff">10</span> }, <span style="color:#75715e">// 5분간 10명 사용자 유지
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>    { <span style="color:#a6e22e">duration</span><span style="color:#f92672">:</span> <span style="color:#e6db74">&#39;2m&#39;</span>, <span style="color:#a6e22e">target</span><span style="color:#f92672">:</span> <span style="color:#ae81ff">20</span> }, <span style="color:#75715e">// 2분간 20명 사용자로 증가
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>    { <span style="color:#a6e22e">duration</span><span style="color:#f92672">:</span> <span style="color:#e6db74">&#39;5m&#39;</span>, <span style="color:#a6e22e">target</span><span style="color:#f92672">:</span> <span style="color:#ae81ff">20</span> }, <span style="color:#75715e">// 5분간 20명 사용자 유지
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>    { <span style="color:#a6e22e">duration</span><span style="color:#f92672">:</span> <span style="color:#e6db74">&#39;2m&#39;</span>, <span style="color:#a6e22e">target</span><span style="color:#f92672">:</span> <span style="color:#ae81ff">0</span> },  <span style="color:#75715e">// 2분간 0명으로 감소
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>  ],
+</span></span><span style="display:flex;"><span>};
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">export</span> <span style="color:#66d9ef">default</span> <span style="color:#66d9ef">function</span> () {
+</span></span><span style="display:flex;"><span>  <span style="color:#66d9ef">let</span> <span style="color:#a6e22e">response</span> <span style="color:#f92672">=</span> <span style="color:#a6e22e">http</span>.<span style="color:#a6e22e">get</span>(<span style="color:#e6db74">&#39;http://localhost:8080&#39;</span>);
+</span></span><span style="display:flex;"><span>  
+</span></span><span style="display:flex;"><span>  <span style="color:#a6e22e">check</span>(<span style="color:#a6e22e">response</span>, {
+</span></span><span style="display:flex;"><span>    <span style="color:#e6db74">&#39;status is 200&#39;</span><span style="color:#f92672">:</span> (<span style="color:#a6e22e">r</span>) =&gt; <span style="color:#a6e22e">r</span>.<span style="color:#a6e22e">status</span> <span style="color:#f92672">===</span> <span style="color:#ae81ff">200</span>,
+</span></span><span style="display:flex;"><span>    <span style="color:#e6db74">&#39;response time &lt; 500ms&#39;</span><span style="color:#f92672">:</span> (<span style="color:#a6e22e">r</span>) =&gt; <span style="color:#a6e22e">r</span>.<span style="color:#a6e22e">timings</span>.<span style="color:#a6e22e">duration</span> <span style="color:#f92672">&lt;</span> <span style="color:#ae81ff">500</span>,
+</span></span><span style="display:flex;"><span>  });
+</span></span><span style="display:flex;"><span>  
+</span></span><span style="display:flex;"><span>  <span style="color:#a6e22e">sleep</span>(<span style="color:#ae81ff">1</span>);
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span><span style="color:#75715e"># K6 설치 및 실행</span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># 1. K6 설치 (macOS)</span>
+</span></span><span style="display:flex;"><span>brew install k6
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># 2. 부하 테스트 실행</span>
+</span></span><span style="display:flex;"><span>kubectl port-forward svc/openwebui-service 8080:8080 -n openwebui &amp;
+</span></span><span style="display:flex;"><span>k6 run k6-load-test.js
+</span></span></code></pre></div><hr>
+<h2 id="-8단계-장애-복구-테스트">🔧 8단계: 장애 복구 테스트<a hidden class="anchor" aria-hidden="true" href="#-8단계-장애-복구-테스트">#</a></h2>
+<h3 id="파드-장애-시뮬레이션">파드 장애 시뮬레이션<a hidden class="anchor" aria-hidden="true" href="#파드-장애-시뮬레이션">#</a></h3>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span><span style="color:#75715e">#!/bin/bash
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span><span style="color:#75715e"># failure-recovery-test.sh</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>echo <span style="color:#e6db74">&#34;🔧 장애 복구 테스트...&#34;</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>echo <span style="color:#e6db74">&#34;💥 OpenWebUI 파드 삭제 (장애 시뮬레이션):&#34;</span>
+</span></span><span style="display:flex;"><span>kubectl delete pod -l app<span style="color:#f92672">=</span>openwebui -n openwebui
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>echo <span style="color:#e6db74">&#34;⏳ 파드 재생성 대기 (30초):&#34;</span>
+</span></span><span style="display:flex;"><span>sleep <span style="color:#ae81ff">30</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>echo <span style="color:#e6db74">&#34;✅ 파드 복구 상태 확인:&#34;</span>
+</span></span><span style="display:flex;"><span>kubectl get pods -l app<span style="color:#f92672">=</span>openwebui -n openwebui
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>echo <span style="color:#e6db74">&#34;🔍 서비스 가용성 테스트:&#34;</span>
+</span></span><span style="display:flex;"><span>kubectl port-forward svc/openwebui-service 8080:8080 -n openwebui &amp;
+</span></span><span style="display:flex;"><span>PORT_FORWARD_PID<span style="color:#f92672">=</span>$!
+</span></span><span style="display:flex;"><span>sleep <span style="color:#ae81ff">10</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>HTTP_STATUS<span style="color:#f92672">=</span><span style="color:#66d9ef">$(</span>curl -s -o /dev/null -w <span style="color:#e6db74">&#34;%{http_code}&#34;</span> http://localhost:8080<span style="color:#66d9ef">)</span>
+</span></span><span style="display:flex;"><span>echo <span style="color:#e6db74">&#34;HTTP 상태: </span>$HTTP_STATUS<span style="color:#e6db74">&#34;</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>kill $PORT_FORWARD_PID
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">if</span> <span style="color:#f92672">[</span> <span style="color:#e6db74">&#34;</span>$HTTP_STATUS<span style="color:#e6db74">&#34;</span> <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;200&#34;</span> <span style="color:#f92672">]</span>; <span style="color:#66d9ef">then</span>
+</span></span><span style="display:flex;"><span>    echo <span style="color:#e6db74">&#34;✅ 장애 복구 성공&#34;</span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">else</span>
+</span></span><span style="display:flex;"><span>    echo <span style="color:#e6db74">&#34;❌ 장애 복구 실패&#34;</span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">fi</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>echo <span style="color:#e6db74">&#34;✅ 장애 복구 테스트 완료&#34;</span>
+</span></span></code></pre></div><h3 id="데이터베이스-장애-테스트">데이터베이스 장애 테스트<a hidden class="anchor" aria-hidden="true" href="#데이터베이스-장애-테스트">#</a></h3>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span><span style="color:#75715e">#!/bin/bash
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span><span style="color:#75715e"># db-failure-test.sh</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>echo <span style="color:#e6db74">&#34;🗃️ 데이터베이스 장애 테스트...&#34;</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>echo <span style="color:#e6db74">&#34;💥 PostgreSQL 파드 삭제:&#34;</span>
+</span></span><span style="display:flex;"><span>kubectl delete pod -l app<span style="color:#f92672">=</span>postgres -n openwebui
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>echo <span style="color:#e6db74">&#34;⏳ 파드 재생성 및 데이터 복구 대기 (60초):&#34;</span>
+</span></span><span style="display:flex;"><span>sleep <span style="color:#ae81ff">60</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>echo <span style="color:#e6db74">&#34;✅ PostgreSQL 복구 확인:&#34;</span>
+</span></span><span style="display:flex;"><span>kubectl wait --for<span style="color:#f92672">=</span>condition<span style="color:#f92672">=</span>ready pod -l app<span style="color:#f92672">=</span>postgres -n openwebui --timeout<span style="color:#f92672">=</span>300s
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>echo <span style="color:#e6db74">&#34;🔍 데이터 무결성 확인:&#34;</span>
+</span></span><span style="display:flex;"><span>kubectl exec deployment/postgres -n openwebui -- psql -U openwebui -d openwebui -c <span style="color:#e6db74">&#34;SELECT 1 as test;&#34;</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>echo <span style="color:#e6db74">&#34;✅ 데이터베이스 장애 테스트 완료&#34;</span>
+</span></span></code></pre></div><hr>
+<h2 id="-9단계-성능-벤치마크">📈 9단계: 성능 벤치마크<a hidden class="anchor" aria-hidden="true" href="#-9단계-성능-벤치마크">#</a></h2>
+<h3 id="애플리케이션-성능-측정">애플리케이션 성능 측정<a hidden class="anchor" aria-hidden="true" href="#애플리케이션-성능-측정">#</a></h3>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span><span style="color:#75715e">#!/bin/bash
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span><span style="color:#75715e"># performance-benchmark.sh</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>echo <span style="color:#e6db74">&#34;📈 성능 벤치마크 시작...&#34;</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># 포트 포워딩 설정</span>
+</span></span><span style="display:flex;"><span>kubectl port-forward svc/openwebui-service 8080:8080 -n openwebui &amp;
+</span></span><span style="display:flex;"><span>PORT_FORWARD_PID<span style="color:#f92672">=</span>$!
+</span></span><span style="display:flex;"><span>sleep <span style="color:#ae81ff">5</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>echo <span style="color:#e6db74">&#34;⏱️ 응답 시간 측정 (10회):&#34;</span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">for</span> i in <span style="color:#f92672">{</span>1..10<span style="color:#f92672">}</span>; <span style="color:#66d9ef">do</span>
+</span></span><span style="display:flex;"><span>    curl -s -o /dev/null -w <span style="color:#e6db74">&#34;응답시간 </span>$i<span style="color:#e6db74">: %{time_total}s\n&#34;</span> http://localhost:8080/
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">done</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>echo <span style="color:#e6db74">&#34;📊 동시 접속 테스트:&#34;</span>
+</span></span><span style="display:flex;"><span>ab -n <span style="color:#ae81ff">50</span> -c <span style="color:#ae81ff">5</span> http://localhost:8080/ | grep -E <span style="color:#e6db74">&#34;(Requests per second|Time per request)&#34;</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># 포트 포워딩 종료</span>
+</span></span><span style="display:flex;"><span>kill $PORT_FORWARD_PID
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>echo <span style="color:#e6db74">&#34;💾 리소스 사용량 기록:&#34;</span>
+</span></span><span style="display:flex;"><span>kubectl top pods -n openwebui --containers
+</span></span><span style="display:flex;"><span>kubectl top pods -n litellm --containers
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>echo <span style="color:#e6db74">&#34;✅ 성능 벤치마크 완료&#34;</span>
+</span></span></code></pre></div><hr>
+<h2 id="-10단계-종합-검증-리포트">🔍 10단계: 종합 검증 리포트<a hidden class="anchor" aria-hidden="true" href="#-10단계-종합-검증-리포트">#</a></h2>
+<h3 id="자동-검증-스크립트">자동 검증 스크립트<a hidden class="anchor" aria-hidden="true" href="#자동-검증-스크립트">#</a></h3>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span><span style="color:#75715e">#!/bin/bash
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span><span style="color:#75715e"># comprehensive-verification.sh</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>set -e
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>REPORT_FILE<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;verification-report-</span><span style="color:#66d9ef">$(</span>date +%Y%m%d-%H%M%S<span style="color:#66d9ef">)</span><span style="color:#e6db74">.txt&#34;</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>echo <span style="color:#e6db74">&#34;📋 OpenWebUI 종합 검증 리포트&#34;</span> | tee $REPORT_FILE
+</span></span><span style="display:flex;"><span>echo <span style="color:#e6db74">&#34;생성 시간: </span><span style="color:#66d9ef">$(</span>date<span style="color:#66d9ef">)</span><span style="color:#e6db74">&#34;</span> | tee -a $REPORT_FILE
+</span></span><span style="display:flex;"><span>echo <span style="color:#e6db74">&#34;======================================&#34;</span> | tee -a $REPORT_FILE
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># 1. 인프라 상태</span>
+</span></span><span style="display:flex;"><span>echo <span style="color:#e6db74">&#34;🏗️ 1. 인프라 상태&#34;</span> | tee -a $REPORT_FILE
+</span></span><span style="display:flex;"><span>kubectl get nodes --no-headers | wc -l | xargs echo <span style="color:#e6db74">&#34;- 활성 노드 수:&#34;</span> | tee -a $REPORT_FILE
+</span></span><span style="display:flex;"><span>kubectl get pods -A --field-selector<span style="color:#f92672">=</span>status.phase<span style="color:#f92672">=</span>Running --no-headers | wc -l | xargs echo <span style="color:#e6db74">&#34;- 실행 중인 파드:&#34;</span> | tee -a $REPORT_FILE
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># 2. 애플리케이션 상태</span>
+</span></span><span style="display:flex;"><span>echo <span style="color:#e6db74">&#34;🌐 2. 애플리케이션 상태&#34;</span> | tee -a $REPORT_FILE
+</span></span><span style="display:flex;"><span>kubectl get pods -n openwebui -l app<span style="color:#f92672">=</span>openwebui --no-headers | grep Running | wc -l | xargs echo <span style="color:#e6db74">&#34;- OpenWebUI 파드:&#34;</span> | tee -a $REPORT_FILE
+</span></span><span style="display:flex;"><span>kubectl get pods -n litellm -l app<span style="color:#f92672">=</span>litellm --no-headers | grep Running | wc -l | xargs echo <span style="color:#e6db74">&#34;- LiteLLM 파드:&#34;</span> | tee -a $REPORT_FILE
+</span></span><span style="display:flex;"><span>kubectl get pods -n openwebui -l app<span style="color:#f92672">=</span>postgres --no-headers | grep Running | wc -l | xargs echo <span style="color:#e6db74">&#34;- PostgreSQL 파드:&#34;</span> | tee -a $REPORT_FILE
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># 3. 서비스 연결성</span>
+</span></span><span style="display:flex;"><span>echo <span style="color:#e6db74">&#34;🔗 3. 서비스 연결성&#34;</span> | tee -a $REPORT_FILE
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">if</span> kubectl exec deployment/openwebui -n openwebui -- curl -s http://litellm-service.litellm.svc.cluster.local:4000/health &gt; /dev/null; <span style="color:#66d9ef">then</span>
+</span></span><span style="display:flex;"><span>    echo <span style="color:#e6db74">&#34;- OpenWebUI → LiteLLM: ✅&#34;</span> | tee -a $REPORT_FILE
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">else</span>
+</span></span><span style="display:flex;"><span>    echo <span style="color:#e6db74">&#34;- OpenWebUI → LiteLLM: ❌&#34;</span> | tee -a $REPORT_FILE
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">fi</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">if</span> kubectl exec deployment/postgres -n openwebui -- pg_isready &gt; /dev/null; <span style="color:#66d9ef">then</span>
+</span></span><span style="display:flex;"><span>    echo <span style="color:#e6db74">&#34;- PostgreSQL 연결: ✅&#34;</span> | tee -a $REPORT_FILE
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">else</span>
+</span></span><span style="display:flex;"><span>    echo <span style="color:#e6db74">&#34;- PostgreSQL 연결: ❌&#34;</span> | tee -a $REPORT_FILE
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">fi</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># 4. 외부 접근성</span>
+</span></span><span style="display:flex;"><span>echo <span style="color:#e6db74">&#34;🌍 4. 외부 접근성&#34;</span> | tee -a $REPORT_FILE
+</span></span><span style="display:flex;"><span>kubectl port-forward svc/openwebui-service 8080:8080 -n openwebui &amp;
+</span></span><span style="display:flex;"><span>PORT_FORWARD_PID<span style="color:#f92672">=</span>$!
+</span></span><span style="display:flex;"><span>sleep <span style="color:#ae81ff">5</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>HTTP_STATUS<span style="color:#f92672">=</span><span style="color:#66d9ef">$(</span>curl -s -o /dev/null -w <span style="color:#e6db74">&#34;%{http_code}&#34;</span> http://localhost:8080 <span style="color:#f92672">||</span> echo <span style="color:#e6db74">&#34;000&#34;</span><span style="color:#66d9ef">)</span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">if</span> <span style="color:#f92672">[</span> <span style="color:#e6db74">&#34;</span>$HTTP_STATUS<span style="color:#e6db74">&#34;</span> <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;200&#34;</span> <span style="color:#f92672">]</span>; <span style="color:#66d9ef">then</span>
+</span></span><span style="display:flex;"><span>    echo <span style="color:#e6db74">&#34;- HTTP 접근: ✅ (</span>$HTTP_STATUS<span style="color:#e6db74">)&#34;</span> | tee -a $REPORT_FILE
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">else</span>
+</span></span><span style="display:flex;"><span>    echo <span style="color:#e6db74">&#34;- HTTP 접근: ❌ (</span>$HTTP_STATUS<span style="color:#e6db74">)&#34;</span> | tee -a $REPORT_FILE
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">fi</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>kill $PORT_FORWARD_PID
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># 5. 리소스 사용량</span>
+</span></span><span style="display:flex;"><span>echo <span style="color:#e6db74">&#34;📊 5. 리소스 사용량&#34;</span> | tee -a $REPORT_FILE
+</span></span><span style="display:flex;"><span>kubectl top nodes --no-headers | awk <span style="color:#e6db74">&#39;{print &#34;- 노드 &#34; $1 &#34;: CPU &#34; $3 &#34;, Memory &#34; $5}&#39;</span> | tee -a $REPORT_FILE
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># 6. 최근 에러 로그</span>
+</span></span><span style="display:flex;"><span>echo <span style="color:#e6db74">&#34;❌ 6. 최근 에러 (최근 10분)&#34;</span> | tee -a $REPORT_FILE
+</span></span><span style="display:flex;"><span>ERROR_COUNT<span style="color:#f92672">=</span><span style="color:#66d9ef">$(</span>kubectl logs --since<span style="color:#f92672">=</span>10m -l app<span style="color:#f92672">=</span>openwebui -n openwebui | grep -i error | wc -l<span style="color:#66d9ef">)</span>
+</span></span><span style="display:flex;"><span>echo <span style="color:#e6db74">&#34;- OpenWebUI 에러: </span>$ERROR_COUNT<span style="color:#e6db74"> 건&#34;</span> | tee -a $REPORT_FILE
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>echo <span style="color:#e6db74">&#34;======================================&#34;</span> | tee -a $REPORT_FILE
+</span></span><span style="display:flex;"><span>echo <span style="color:#e6db74">&#34;✅ 검증 완료 - 리포트 파일: </span>$REPORT_FILE<span style="color:#e6db74">&#34;</span> | tee -a $REPORT_FILE
+</span></span></code></pre></div><h3 id="검증-체크리스트-확인">검증 체크리스트 확인<a hidden class="anchor" aria-hidden="true" href="#검증-체크리스트-확인">#</a></h3>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span><span style="color:#75715e">#!/bin/bash
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span><span style="color:#75715e"># final-checklist.sh</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>echo <span style="color:#e6db74">&#34;📋 최종 배포 검증 체크리스트&#34;</span>
+</span></span><span style="display:flex;"><span>echo <span style="color:#e6db74">&#34;===============================&#34;</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>checks<span style="color:#f92672">=(</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#e6db74">&#34;모든 파드가 Running 상태인가?&#34;</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#e6db74">&#34;데이터베이스 연결이 정상인가?&#34;</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#e6db74">&#34;LiteLLM API가 응답하는가?&#34;</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#e6db74">&#34;OpenWebUI 웹 페이지가 로드되는가?&#34;</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#e6db74">&#34;외부에서 접근 가능한가?&#34;</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#e6db74">&#34;파드 간 통신이 정상인가?&#34;</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#e6db74">&#34;로그에 심각한 에러가 없는가?&#34;</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#e6db74">&#34;리소스 사용량이 적정한가?&#34;</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#e6db74">&#34;장애 복구가 정상 작동하는가?&#34;</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#e6db74">&#34;성능이 요구사항을 만족하는가?&#34;</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">)</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">for</span> check in <span style="color:#e6db74">&#34;</span><span style="color:#e6db74">${</span>checks[@]<span style="color:#e6db74">}</span><span style="color:#e6db74">&#34;</span>; <span style="color:#66d9ef">do</span>
+</span></span><span style="display:flex;"><span>    echo <span style="color:#e6db74">&#34;□ </span>$check<span style="color:#e6db74">&#34;</span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">done</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>echo <span style="color:#e6db74">&#34;&#34;</span>
+</span></span><span style="display:flex;"><span>echo <span style="color:#e6db74">&#34;모든 항목이 체크되면 배포가 성공적으로 완료된 것입니다! 🎉&#34;</span>
+</span></span></code></pre></div><hr>
+<h2 id="-문제-해결-가이드">🚨 문제 해결 가이드<a hidden class="anchor" aria-hidden="true" href="#-문제-해결-가이드">#</a></h2>
+<h3 id="일반적인-문제들">일반적인 문제들<a hidden class="anchor" aria-hidden="true" href="#일반적인-문제들">#</a></h3>
+<h4 id="1-파드가-pending-상태">1. 파드가 Pending 상태<a hidden class="anchor" aria-hidden="true" href="#1-파드가-pending-상태">#</a></h4>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span><span style="color:#75715e"># 원인 확인</span>
+</span></span><span style="display:flex;"><span>kubectl describe pod &lt;pod-name&gt; -n &lt;namespace&gt;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># 일반적인 해결책</span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># - 노드 리소스 부족: 스케일링 또는 리소스 조정</span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># - PVC 마운트 실패: StorageClass 확인</span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># - 이미지 Pull 실패: 이미지 레지스트리 접근 권한 확인</span>
+</span></span></code></pre></div><h4 id="2-서비스-연결-실패">2. 서비스 연결 실패<a hidden class="anchor" aria-hidden="true" href="#2-서비스-연결-실패">#</a></h4>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span><span style="color:#75715e"># 서비스 엔드포인트 확인</span>
+</span></span><span style="display:flex;"><span>kubectl get endpoints -n &lt;namespace&gt;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># DNS 해상도 테스트</span>
+</span></span><span style="display:flex;"><span>kubectl exec -it &lt;pod-name&gt; -n &lt;namespace&gt; -- nslookup &lt;service-name&gt;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># 네트워크 정책 확인</span>
+</span></span><span style="display:flex;"><span>kubectl get networkpolicy -A
+</span></span></code></pre></div><h4 id="3-로드밸런서-접근-불가">3. 로드밸런서 접근 불가<a hidden class="anchor" aria-hidden="true" href="#3-로드밸런서-접근-불가">#</a></h4>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span><span style="color:#75715e"># ALB 상태 확인</span>
+</span></span><span style="display:flex;"><span>kubectl describe ingress &lt;ingress-name&gt; -n &lt;namespace&gt;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># AWS 콘솔에서 로드밸런서 상태 확인</span>
+</span></span><span style="display:flex;"><span>aws elbv2 describe-load-balancers
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># 보안 그룹 규칙 확인</span>
+</span></span><span style="display:flex;"><span>aws ec2 describe-security-groups
+</span></span></code></pre></div><hr>
+<h2 id="-성능-최적화-권장사항">📚 성능 최적화 권장사항<a hidden class="anchor" aria-hidden="true" href="#-성능-최적화-권장사항">#</a></h2>
+<h3 id="리소스-최적화">리소스 최적화<a hidden class="anchor" aria-hidden="true" href="#리소스-최적화">#</a></h3>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-yaml" data-lang="yaml"><span style="display:flex;"><span><span style="color:#75715e"># 권장 리소스 설정</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">resources</span>:
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">requests</span>:
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">memory</span>: <span style="color:#e6db74">&#34;256Mi&#34;</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">cpu</span>: <span style="color:#e6db74">&#34;250m&#34;</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">limits</span>:
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">memory</span>: <span style="color:#e6db74">&#34;512Mi&#34;</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">cpu</span>: <span style="color:#e6db74">&#34;500m&#34;</span>
+</span></span></code></pre></div><h3 id="캐싱-전략">캐싱 전략<a hidden class="anchor" aria-hidden="true" href="#캐싱-전략">#</a></h3>
+<ul>
+<li>Redis 캐시 추가 고려</li>
+<li>CDN 설정 (정적 자원용)</li>
+<li>데이터베이스 쿼리 최적화</li>
+</ul>
+<h3 id="모니터링-강화">모니터링 강화<a hidden class="anchor" aria-hidden="true" href="#모니터링-강화">#</a></h3>
+<ul>
+<li>Prometheus + Grafana 설치</li>
+<li>Alert Manager 설정</li>
+<li>로그 집계 시스템 구축</li>
+</ul>
+<hr>
+<h2 id="-다음-단계">⏭️ 다음 단계<a hidden class="anchor" aria-hidden="true" href="#-다음-단계">#</a></h2>
+<p>배포 검증이 완료되었다면:</p>
+<ul>
+<li><strong>운영 환경 배포 준비</strong></li>
+<li><strong>모니터링 시스템 확장</strong></li>
+<li><strong>백업 및 재해 복구 계획 수립</strong></li>
+<li><strong>CI/CD 파이프라인 최적화</strong></li>
+</ul>
+
+
+  </div>
+
+  <footer class="post-footer">
+    <ul class="post-tags">
+    </ul>
+<nav class="paginav">
+  <a class="prev" href="http://localhost:65390/backend/terraform-%EC%84%A4%EC%A0%95/">
+    <span class="title">« Prev</span>
+    <br>
+    <span></span>
+  </a>
+  <a class="next" href="http://localhost:65390/backend/%EC%82%AC%EC%A0%84%EC%A4%80%EB%B9%84%EC%82%AC%ED%95%AD/">
+    <span class="title">Next »</span>
+    <br>
+    <span></span>
+  </a>
+</nav>
+
+  </footer>
+</article>
+    </main>
+    
+<footer class="footer">
+        <span>&copy; 2025 <a href="http://localhost:65390/">8dobibim Tech Blog</a></span> · 
+
+    <span>
+        Powered by
+        <a href="https://gohugo.io/" rel="noopener noreferrer" target="_blank">Hugo</a> &
+        <a href="https://github.com/adityatelange/hugo-PaperMod/" rel="noopener" target="_blank">PaperMod</a>
+    </span>
+</footer>
+<a href="#top" aria-label="go to top" title="Go to Top (Alt + G)" class="top-link" id="top-link" accesskey="g">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 12 6" fill="currentColor">
+        <path d="M12 6H0l6-6z" />
+    </svg>
+</a>
+
+<script>
+    let menu = document.getElementById('menu')
+    if (menu) {
+        menu.scrollLeft = localStorage.getItem("menu-scroll-position");
+        menu.onscroll = function () {
+            localStorage.setItem("menu-scroll-position", menu.scrollLeft);
+        }
+    }
+
+    document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+        anchor.addEventListener("click", function (e) {
+            e.preventDefault();
+            var id = this.getAttribute("href").substr(1);
+            if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+                document.querySelector(`[id='${decodeURIComponent(id)}']`).scrollIntoView({
+                    behavior: "smooth"
+                });
+            } else {
+                document.querySelector(`[id='${decodeURIComponent(id)}']`).scrollIntoView();
+            }
+            if (id === "top") {
+                history.replaceState(null, null, " ");
+            } else {
+                history.pushState(null, null, `#${id}`);
+            }
+        });
+    });
+
+</script>
+<script>
+    var mybutton = document.getElementById("top-link");
+    window.onscroll = function () {
+        if (document.body.scrollTop > 800 || document.documentElement.scrollTop > 800) {
+            mybutton.style.visibility = "visible";
+            mybutton.style.opacity = "1";
+        } else {
+            mybutton.style.visibility = "hidden";
+            mybutton.style.opacity = "0";
+        }
+    };
+
+</script>
+<script>
+    document.getElementById("theme-toggle").addEventListener("click", () => {
+        if (document.body.className.includes("dark")) {
+            document.body.classList.remove('dark');
+            localStorage.setItem("pref-theme", 'light');
+        } else {
+            document.body.classList.add('dark');
+            localStorage.setItem("pref-theme", 'dark');
+        }
+    })
+
+</script>
+<script>
+    document.querySelectorAll('pre > code').forEach((codeblock) => {
+        const container = codeblock.parentNode.parentNode;
+
+        const copybutton = document.createElement('button');
+        copybutton.classList.add('copy-code');
+        copybutton.innerHTML = 'copy';
+
+        function copyingDone() {
+            copybutton.innerHTML = 'copied!';
+            setTimeout(() => {
+                copybutton.innerHTML = 'copy';
+            }, 2000);
+        }
+
+        copybutton.addEventListener('click', (cb) => {
+            if ('clipboard' in navigator) {
+                navigator.clipboard.writeText(codeblock.textContent);
+                copyingDone();
+                return;
+            }
+
+            const range = document.createRange();
+            range.selectNodeContents(codeblock);
+            const selection = window.getSelection();
+            selection.removeAllRanges();
+            selection.addRange(range);
+            try {
+                document.execCommand('copy');
+                copyingDone();
+            } catch (e) { };
+            selection.removeRange(range);
+        });
+
+        if (container.classList.contains("highlight")) {
+            container.appendChild(copybutton);
+        } else if (container.parentNode.firstChild == container) {
+            
+        } else if (codeblock.parentNode.parentNode.parentNode.parentNode.parentNode.nodeName == "TABLE") {
+            
+            codeblock.parentNode.parentNode.parentNode.parentNode.parentNode.appendChild(copybutton);
+        } else {
+            
+            codeblock.parentNode.appendChild(copybutton);
+        }
+    });
+</script>
+</body>
+
+</html>

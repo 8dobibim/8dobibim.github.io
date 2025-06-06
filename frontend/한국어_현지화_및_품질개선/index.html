@@ -1,0 +1,437 @@
+<!DOCTYPE html>
+<html lang="en" dir="auto">
+
+<head><script src="/livereload.js?mindelay=10&amp;v=2&amp;port=65390&amp;path=livereload" data-no-instant defer></script><meta charset="utf-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+<meta name="robots" content="noindex, nofollow">
+<title>8dobibim Tech Blog</title>
+<meta name="keywords" content="">
+<meta name="description" content="한국어 현지화 및 누락 번역 문자열 추가 작업
+📌 설명
+[i18n] OpenWebUI의 한국어 번역(&lsquo;ko-KR&rsquo;) 파일에 대한 전반적인 개선 작업입니다.
+누락된 한글 번역 문자열을 추가하고, 기존 번역의 문맥적 부자연스러움을 개선하였습니다.
+또한, 일부 UI 구성 요소에서 영어가 그대로 노출되는 현상을 해결하여, 사용자 경험의 일관성과 번역 완성도를 향상시키는 것을 목표로 하였습니다.
+
+🧭 배경
+
+일부 UI 텍스트가 영어로 노출되어 사용자에게 문맥상 어색하게 인식됨
+locales/ko/*.json 파일 내 일부 key 누락으로 인해 t(&#39;key&#39;) 호출 시 fallback이 발생
+번역 간 용어 사용이 일관되지 않아 사용자 혼란을 유발
+이는 사용자 경험(UX)을 저해하고, 현지화(i18n) 품질 저하로 이어짐
+OpenWebUI의 기능 확장(음성 기능, 설정 메뉴 등)으로 인한 번역 범위 확장 필요
+
+
+✅ 작업 내용
+
+  
+      
+          항목
+          설명
+      
+  
+  
+      
+          신규 번역
+          최근 추가된 메뉴 항목, 설정, 음성 기능 관련 문자열 번역
+      
+      
+          기존 개선
+          약 180여 개 항목의 표현을 자연스럽게 개선- 일관된 용어 사용 (&ldquo;대화&rdquo;, &ldquo;삭제&rdquo;, &ldquo;설정&rdquo; 등)- 모바일 및 데스크탑 UI에서 자연스러운 길이 유지
+      
+      
+          정리 작업
+          불필요하거나 중복된 항목 정리
+      
+      
+          파일 경로
+          src/lib/i18n/locales/ko/translation.json
+      
+  
+
+
+197 additions, 197 deletions
+
+
+전체 변경 내용은 PR diff를 참고">
+<meta name="author" content="">
+<link rel="canonical" href="http://localhost:65390/frontend/%ED%95%9C%EA%B5%AD%EC%96%B4_%ED%98%84%EC%A7%80%ED%99%94_%EB%B0%8F_%ED%92%88%EC%A7%88%EA%B0%9C%EC%84%A0/">
+<link crossorigin="anonymous" href="/assets/css/stylesheet.36819bea596090d8b48cf10d9831382996197aa7e4fc86f792f7c08c9ca4d23b.css" integrity="sha256-NoGb6llgkNi0jPENmDE4KZYZeqfk/Ib3kvfAjJyk0js=" rel="preload stylesheet" as="style">
+<link rel="icon" href="http://localhost:65390/favicon.ico">
+<link rel="icon" type="image/png" sizes="16x16" href="http://localhost:65390/favicon-16x16.png">
+<link rel="icon" type="image/png" sizes="32x32" href="http://localhost:65390/favicon-32x32.png">
+<link rel="apple-touch-icon" href="http://localhost:65390/apple-touch-icon.png">
+<link rel="mask-icon" href="http://localhost:65390/safari-pinned-tab.svg">
+<meta name="theme-color" content="#2e2e33">
+<meta name="msapplication-TileColor" content="#2e2e33">
+<link rel="alternate" hreflang="en" href="http://localhost:65390/frontend/%ED%95%9C%EA%B5%AD%EC%96%B4_%ED%98%84%EC%A7%80%ED%99%94_%EB%B0%8F_%ED%92%88%EC%A7%88%EA%B0%9C%EC%84%A0/">
+<noscript>
+    <style>
+        #theme-toggle,
+        .top-link {
+            display: none;
+        }
+
+    </style>
+    <style>
+        @media (prefers-color-scheme: dark) {
+            :root {
+                --theme: rgb(29, 30, 32);
+                --entry: rgb(46, 46, 51);
+                --primary: rgb(218, 218, 219);
+                --secondary: rgb(155, 156, 157);
+                --tertiary: rgb(65, 66, 68);
+                --content: rgb(196, 196, 197);
+                --code-block-bg: rgb(46, 46, 51);
+                --code-bg: rgb(55, 56, 62);
+                --border: rgb(51, 51, 51);
+            }
+
+            .list {
+                background: var(--theme);
+            }
+
+            .list:not(.dark)::-webkit-scrollbar-track {
+                background: 0 0;
+            }
+
+            .list:not(.dark)::-webkit-scrollbar-thumb {
+                border-color: var(--theme);
+            }
+        }
+
+    </style>
+</noscript>
+</head>
+
+<body class="" id="top">
+<script>
+    if (localStorage.getItem("pref-theme") === "dark") {
+        document.body.classList.add('dark');
+    } else if (localStorage.getItem("pref-theme") === "light") {
+        document.body.classList.remove('dark')
+    } else if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
+        document.body.classList.add('dark');
+    }
+
+</script>
+
+<header class="header">
+    <nav class="nav">
+        <div class="logo">
+            <a href="http://localhost:65390/" accesskey="h" title="8dobibim Tech Blog (Alt + H)">8dobibim Tech Blog</a>
+            <div class="logo-switches">
+                <button id="theme-toggle" accesskey="t" title="(Alt + T)" aria-label="Toggle theme">
+                    <svg id="moon" xmlns="http://www.w3.org/2000/svg" width="24" height="18" viewBox="0 0 24 24"
+                        fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                        stroke-linejoin="round">
+                        <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+                    </svg>
+                    <svg id="sun" xmlns="http://www.w3.org/2000/svg" width="24" height="18" viewBox="0 0 24 24"
+                        fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                        stroke-linejoin="round">
+                        <circle cx="12" cy="12" r="5"></circle>
+                        <line x1="12" y1="1" x2="12" y2="3"></line>
+                        <line x1="12" y1="21" x2="12" y2="23"></line>
+                        <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+                        <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+                        <line x1="1" y1="12" x2="3" y2="12"></line>
+                        <line x1="21" y1="12" x2="23" y2="12"></line>
+                        <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+                        <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+                    </svg>
+                </button>
+            </div>
+        </div>
+        <ul id="menu">
+            <li>
+                <a href="http://localhost:65390/frontend/" title="🖥 프론트엔드">
+                    <span>🖥 프론트엔드</span>
+                </a>
+            </li>
+            <li>
+                <a href="http://localhost:65390/backend/" title="💾 백엔드">
+                    <span>💾 백엔드</span>
+                </a>
+            </li>
+        </ul>
+    </nav>
+</header>
+<main class="main">
+
+<article class="post-single">
+  <header class="post-header">
+    <div class="breadcrumbs"><a href="http://localhost:65390/">Home</a>&nbsp;»&nbsp;<a href="http://localhost:65390/frontend/">Frontend 문서</a></div>
+    <h1 class="post-title entry-hint-parent">
+      
+    </h1>
+    <div class="post-meta">2 min&nbsp;·&nbsp;339 words
+
+</div>
+  </header> <div class="toc">
+    <details  open>
+        <summary accesskey="c" title="(Alt + C)">
+            <span class="details">Table of Contents</span>
+        </summary>
+
+        <div class="inner"><ul>
+                <li>
+                    <a href="#%ed%95%9c%ea%b5%ad%ec%96%b4-%ed%98%84%ec%a7%80%ed%99%94-%eb%b0%8f-%eb%88%84%eb%9d%bd-%eb%b2%88%ec%97%ad-%eb%ac%b8%ec%9e%90%ec%97%b4-%ec%b6%94%ea%b0%80-%ec%9e%91%ec%97%85" aria-label="한국어 현지화 및 누락 번역 문자열 추가 작업">한국어 현지화 및 누락 번역 문자열 추가 작업</a><ul>
+                        
+                <li>
+                    <a href="#-%ec%84%a4%eb%aa%85" aria-label="📌 설명">📌 설명</a></li>
+                <li>
+                    <a href="#-%eb%b0%b0%ea%b2%bd" aria-label="🧭 배경">🧭 배경</a></li>
+                <li>
+                    <a href="#-%ec%9e%91%ec%97%85-%eb%82%b4%ec%9a%a9" aria-label="✅ 작업 내용">✅ 작업 내용</a></li>
+                <li>
+                    <a href="#-%eb%b2%88%ec%97%ad-%ea%b8%b0%ec%a4%80-%eb%b0%8f-%ec%a0%9c%ec%99%b8-%ec%9b%90%ec%b9%99" aria-label="🔍 번역 기준 및 제외 원칙">🔍 번역 기준 및 제외 원칙</a><ul>
+                        
+                <li>
+                    <a href="#-%eb%b2%88%ec%97%ad-%ec%a0%9c%ec%99%b8-%ea%b8%b0%ec%a4%80" aria-label="❌ 번역 제외 기준">❌ 번역 제외 기준</a></li>
+                <li>
+                    <a href="#-%ec%98%88%ec%99%b8%ec%a0%81%ec%9c%bc%eb%a1%9c-%eb%b2%88%ec%97%ad%ed%95%9c-%ea%b2%bd%ec%9a%b0" aria-label="✅ 예외적으로 번역한 경우">✅ 예외적으로 번역한 경우</a></li></ul>
+                </li>
+                <li>
+                    <a href="#-%ed%85%8c%ec%8a%a4%ed%8a%b8-%eb%b0%8f-%ec%a0%81%ec%9a%a9-%ea%b2%b0%ea%b3%bc" aria-label="🧪 테스트 및 적용 결과">🧪 테스트 및 적용 결과</a></li>
+                <li>
+                    <a href="#-%ea%b3%b5%ec%8b%9d-openwebui-%eb%a0%88%ed%8f%ac%ec%a7%80%ed%86%a0%eb%a6%ac%ec%97%90-pr-%ec%83%9d%ec%84%b1-%eb%b0%8f-%ec%8a%b9%ec%9d%b8" aria-label="🛠 공식 OpenWebUI 레포지토리에 PR 생성 및 승인">🛠 공식 OpenWebUI 레포지토리에 PR 생성 및 승인</a>
+                </li>
+            </ul>
+            </li>
+            </ul>
+        </div>
+    </details>
+</div>
+
+  <div class="post-content"><h1 id="한국어-현지화-및-누락-번역-문자열-추가-작업">한국어 현지화 및 누락 번역 문자열 추가 작업<a hidden class="anchor" aria-hidden="true" href="#한국어-현지화-및-누락-번역-문자열-추가-작업">#</a></h1>
+<h2 id="-설명">📌 설명<a hidden class="anchor" aria-hidden="true" href="#-설명">#</a></h2>
+<p>[i18n] OpenWebUI의 한국어 번역(&lsquo;ko-KR&rsquo;) 파일에 대한 전반적인 개선 작업입니다.</p>
+<p><strong>누락된 한글 번역 문자열을 추가</strong>하고, <strong>기존 번역의 문맥적 부자연스러움을 개선</strong>하였습니다.<br>
+또한, 일부 UI 구성 요소에서 영어가 그대로 노출되는 현상을 해결하여, 사용자 경험의 일관성과 번역 완성도를 향상시키는 것을 목표로 하였습니다.</p>
+<hr>
+<h2 id="-배경">🧭 배경<a hidden class="anchor" aria-hidden="true" href="#-배경">#</a></h2>
+<ul>
+<li>일부 UI 텍스트가 영어로 노출되어 사용자에게 문맥상 어색하게 인식됨</li>
+<li><code>locales/ko/*.json</code> 파일 내 일부 key 누락으로 인해 <code>t('key')</code> 호출 시 fallback이 발생</li>
+<li>번역 간 용어 사용이 일관되지 않아 사용자 혼란을 유발</li>
+<li>이는 사용자 경험(UX)을 저해하고, 현지화(i18n) 품질 저하로 이어짐</li>
+<li>OpenWebUI의 기능 확장(음성 기능, 설정 메뉴 등)으로 인한 번역 범위 확장 필요</li>
+</ul>
+<hr>
+<h2 id="-작업-내용">✅ 작업 내용<a hidden class="anchor" aria-hidden="true" href="#-작업-내용">#</a></h2>
+<table>
+  <thead>
+      <tr>
+          <th>항목</th>
+          <th>설명</th>
+      </tr>
+  </thead>
+  <tbody>
+      <tr>
+          <td>신규 번역</td>
+          <td>최근 추가된 메뉴 항목, 설정, 음성 기능 관련 문자열 번역</td>
+      </tr>
+      <tr>
+          <td>기존 개선</td>
+          <td>약 <strong>180여 개 항목의 표현을 자연스럽게 개선</strong><!-- raw HTML omitted -->- 일관된 용어 사용 (&ldquo;대화&rdquo;, &ldquo;삭제&rdquo;, &ldquo;설정&rdquo; 등)<!-- raw HTML omitted -->- 모바일 및 데스크탑 UI에서 자연스러운 길이 유지</td>
+      </tr>
+      <tr>
+          <td>정리 작업</td>
+          <td>불필요하거나 중복된 항목 정리</td>
+      </tr>
+      <tr>
+          <td>파일 경로</td>
+          <td><code>src/lib/i18n/locales/ko/translation.json</code></td>
+      </tr>
+  </tbody>
+</table>
+<ul>
+<li><strong>197 additions</strong>, <strong>197 deletions</strong></li>
+</ul>
+<blockquote>
+<p>전체 변경 내용은 <a href="https://github.com/open-webui/open-webui/pull/13929/files">PR diff</a>를 참고</p></blockquote>
+<hr>
+<h2 id="-번역-기준-및-제외-원칙">🔍 번역 기준 및 제외 원칙<a hidden class="anchor" aria-hidden="true" href="#-번역-기준-및-제외-원칙">#</a></h2>
+<p>다음 기준을 기반으로 번역 포함/제외 여부를 판단하였습니다:</p>
+<h3 id="-번역-제외-기준">❌ 번역 <strong>제외 기준</strong><a hidden class="anchor" aria-hidden="true" href="#-번역-제외-기준">#</a></h3>
+<ul>
+<li><strong>고유명사 및 기술용어</strong><br>
+예: <code>ChatGPT</code>, <code>GPT-4</code>, <code>Plugin</code> 등은 혼동 방지를 위해 유지</li>
+<li><strong>짧고 자주 등장하는 UI 단어</strong><br>
+예: <code>&quot;All&quot;</code>, <code>&quot;Save&quot;</code>, <code>&quot;On/Off&quot;</code>, <code>&quot;Copy&quot;</code> 등은 문맥에 따라 유지</li>
+</ul>
+<h3 id="-예외적으로-번역한-경우">✅ 예외적으로 번역한 경우<a hidden class="anchor" aria-hidden="true" href="#-예외적으로-번역한-경우">#</a></h3>
+<ul>
+<li>기존 UI 내 <strong>일관성 저하 또는 혼동이 발생하는 경우</strong></li>
+<li>버튼/섹션 명칭 등 <strong>역할이 명확한 경우</strong>에는 &ldquo;모두&rdquo;, &ldquo;저장&rdquo; 등으로 번역</li>
+<li>문맥적 자연스러움을 확보하기 위해 <strong>최소한의 번역 적용이 필요한 경우</strong></li>
+</ul>
+<hr>
+<h2 id="-테스트-및-적용-결과">🧪 테스트 및 적용 결과<a hidden class="anchor" aria-hidden="true" href="#-테스트-및-적용-결과">#</a></h2>
+<ul>
+<li>
+<p>로컬 환경에서 최신 버전 UI에 적용 후 전체 확인 완료</p>
+</li>
+<li>
+<p>한국어 번역이 누락된 UI 요소의 완전한 현지화 달성</p>
+</li>
+<li>
+<p>i18n fallback 에러 및 경고 없이 정상 작동</p>
+</li>
+<li>
+<p>사용자 입장에서 혼동 없이 직관적인 인터페이스 제공</p>
+</li>
+<li>
+<p>적용 전
+<img alt="수정전" loading="lazy" src="https://github.com/user-attachments/assets/e96035a5-caf9-4418-8f82-55db0c53a95b">
+<img alt="수정전2" loading="lazy" src="https://github.com/user-attachments/assets/06ea2ba8-4233-4842-b4ac-0b4e993a65f1"></p>
+</li>
+<li>
+<p>적용 후
+<img alt="수정후" loading="lazy" src="https://github.com/user-attachments/assets/df2c2fee-6af1-4e3e-8956-5bf221379407">
+<img alt="수정후2" loading="lazy" src="https://github.com/user-attachments/assets/5dd7ca27-ebfa-46db-9820-2cdc18a3bd02"></p>
+</li>
+</ul>
+<hr>
+<h2 id="-공식-openwebui-레포지토리에-pr-생성-및-승인">🛠 공식 OpenWebUI 레포지토리에 PR 생성 및 승인<a hidden class="anchor" aria-hidden="true" href="#-공식-openwebui-레포지토리에-pr-생성-및-승인">#</a></h2>
+<p>해당 한국어 번역 개선 작업은 <strong>공식 OpenWebUI 레포지토리</strong>에 Pull Request 형태로 기여되었으며,<br>
+검토 및 리뷰를 거쳐 <strong>정식으로 병합(merged)</strong> 되었습니다.</p>
+<ul>
+<li>✅ PR 승인 완료: <a href="https://github.com/open-webui/open-webui/pull/13929">open-webui#13929</a></li>
+<li>🚀 기여 내용은 OpenWebUI <strong>공식 릴리즈(v0.6.10)</strong> 에 포함되었습니다.
+→ <a href="https://github.com/open-webui/open-webui/releases/tag/v0.6.10">릴리즈 노트 보기</a></li>
+</ul>
+<p>이를 통해 OpenWebUI의 한국어 현지화 품질이 향상되었으며,<br>
+전 세계 사용자에게 실제 배포된 버전에 적용되어 <strong>실질적인 오픈소스 기여 성과</strong>를 이뤄냈습니다.</p>
+
+
+  </div>
+
+  <footer class="post-footer">
+    <ul class="post-tags">
+    </ul>
+
+  </footer>
+</article>
+    </main>
+    
+<footer class="footer">
+        <span>&copy; 2025 <a href="http://localhost:65390/">8dobibim Tech Blog</a></span> · 
+
+    <span>
+        Powered by
+        <a href="https://gohugo.io/" rel="noopener noreferrer" target="_blank">Hugo</a> &
+        <a href="https://github.com/adityatelange/hugo-PaperMod/" rel="noopener" target="_blank">PaperMod</a>
+    </span>
+</footer>
+<a href="#top" aria-label="go to top" title="Go to Top (Alt + G)" class="top-link" id="top-link" accesskey="g">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 12 6" fill="currentColor">
+        <path d="M12 6H0l6-6z" />
+    </svg>
+</a>
+
+<script>
+    let menu = document.getElementById('menu')
+    if (menu) {
+        menu.scrollLeft = localStorage.getItem("menu-scroll-position");
+        menu.onscroll = function () {
+            localStorage.setItem("menu-scroll-position", menu.scrollLeft);
+        }
+    }
+
+    document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+        anchor.addEventListener("click", function (e) {
+            e.preventDefault();
+            var id = this.getAttribute("href").substr(1);
+            if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+                document.querySelector(`[id='${decodeURIComponent(id)}']`).scrollIntoView({
+                    behavior: "smooth"
+                });
+            } else {
+                document.querySelector(`[id='${decodeURIComponent(id)}']`).scrollIntoView();
+            }
+            if (id === "top") {
+                history.replaceState(null, null, " ");
+            } else {
+                history.pushState(null, null, `#${id}`);
+            }
+        });
+    });
+
+</script>
+<script>
+    var mybutton = document.getElementById("top-link");
+    window.onscroll = function () {
+        if (document.body.scrollTop > 800 || document.documentElement.scrollTop > 800) {
+            mybutton.style.visibility = "visible";
+            mybutton.style.opacity = "1";
+        } else {
+            mybutton.style.visibility = "hidden";
+            mybutton.style.opacity = "0";
+        }
+    };
+
+</script>
+<script>
+    document.getElementById("theme-toggle").addEventListener("click", () => {
+        if (document.body.className.includes("dark")) {
+            document.body.classList.remove('dark');
+            localStorage.setItem("pref-theme", 'light');
+        } else {
+            document.body.classList.add('dark');
+            localStorage.setItem("pref-theme", 'dark');
+        }
+    })
+
+</script>
+<script>
+    document.querySelectorAll('pre > code').forEach((codeblock) => {
+        const container = codeblock.parentNode.parentNode;
+
+        const copybutton = document.createElement('button');
+        copybutton.classList.add('copy-code');
+        copybutton.innerHTML = 'copy';
+
+        function copyingDone() {
+            copybutton.innerHTML = 'copied!';
+            setTimeout(() => {
+                copybutton.innerHTML = 'copy';
+            }, 2000);
+        }
+
+        copybutton.addEventListener('click', (cb) => {
+            if ('clipboard' in navigator) {
+                navigator.clipboard.writeText(codeblock.textContent);
+                copyingDone();
+                return;
+            }
+
+            const range = document.createRange();
+            range.selectNodeContents(codeblock);
+            const selection = window.getSelection();
+            selection.removeAllRanges();
+            selection.addRange(range);
+            try {
+                document.execCommand('copy');
+                copyingDone();
+            } catch (e) { };
+            selection.removeRange(range);
+        });
+
+        if (container.classList.contains("highlight")) {
+            container.appendChild(copybutton);
+        } else if (container.parentNode.firstChild == container) {
+            
+        } else if (codeblock.parentNode.parentNode.parentNode.parentNode.parentNode.nodeName == "TABLE") {
+            
+            codeblock.parentNode.parentNode.parentNode.parentNode.parentNode.appendChild(copybutton);
+        } else {
+            
+            codeblock.parentNode.appendChild(copybutton);
+        }
+    });
+</script>
+</body>
+
+</html>

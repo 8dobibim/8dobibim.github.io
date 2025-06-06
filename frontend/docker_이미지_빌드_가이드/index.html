@@ -1,0 +1,440 @@
+<!DOCTYPE html>
+<html lang="en" dir="auto">
+
+<head><script src="/livereload.js?mindelay=10&amp;v=2&amp;port=65390&amp;path=livereload" data-no-instant defer></script><meta charset="utf-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+<meta name="robots" content="noindex, nofollow">
+<title>8dobibim Tech Blog</title>
+<meta name="keywords" content="">
+<meta name="description" content="🐳 Docker 이미지 빌드 가이드
+OpenWebUI 기반 프론트를 Docker 환경에서 실행하는 과정을 운영체제별로 정리했습니다.
+
+📦 사전 준비 공통 사항
+
+  
+      
+          항목
+          설명
+      
+  
+  
+      
+          프로젝트 루트
+          submodules/8dobibim -&gt; open-webui 로 이동
+      
+      
+          주요 파일
+          Dockerfile, .dockerignore, nginx/default.conf
+      
+      
+          결과 포트
+          기본적으로 localhost:3000 (포트는 자유 설정 가능)
+      
+  
+
+
+🪟 Windows
+📥 1. Docker Desktop 설치
+
+공식 설치 페이지: https://www.docker.com/products/docker-desktop/
+WSL2 백엔드 권장 (설치 시 자동 안내됨)
+설치 후 Docker 실행 여부 확인
+
+docker --version
+⚙️ 2. 프로젝트 디렉토리 이동 (Git Bash 또는 PowerShell)
+cd path/to/8dobibim_front
+🧱 3. Docker 이미지 빌드
+docker build -t 8dobibim-front 
+▶️ 4. 실행
+docker run -d -p 3000:80 --name 8dobibim-front 8dobibim-front
+🖥️ 5. 접속
+http://localhost:3000
+
+🍎 macOS
+📥 1. Docker Desktop 설치
+
+공식 설치 페이지: https://www.docker.com/products/docker-desktop/
+설치 후 Terminal에서 확인: docker &ndash;version
+
+⚙️ 2. 터미널에서 실행
+cd /path/to/8dobibim_front
+docker build -t 8dobibim-front .
+docker run -d -p 3000:80 --name 8dobibim-front 8dobibim-front
+
+macOS는 localhost:3000 바로 접속 가능 (Chrome/Safari 등)">
+<meta name="author" content="">
+<link rel="canonical" href="http://localhost:65390/frontend/docker_%EC%9D%B4%EB%AF%B8%EC%A7%80_%EB%B9%8C%EB%93%9C_%EA%B0%80%EC%9D%B4%EB%93%9C/">
+<link crossorigin="anonymous" href="/assets/css/stylesheet.36819bea596090d8b48cf10d9831382996197aa7e4fc86f792f7c08c9ca4d23b.css" integrity="sha256-NoGb6llgkNi0jPENmDE4KZYZeqfk/Ib3kvfAjJyk0js=" rel="preload stylesheet" as="style">
+<link rel="icon" href="http://localhost:65390/favicon.ico">
+<link rel="icon" type="image/png" sizes="16x16" href="http://localhost:65390/favicon-16x16.png">
+<link rel="icon" type="image/png" sizes="32x32" href="http://localhost:65390/favicon-32x32.png">
+<link rel="apple-touch-icon" href="http://localhost:65390/apple-touch-icon.png">
+<link rel="mask-icon" href="http://localhost:65390/safari-pinned-tab.svg">
+<meta name="theme-color" content="#2e2e33">
+<meta name="msapplication-TileColor" content="#2e2e33">
+<link rel="alternate" hreflang="en" href="http://localhost:65390/frontend/docker_%EC%9D%B4%EB%AF%B8%EC%A7%80_%EB%B9%8C%EB%93%9C_%EA%B0%80%EC%9D%B4%EB%93%9C/">
+<noscript>
+    <style>
+        #theme-toggle,
+        .top-link {
+            display: none;
+        }
+
+    </style>
+    <style>
+        @media (prefers-color-scheme: dark) {
+            :root {
+                --theme: rgb(29, 30, 32);
+                --entry: rgb(46, 46, 51);
+                --primary: rgb(218, 218, 219);
+                --secondary: rgb(155, 156, 157);
+                --tertiary: rgb(65, 66, 68);
+                --content: rgb(196, 196, 197);
+                --code-block-bg: rgb(46, 46, 51);
+                --code-bg: rgb(55, 56, 62);
+                --border: rgb(51, 51, 51);
+            }
+
+            .list {
+                background: var(--theme);
+            }
+
+            .list:not(.dark)::-webkit-scrollbar-track {
+                background: 0 0;
+            }
+
+            .list:not(.dark)::-webkit-scrollbar-thumb {
+                border-color: var(--theme);
+            }
+        }
+
+    </style>
+</noscript>
+</head>
+
+<body class="" id="top">
+<script>
+    if (localStorage.getItem("pref-theme") === "dark") {
+        document.body.classList.add('dark');
+    } else if (localStorage.getItem("pref-theme") === "light") {
+        document.body.classList.remove('dark')
+    } else if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
+        document.body.classList.add('dark');
+    }
+
+</script>
+
+<header class="header">
+    <nav class="nav">
+        <div class="logo">
+            <a href="http://localhost:65390/" accesskey="h" title="8dobibim Tech Blog (Alt + H)">8dobibim Tech Blog</a>
+            <div class="logo-switches">
+                <button id="theme-toggle" accesskey="t" title="(Alt + T)" aria-label="Toggle theme">
+                    <svg id="moon" xmlns="http://www.w3.org/2000/svg" width="24" height="18" viewBox="0 0 24 24"
+                        fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                        stroke-linejoin="round">
+                        <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+                    </svg>
+                    <svg id="sun" xmlns="http://www.w3.org/2000/svg" width="24" height="18" viewBox="0 0 24 24"
+                        fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                        stroke-linejoin="round">
+                        <circle cx="12" cy="12" r="5"></circle>
+                        <line x1="12" y1="1" x2="12" y2="3"></line>
+                        <line x1="12" y1="21" x2="12" y2="23"></line>
+                        <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+                        <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+                        <line x1="1" y1="12" x2="3" y2="12"></line>
+                        <line x1="21" y1="12" x2="23" y2="12"></line>
+                        <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+                        <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+                    </svg>
+                </button>
+            </div>
+        </div>
+        <ul id="menu">
+            <li>
+                <a href="http://localhost:65390/frontend/" title="🖥 프론트엔드">
+                    <span>🖥 프론트엔드</span>
+                </a>
+            </li>
+            <li>
+                <a href="http://localhost:65390/backend/" title="💾 백엔드">
+                    <span>💾 백엔드</span>
+                </a>
+            </li>
+        </ul>
+    </nav>
+</header>
+<main class="main">
+
+<article class="post-single">
+  <header class="post-header">
+    <div class="breadcrumbs"><a href="http://localhost:65390/">Home</a>&nbsp;»&nbsp;<a href="http://localhost:65390/frontend/">Frontend 문서</a></div>
+    <h1 class="post-title entry-hint-parent">
+      
+    </h1>
+    <div class="post-meta">2 min&nbsp;·&nbsp;216 words
+
+</div>
+  </header> <div class="toc">
+    <details  open>
+        <summary accesskey="c" title="(Alt + C)">
+            <span class="details">Table of Contents</span>
+        </summary>
+
+        <div class="inner"><ul>
+                <li>
+                    <a href="#-docker-%ec%9d%b4%eb%af%b8%ec%a7%80-%eb%b9%8c%eb%93%9c-%ea%b0%80%ec%9d%b4%eb%93%9c" aria-label="🐳 Docker 이미지 빌드 가이드">🐳 Docker 이미지 빌드 가이드</a><ul>
+                        
+                <li>
+                    <a href="#-%ec%82%ac%ec%a0%84-%ec%a4%80%eb%b9%84-%ea%b3%b5%ed%86%b5-%ec%82%ac%ed%95%ad" aria-label="📦 사전 준비 공통 사항">📦 사전 준비 공통 사항</a></li>
+                <li>
+                    <a href="#-windows" aria-label="🪟 Windows">🪟 Windows</a><ul>
+                        
+                <li>
+                    <a href="#-1-docker-desktop-%ec%84%a4%ec%b9%98" aria-label="📥 1. Docker Desktop 설치">📥 1. Docker Desktop 설치</a></li>
+                <li>
+                    <a href="#-2-%ed%94%84%eb%a1%9c%ec%a0%9d%ed%8a%b8-%eb%94%94%eb%a0%89%ed%86%a0%eb%a6%ac-%ec%9d%b4%eb%8f%99-git-bash-%eb%98%90%eb%8a%94-powershell" aria-label="⚙️ 2. 프로젝트 디렉토리 이동 (Git Bash 또는 PowerShell)">⚙️ 2. 프로젝트 디렉토리 이동 (Git Bash 또는 PowerShell)</a></li>
+                <li>
+                    <a href="#-3-docker-%ec%9d%b4%eb%af%b8%ec%a7%80-%eb%b9%8c%eb%93%9c" aria-label="🧱 3. Docker 이미지 빌드">🧱 3. Docker 이미지 빌드</a></li>
+                <li>
+                    <a href="#-4-%ec%8b%a4%ed%96%89" aria-label="▶️ 4. 실행">▶️ 4. 실행</a></li>
+                <li>
+                    <a href="#-5-%ec%a0%91%ec%86%8d" aria-label="🖥️ 5. 접속">🖥️ 5. 접속</a></li></ul>
+                </li>
+                <li>
+                    <a href="#-macos" aria-label="🍎 macOS">🍎 macOS</a><ul>
+                        
+                <li>
+                    <a href="#-1-docker-desktop-%ec%84%a4%ec%b9%98-1" aria-label="📥 1. Docker Desktop 설치">📥 1. Docker Desktop 설치</a></li>
+                <li>
+                    <a href="#-2-%ed%84%b0%eb%af%b8%eb%84%90%ec%97%90%ec%84%9c-%ec%8b%a4%ed%96%89" aria-label="⚙️ 2. 터미널에서 실행">⚙️ 2. 터미널에서 실행</a></li></ul>
+                </li>
+                <li>
+                    <a href="#-ubuntu--linux" aria-label="🐧 Ubuntu / Linux">🐧 Ubuntu / Linux</a><ul>
+                        
+                <li>
+                    <a href="#-1-docker--docker-compose-%ec%84%a4%ec%b9%98" aria-label="📥 1. Docker &amp; Docker Compose 설치">📥 1. Docker &amp; Docker Compose 설치</a></li>
+                <li>
+                    <a href="#-2-%ed%94%84%eb%a1%9c%ec%a0%9d%ed%8a%b8-%eb%94%94%eb%a0%89%ed%86%a0%eb%a6%ac%eb%a1%9c-%ec%9d%b4%eb%8f%99" aria-label="⚙️ 2. 프로젝트 디렉토리로 이동">⚙️ 2. 프로젝트 디렉토리로 이동</a></li>
+                <li>
+                    <a href="#-3-docker-%ec%9d%b4%eb%af%b8%ec%a7%80-%eb%b9%8c%eb%93%9c-1" aria-label="🧱 3. Docker 이미지 빌드">🧱 3. Docker 이미지 빌드</a></li>
+                <li>
+                    <a href="#-4-%ec%8b%a4%ed%96%89-1" aria-label="▶️ 4. 실행">▶️ 4. 실행</a></li>
+                <li>
+                    <a href="#-5-%ec%a0%91%ec%86%8d-1" aria-label="🖥️ 5. 접속">🖥️ 5. 접속</a>
+                </li>
+            </ul>
+            </li>
+            </ul>
+            </li>
+            </ul>
+        </div>
+    </details>
+</div>
+
+  <div class="post-content"><h1 id="-docker-이미지-빌드-가이드">🐳 Docker 이미지 빌드 가이드<a hidden class="anchor" aria-hidden="true" href="#-docker-이미지-빌드-가이드">#</a></h1>
+<p>OpenWebUI 기반 프론트를 Docker 환경에서 실행하는 과정을 운영체제별로 정리했습니다.</p>
+<hr>
+<h2 id="-사전-준비-공통-사항">📦 사전 준비 공통 사항<a hidden class="anchor" aria-hidden="true" href="#-사전-준비-공통-사항">#</a></h2>
+<table>
+  <thead>
+      <tr>
+          <th>항목</th>
+          <th>설명</th>
+      </tr>
+  </thead>
+  <tbody>
+      <tr>
+          <td>프로젝트 루트</td>
+          <td><code>submodules/8dobibim</code> <code>-&gt;</code> <code>open-webui</code> 로 이동</td>
+      </tr>
+      <tr>
+          <td>주요 파일</td>
+          <td><code>Dockerfile</code>, <code>.dockerignore</code>, <code>nginx/default.conf</code></td>
+      </tr>
+      <tr>
+          <td>결과 포트</td>
+          <td>기본적으로 <code>localhost:3000</code> (포트는 자유 설정 가능)</td>
+      </tr>
+  </tbody>
+</table>
+<hr>
+<h2 id="-windows">🪟 Windows<a hidden class="anchor" aria-hidden="true" href="#-windows">#</a></h2>
+<h3 id="-1-docker-desktop-설치">📥 1. Docker Desktop 설치<a hidden class="anchor" aria-hidden="true" href="#-1-docker-desktop-설치">#</a></h3>
+<ul>
+<li>공식 설치 페이지: <a href="https://www.docker.com/products/docker-desktop/">https://www.docker.com/products/docker-desktop/</a></li>
+<li>WSL2 백엔드 권장 (설치 시 자동 안내됨)</li>
+<li>설치 후 Docker 실행 여부 확인</li>
+</ul>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-powershell" data-lang="powershell"><span style="display:flex;"><span>docker --version
+</span></span></code></pre></div><h3 id="-2-프로젝트-디렉토리-이동-git-bash-또는-powershell">⚙️ 2. 프로젝트 디렉토리 이동 (Git Bash 또는 PowerShell)<a hidden class="anchor" aria-hidden="true" href="#-2-프로젝트-디렉토리-이동-git-bash-또는-powershell">#</a></h3>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>cd path/to/8dobibim_front
+</span></span></code></pre></div><h3 id="-3-docker-이미지-빌드">🧱 3. Docker 이미지 빌드<a hidden class="anchor" aria-hidden="true" href="#-3-docker-이미지-빌드">#</a></h3>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>docker build -t 8dobibim-front 
+</span></span></code></pre></div><h3 id="-4-실행">▶️ 4. 실행<a hidden class="anchor" aria-hidden="true" href="#-4-실행">#</a></h3>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>docker run -d -p 3000:80 --name 8dobibim-front 8dobibim-front
+</span></span></code></pre></div><h3 id="-5-접속">🖥️ 5. 접속<a hidden class="anchor" aria-hidden="true" href="#-5-접속">#</a></h3>
+<pre tabindex="0"><code>http://localhost:3000
+</code></pre><hr>
+<h2 id="-macos">🍎 macOS<a hidden class="anchor" aria-hidden="true" href="#-macos">#</a></h2>
+<h3 id="-1-docker-desktop-설치-1">📥 1. Docker Desktop 설치<a hidden class="anchor" aria-hidden="true" href="#-1-docker-desktop-설치-1">#</a></h3>
+<ul>
+<li>공식 설치 페이지: <a href="https://www.docker.com/products/docker-desktop/">https://www.docker.com/products/docker-desktop/</a></li>
+<li>설치 후 <code>Terminal</code>에서 확인: docker &ndash;version</li>
+</ul>
+<h3 id="-2-터미널에서-실행">⚙️ 2. 터미널에서 실행<a hidden class="anchor" aria-hidden="true" href="#-2-터미널에서-실행">#</a></h3>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>cd /path/to/8dobibim_front
+</span></span><span style="display:flex;"><span>docker build -t 8dobibim-front .
+</span></span><span style="display:flex;"><span>docker run -d -p 3000:80 --name 8dobibim-front 8dobibim-front
+</span></span></code></pre></div><blockquote>
+<p>macOS는 localhost:3000 바로 접속 가능 (Chrome/Safari 등)</p></blockquote>
+<hr>
+<h2 id="-ubuntu--linux">🐧 Ubuntu / Linux<a hidden class="anchor" aria-hidden="true" href="#-ubuntu--linux">#</a></h2>
+<h3 id="-1-docker--docker-compose-설치">📥 1. Docker &amp; Docker Compose 설치<a hidden class="anchor" aria-hidden="true" href="#-1-docker--docker-compose-설치">#</a></h3>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>sudo apt update
+</span></span><span style="display:flex;"><span>sudo apt install docker.io docker-compose -y
+</span></span></code></pre></div><p>추가로 Docker 권한 없이 실행하려면:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>sudo usermod -aG docker $USER
+</span></span><span style="display:flex;"><span>newgrp docker
+</span></span></code></pre></div><h3 id="-2-프로젝트-디렉토리로-이동">⚙️ 2. 프로젝트 디렉토리로 이동<a hidden class="anchor" aria-hidden="true" href="#-2-프로젝트-디렉토리로-이동">#</a></h3>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>cd ~/projects/8dobibim_front
+</span></span></code></pre></div><h3 id="-3-docker-이미지-빌드-1">🧱 3. Docker 이미지 빌드<a hidden class="anchor" aria-hidden="true" href="#-3-docker-이미지-빌드-1">#</a></h3>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>docker build -t 8dobibim-front .
+</span></span></code></pre></div><h3 id="-4-실행-1">▶️ 4. 실행<a hidden class="anchor" aria-hidden="true" href="#-4-실행-1">#</a></h3>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>docker run -d -p 3000:80 --name 8dobibim-front 8dobibim-front
+</span></span></code></pre></div><h3 id="-5-접속-1">🖥️ 5. 접속<a hidden class="anchor" aria-hidden="true" href="#-5-접속-1">#</a></h3>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>로컬 브라우저: http://localhost:3000
+</span></span><span style="display:flex;"><span>외부 접속 시: http://&lt;서버 IP&gt;:3000
+</span></span></code></pre></div>
+
+  </div>
+
+  <footer class="post-footer">
+    <ul class="post-tags">
+    </ul>
+
+  </footer>
+</article>
+    </main>
+    
+<footer class="footer">
+        <span>&copy; 2025 <a href="http://localhost:65390/">8dobibim Tech Blog</a></span> · 
+
+    <span>
+        Powered by
+        <a href="https://gohugo.io/" rel="noopener noreferrer" target="_blank">Hugo</a> &
+        <a href="https://github.com/adityatelange/hugo-PaperMod/" rel="noopener" target="_blank">PaperMod</a>
+    </span>
+</footer>
+<a href="#top" aria-label="go to top" title="Go to Top (Alt + G)" class="top-link" id="top-link" accesskey="g">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 12 6" fill="currentColor">
+        <path d="M12 6H0l6-6z" />
+    </svg>
+</a>
+
+<script>
+    let menu = document.getElementById('menu')
+    if (menu) {
+        menu.scrollLeft = localStorage.getItem("menu-scroll-position");
+        menu.onscroll = function () {
+            localStorage.setItem("menu-scroll-position", menu.scrollLeft);
+        }
+    }
+
+    document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+        anchor.addEventListener("click", function (e) {
+            e.preventDefault();
+            var id = this.getAttribute("href").substr(1);
+            if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+                document.querySelector(`[id='${decodeURIComponent(id)}']`).scrollIntoView({
+                    behavior: "smooth"
+                });
+            } else {
+                document.querySelector(`[id='${decodeURIComponent(id)}']`).scrollIntoView();
+            }
+            if (id === "top") {
+                history.replaceState(null, null, " ");
+            } else {
+                history.pushState(null, null, `#${id}`);
+            }
+        });
+    });
+
+</script>
+<script>
+    var mybutton = document.getElementById("top-link");
+    window.onscroll = function () {
+        if (document.body.scrollTop > 800 || document.documentElement.scrollTop > 800) {
+            mybutton.style.visibility = "visible";
+            mybutton.style.opacity = "1";
+        } else {
+            mybutton.style.visibility = "hidden";
+            mybutton.style.opacity = "0";
+        }
+    };
+
+</script>
+<script>
+    document.getElementById("theme-toggle").addEventListener("click", () => {
+        if (document.body.className.includes("dark")) {
+            document.body.classList.remove('dark');
+            localStorage.setItem("pref-theme", 'light');
+        } else {
+            document.body.classList.add('dark');
+            localStorage.setItem("pref-theme", 'dark');
+        }
+    })
+
+</script>
+<script>
+    document.querySelectorAll('pre > code').forEach((codeblock) => {
+        const container = codeblock.parentNode.parentNode;
+
+        const copybutton = document.createElement('button');
+        copybutton.classList.add('copy-code');
+        copybutton.innerHTML = 'copy';
+
+        function copyingDone() {
+            copybutton.innerHTML = 'copied!';
+            setTimeout(() => {
+                copybutton.innerHTML = 'copy';
+            }, 2000);
+        }
+
+        copybutton.addEventListener('click', (cb) => {
+            if ('clipboard' in navigator) {
+                navigator.clipboard.writeText(codeblock.textContent);
+                copyingDone();
+                return;
+            }
+
+            const range = document.createRange();
+            range.selectNodeContents(codeblock);
+            const selection = window.getSelection();
+            selection.removeAllRanges();
+            selection.addRange(range);
+            try {
+                document.execCommand('copy');
+                copyingDone();
+            } catch (e) { };
+            selection.removeRange(range);
+        });
+
+        if (container.classList.contains("highlight")) {
+            container.appendChild(copybutton);
+        } else if (container.parentNode.firstChild == container) {
+            
+        } else if (codeblock.parentNode.parentNode.parentNode.parentNode.parentNode.nodeName == "TABLE") {
+            
+            codeblock.parentNode.parentNode.parentNode.parentNode.parentNode.appendChild(copybutton);
+        } else {
+            
+            codeblock.parentNode.appendChild(copybutton);
+        }
+    });
+</script>
+</body>
+
+</html>

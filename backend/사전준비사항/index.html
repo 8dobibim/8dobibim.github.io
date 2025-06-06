@@ -1,0 +1,882 @@
+<!DOCTYPE html>
+<html lang="en" dir="auto">
+
+<head><script src="/livereload.js?mindelay=10&amp;v=2&amp;port=65390&amp;path=livereload" data-no-instant defer></script><meta charset="utf-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+<meta name="robots" content="noindex, nofollow">
+<title>8dobibim Tech Blog</title>
+<meta name="keywords" content="">
+<meta name="description" content="🚀 OpenWebUI AWS 배포 사전 준비사항
+
+⏱️ 예상 소요시간: 약 60-90분
+💡 난이도: 초급
+📋 목표: AWS에 OpenWebUI를 배포하기 위한 모든 도구와 환경을 준비합니다.
+
+📋 준비 완료 체크리스트
+작업을 시작하기 전에 아래 항목들을 체크해주세요:
+필수 계정
+
+ AWS 계정 (결제 정보 등록 완료)
+ GitHub 계정
+ Docker Hub 계정 (선택사항)
+
+필수 도구 설치
+
+ AWS CLI v2
+ Terraform v1.5&#43;
+ kubectl v1.24&#43;
+ Docker Desktop
+ Git
+ 코드 에디터 (VS Code 권장)
+
+권한 및 설정
+
+ AWS IAM 사용자 생성 및 권한 설정
+ AWS CLI 자격 증명 설정
+ GitHub Personal Access Token 생성
+
+
+1️⃣ AWS 계정 및 IAM 설정
+AWS 계정 준비
+
+
+AWS 계정이 없는 경우">
+<meta name="author" content="">
+<link rel="canonical" href="http://localhost:65390/backend/%EC%82%AC%EC%A0%84%EC%A4%80%EB%B9%84%EC%82%AC%ED%95%AD/">
+<link crossorigin="anonymous" href="/assets/css/stylesheet.36819bea596090d8b48cf10d9831382996197aa7e4fc86f792f7c08c9ca4d23b.css" integrity="sha256-NoGb6llgkNi0jPENmDE4KZYZeqfk/Ib3kvfAjJyk0js=" rel="preload stylesheet" as="style">
+<link rel="icon" href="http://localhost:65390/favicon.ico">
+<link rel="icon" type="image/png" sizes="16x16" href="http://localhost:65390/favicon-16x16.png">
+<link rel="icon" type="image/png" sizes="32x32" href="http://localhost:65390/favicon-32x32.png">
+<link rel="apple-touch-icon" href="http://localhost:65390/apple-touch-icon.png">
+<link rel="mask-icon" href="http://localhost:65390/safari-pinned-tab.svg">
+<meta name="theme-color" content="#2e2e33">
+<meta name="msapplication-TileColor" content="#2e2e33">
+<link rel="alternate" hreflang="en" href="http://localhost:65390/backend/%EC%82%AC%EC%A0%84%EC%A4%80%EB%B9%84%EC%82%AC%ED%95%AD/">
+<noscript>
+    <style>
+        #theme-toggle,
+        .top-link {
+            display: none;
+        }
+
+    </style>
+    <style>
+        @media (prefers-color-scheme: dark) {
+            :root {
+                --theme: rgb(29, 30, 32);
+                --entry: rgb(46, 46, 51);
+                --primary: rgb(218, 218, 219);
+                --secondary: rgb(155, 156, 157);
+                --tertiary: rgb(65, 66, 68);
+                --content: rgb(196, 196, 197);
+                --code-block-bg: rgb(46, 46, 51);
+                --code-bg: rgb(55, 56, 62);
+                --border: rgb(51, 51, 51);
+            }
+
+            .list {
+                background: var(--theme);
+            }
+
+            .list:not(.dark)::-webkit-scrollbar-track {
+                background: 0 0;
+            }
+
+            .list:not(.dark)::-webkit-scrollbar-thumb {
+                border-color: var(--theme);
+            }
+        }
+
+    </style>
+</noscript>
+</head>
+
+<body class="" id="top">
+<script>
+    if (localStorage.getItem("pref-theme") === "dark") {
+        document.body.classList.add('dark');
+    } else if (localStorage.getItem("pref-theme") === "light") {
+        document.body.classList.remove('dark')
+    } else if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
+        document.body.classList.add('dark');
+    }
+
+</script>
+
+<header class="header">
+    <nav class="nav">
+        <div class="logo">
+            <a href="http://localhost:65390/" accesskey="h" title="8dobibim Tech Blog (Alt + H)">8dobibim Tech Blog</a>
+            <div class="logo-switches">
+                <button id="theme-toggle" accesskey="t" title="(Alt + T)" aria-label="Toggle theme">
+                    <svg id="moon" xmlns="http://www.w3.org/2000/svg" width="24" height="18" viewBox="0 0 24 24"
+                        fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                        stroke-linejoin="round">
+                        <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+                    </svg>
+                    <svg id="sun" xmlns="http://www.w3.org/2000/svg" width="24" height="18" viewBox="0 0 24 24"
+                        fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                        stroke-linejoin="round">
+                        <circle cx="12" cy="12" r="5"></circle>
+                        <line x1="12" y1="1" x2="12" y2="3"></line>
+                        <line x1="12" y1="21" x2="12" y2="23"></line>
+                        <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+                        <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+                        <line x1="1" y1="12" x2="3" y2="12"></line>
+                        <line x1="21" y1="12" x2="23" y2="12"></line>
+                        <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+                        <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+                    </svg>
+                </button>
+            </div>
+        </div>
+        <ul id="menu">
+            <li>
+                <a href="http://localhost:65390/frontend/" title="🖥 프론트엔드">
+                    <span>🖥 프론트엔드</span>
+                </a>
+            </li>
+            <li>
+                <a href="http://localhost:65390/backend/" title="💾 백엔드">
+                    <span>💾 백엔드</span>
+                </a>
+            </li>
+        </ul>
+    </nav>
+</header>
+<main class="main">
+
+<article class="post-single">
+  <header class="post-header">
+    <div class="breadcrumbs"><a href="http://localhost:65390/">Home</a>&nbsp;»&nbsp;<a href="http://localhost:65390/backend/">Backend 문서</a></div>
+    <h1 class="post-title entry-hint-parent">
+      
+    </h1>
+    <div class="post-meta">6 min&nbsp;·&nbsp;1243 words
+
+</div>
+  </header> <div class="toc">
+    <details  open>
+        <summary accesskey="c" title="(Alt + C)">
+            <span class="details">Table of Contents</span>
+        </summary>
+
+        <div class="inner"><ul>
+                <li>
+                    <a href="#-openwebui-aws-%eb%b0%b0%ed%8f%ac-%ec%82%ac%ec%a0%84-%ec%a4%80%eb%b9%84%ec%82%ac%ed%95%ad" aria-label="🚀 OpenWebUI AWS 배포 사전 준비사항">🚀 OpenWebUI AWS 배포 사전 준비사항</a><ul>
+                        
+                <li>
+                    <a href="#-%ec%a4%80%eb%b9%84-%ec%99%84%eb%a3%8c-%ec%b2%b4%ed%81%ac%eb%a6%ac%ec%8a%a4%ed%8a%b8" aria-label="📋 준비 완료 체크리스트">📋 준비 완료 체크리스트</a><ul>
+                        
+                <li>
+                    <a href="#%ed%95%84%ec%88%98-%ea%b3%84%ec%a0%95" aria-label="필수 계정">필수 계정</a></li>
+                <li>
+                    <a href="#%ed%95%84%ec%88%98-%eb%8f%84%ea%b5%ac-%ec%84%a4%ec%b9%98" aria-label="필수 도구 설치">필수 도구 설치</a></li>
+                <li>
+                    <a href="#%ea%b6%8c%ed%95%9c-%eb%b0%8f-%ec%84%a4%ec%a0%95" aria-label="권한 및 설정">권한 및 설정</a></li></ul>
+                </li>
+                <li>
+                    <a href="#1-aws-%ea%b3%84%ec%a0%95-%eb%b0%8f-iam-%ec%84%a4%ec%a0%95" aria-label="1️⃣ AWS 계정 및 IAM 설정">1️⃣ AWS 계정 및 IAM 설정</a><ul>
+                        
+                <li>
+                    <a href="#aws-%ea%b3%84%ec%a0%95-%ec%a4%80%eb%b9%84" aria-label="AWS 계정 준비">AWS 계정 준비</a></li>
+                <li>
+                    <a href="#iam-%ec%82%ac%ec%9a%a9%ec%9e%90-%ec%83%9d%ec%84%b1-%eb%b3%b4%ec%95%88%ec%9d%84-%ec%9c%84%ed%95%b4-%ed%95%84%ec%88%98" aria-label="IAM 사용자 생성 (보안을 위해 필수!)">IAM 사용자 생성 (보안을 위해 필수!)</a></li></ul>
+                </li>
+                <li>
+                    <a href="#2-%ed%95%84%ec%88%98-%eb%8f%84%ea%b5%ac-%ec%84%a4%ec%b9%98" aria-label="2️⃣ 필수 도구 설치">2️⃣ 필수 도구 설치</a><ul>
+                        
+                <li>
+                    <a href="#aws-cli-%ec%84%a4%ec%b9%98" aria-label="AWS CLI 설치">AWS CLI 설치</a><ul>
+                        
+                <li>
+                    <a href="#-windows" aria-label="🪟 Windows">🪟 Windows</a></li>
+                <li>
+                    <a href="#-macos" aria-label="🍎 macOS">🍎 macOS</a></li>
+                <li>
+                    <a href="#-linux-ubuntudebian" aria-label="🐧 Linux (Ubuntu/Debian)">🐧 Linux (Ubuntu/Debian)</a></li>
+                <li>
+                    <a href="#%ec%84%a4%ec%b9%98-%ed%99%95%ec%9d%b8" aria-label="설치 확인">설치 확인</a></li></ul>
+                </li>
+                <li>
+                    <a href="#aws-cli-%ec%84%a4%ec%a0%95" aria-label="AWS CLI 설정">AWS CLI 설정</a></li>
+                <li>
+                    <a href="#terraform-%ec%84%a4%ec%b9%98" aria-label="Terraform 설치">Terraform 설치</a><ul>
+                        
+                <li>
+                    <a href="#-windows-1" aria-label="🪟 Windows">🪟 Windows</a></li>
+                <li>
+                    <a href="#-macos-1" aria-label="🍎 macOS">🍎 macOS</a></li>
+                <li>
+                    <a href="#-linux" aria-label="🐧 Linux">🐧 Linux</a></li>
+                <li>
+                    <a href="#%ec%84%a4%ec%b9%98-%ed%99%95%ec%9d%b8-1" aria-label="설치 확인">설치 확인</a></li></ul>
+                </li>
+                <li>
+                    <a href="#kubectl-%ec%84%a4%ec%b9%98" aria-label="kubectl 설치">kubectl 설치</a><ul>
+                        
+                <li>
+                    <a href="#-windows-2" aria-label="🪟 Windows">🪟 Windows</a></li>
+                <li>
+                    <a href="#-macos-2" aria-label="🍎 macOS">🍎 macOS</a></li>
+                <li>
+                    <a href="#-linux-1" aria-label="🐧 Linux">🐧 Linux</a></li>
+                <li>
+                    <a href="#%ec%84%a4%ec%b9%98-%ed%99%95%ec%9d%b8-2" aria-label="설치 확인">설치 확인</a></li></ul>
+                </li>
+                <li>
+                    <a href="#docker-desktop-%ec%84%a4%ec%b9%98" aria-label="Docker Desktop 설치">Docker Desktop 설치</a><ul>
+                        
+                <li>
+                    <a href="#-windows---macos" aria-label="🪟 Windows &amp; 🍎 macOS">🪟 Windows &amp; 🍎 macOS</a></li>
+                <li>
+                    <a href="#-linux-2" aria-label="🐧 Linux">🐧 Linux</a></li>
+                <li>
+                    <a href="#%ec%84%a4%ec%b9%98-%ed%99%95%ec%9d%b8-3" aria-label="설치 확인">설치 확인</a></li></ul>
+                </li>
+                <li>
+                    <a href="#git-%ec%84%a4%ec%b9%98-%eb%b0%8f-%ec%84%a4%ec%a0%95" aria-label="Git 설치 및 설정">Git 설치 및 설정</a><ul>
+                        
+                <li>
+                    <a href="#%ec%84%a4%ec%b9%98" aria-label="설치">설치</a></li>
+                <li>
+                    <a href="#git-%ec%84%a4%ec%a0%95" aria-label="Git 설정">Git 설정</a></li>
+                <li>
+                    <a href="#%ec%84%a4%ec%b9%98-%ed%99%95%ec%9d%b8-4" aria-label="설치 확인">설치 확인</a></li></ul>
+                </li></ul>
+                </li>
+                <li>
+                    <a href="#3-github-%ec%84%a4%ec%a0%95" aria-label="3️⃣ GitHub 설정">3️⃣ GitHub 설정</a><ul>
+                        
+                <li>
+                    <a href="#personal-access-token-%ec%83%9d%ec%84%b1" aria-label="Personal Access Token 생성">Personal Access Token 생성</a></li></ul>
+                </li>
+                <li>
+                    <a href="#4-%ec%9e%91%ec%97%85-%eb%94%94%eb%a0%89%ed%86%a0%eb%a6%ac-%ec%84%a4%ec%a0%95" aria-label="4️⃣ 작업 디렉토리 설정">4️⃣ 작업 디렉토리 설정</a><ul>
+                        
+                <li>
+                    <a href="#%ed%94%84%eb%a1%9c%ec%a0%9d%ed%8a%b8-%ed%8f%b4%eb%8d%94-%ec%83%9d%ec%84%b1" aria-label="프로젝트 폴더 생성">프로젝트 폴더 생성</a></li>
+                <li>
+                    <a href="#gitignore-%ed%8c%8c%ec%9d%bc-%ec%83%9d%ec%84%b1" aria-label=".gitignore 파일 생성">.gitignore 파일 생성</a></li></ul>
+                </li>
+                <li>
+                    <a href="#5-vs-code-%ed%99%95%ec%9e%a5-%ed%94%84%eb%a1%9c%ea%b7%b8%eb%9e%a8-%ea%b6%8c%ec%9e%a5" aria-label="5️⃣ VS Code 확장 프로그램 (권장)">5️⃣ VS Code 확장 프로그램 (권장)</a></li>
+                <li>
+                    <a href="#6-%ed%99%98%ea%b2%bd-%eb%b3%80%ec%88%98-%ec%84%a4%ec%a0%95" aria-label="6️⃣ 환경 변수 설정">6️⃣ 환경 변수 설정</a><ul>
+                        
+                <li>
+                    <a href="#%ed%99%98%ea%b2%bd-%eb%b3%80%ec%88%98-%ed%85%9c%ed%94%8c%eb%a6%bf-%ed%8c%8c%ec%9d%bc-%ec%83%9d%ec%84%b1" aria-label="환경 변수 템플릿 파일 생성">환경 변수 템플릿 파일 생성</a></li>
+                <li>
+                    <a href="#%ec%8b%a4%ec%a0%9c-%ed%99%98%ea%b2%bd-%eb%b3%80%ec%88%98-%ed%8c%8c%ec%9d%bc-%ec%83%9d%ec%84%b1" aria-label="실제 환경 변수 파일 생성">실제 환경 변수 파일 생성</a></li></ul>
+                </li>
+                <li>
+                    <a href="#-%ec%b5%9c%ec%a2%85-%ea%b2%80%ec%a6%9d" aria-label="✅ 최종 검증">✅ 최종 검증</a></li>
+                <li>
+                    <a href="#-%eb%ac%b8%ec%a0%9c-%ed%95%b4%ea%b2%b0" aria-label="🚨 문제 해결">🚨 문제 해결</a><ul>
+                        
+                <li>
+                    <a href="#%ec%9e%90%ec%a3%bc-%eb%b0%9c%ec%83%9d%ed%95%98%eb%8a%94-%eb%ac%b8%ec%a0%9c%eb%93%a4" aria-label="자주 발생하는 문제들">자주 발생하는 문제들</a><ul>
+                        
+                <li>
+                    <a href="#1-aws-cli-%ec%9e%90%ea%b2%a9-%ec%a6%9d%eb%aa%85-%ec%98%a4%eb%a5%98" aria-label="1. AWS CLI 자격 증명 오류">1. AWS CLI 자격 증명 오류</a></li>
+                <li>
+                    <a href="#2-docker-%ea%b6%8c%ed%95%9c-%ec%98%a4%eb%a5%98-linux" aria-label="2. Docker 권한 오류 (Linux)">2. Docker 권한 오류 (Linux)</a></li>
+                <li>
+                    <a href="#3-kubectl-%eb%aa%85%eb%a0%b9%ec%96%b4-%ec%b0%be%ec%9d%84-%ec%88%98-%ec%97%86%ec%9d%8c" aria-label="3. kubectl 명령어 찾을 수 없음">3. kubectl 명령어 찾을 수 없음</a></li></ul>
+                </li></ul>
+                </li>
+                <li>
+                    <a href="#-%ec%b0%b8%ea%b3%a0-%ec%9e%90%eb%a3%8c" aria-label="📚 참고 자료">📚 참고 자료</a></li>
+                <li>
+                    <a href="#-%eb%8b%a4%ec%9d%8c-%eb%8b%a8%ea%b3%84" aria-label="⏭️ 다음 단계">⏭️ 다음 단계</a>
+                </li>
+            </ul>
+            </li>
+            </ul>
+        </div>
+    </details>
+</div>
+
+  <div class="post-content"><h1 id="-openwebui-aws-배포-사전-준비사항">🚀 OpenWebUI AWS 배포 사전 준비사항<a hidden class="anchor" aria-hidden="true" href="#-openwebui-aws-배포-사전-준비사항">#</a></h1>
+<blockquote>
+<p><strong>⏱️ 예상 소요시간</strong>: 약 60-90분<br>
+<strong>💡 난이도</strong>: 초급<br>
+<strong>📋 목표</strong>: AWS에 OpenWebUI를 배포하기 위한 모든 도구와 환경을 준비합니다.</p></blockquote>
+<hr>
+<h2 id="-준비-완료-체크리스트">📋 준비 완료 체크리스트<a hidden class="anchor" aria-hidden="true" href="#-준비-완료-체크리스트">#</a></h2>
+<p>작업을 시작하기 전에 아래 항목들을 체크해주세요:</p>
+<h3 id="필수-계정">필수 계정<a hidden class="anchor" aria-hidden="true" href="#필수-계정">#</a></h3>
+<ul>
+<li><input disabled="" type="checkbox"> AWS 계정 (결제 정보 등록 완료)</li>
+<li><input disabled="" type="checkbox"> GitHub 계정</li>
+<li><input disabled="" type="checkbox"> Docker Hub 계정 (선택사항)</li>
+</ul>
+<h3 id="필수-도구-설치">필수 도구 설치<a hidden class="anchor" aria-hidden="true" href="#필수-도구-설치">#</a></h3>
+<ul>
+<li><input disabled="" type="checkbox"> AWS CLI v2</li>
+<li><input disabled="" type="checkbox"> Terraform v1.5+</li>
+<li><input disabled="" type="checkbox"> kubectl v1.24+</li>
+<li><input disabled="" type="checkbox"> Docker Desktop</li>
+<li><input disabled="" type="checkbox"> Git</li>
+<li><input disabled="" type="checkbox"> 코드 에디터 (VS Code 권장)</li>
+</ul>
+<h3 id="권한-및-설정">권한 및 설정<a hidden class="anchor" aria-hidden="true" href="#권한-및-설정">#</a></h3>
+<ul>
+<li><input disabled="" type="checkbox"> AWS IAM 사용자 생성 및 권한 설정</li>
+<li><input disabled="" type="checkbox"> AWS CLI 자격 증명 설정</li>
+<li><input disabled="" type="checkbox"> GitHub Personal Access Token 생성</li>
+</ul>
+<hr>
+<h2 id="1-aws-계정-및-iam-설정">1️⃣ AWS 계정 및 IAM 설정<a hidden class="anchor" aria-hidden="true" href="#1-aws-계정-및-iam-설정">#</a></h2>
+<h3 id="aws-계정-준비">AWS 계정 준비<a hidden class="anchor" aria-hidden="true" href="#aws-계정-준비">#</a></h3>
+<ol>
+<li>
+<p><strong>AWS 계정이 없는 경우</strong></p>
+<ul>
+<li><a href="https://aws.amazon.com/ko/">AWS 회원가입 페이지</a>에서 계정 생성</li>
+<li>신용카드 정보 등록 (프리티어 사용 가능)</li>
+<li>이메일 인증 완료</li>
+</ul>
+</li>
+<li>
+<p><strong>결제 알림 설정 (중요!)</strong></p>
+<pre tabindex="0"><code>💰 예상 월 비용: $50-150 (테스트 환경 기준)
+⚠️  비용 초과를 방지하기 위해 결제 알림을 설정하세요!
+</code></pre></li>
+</ol>
+<h3 id="iam-사용자-생성-보안을-위해-필수">IAM 사용자 생성 (보안을 위해 필수!)<a hidden class="anchor" aria-hidden="true" href="#iam-사용자-생성-보안을-위해-필수">#</a></h3>
+<blockquote>
+<p><strong>⚠️ 중요</strong>: 루트 계정을 직접 사용하지 마세요! IAM 사용자를 생성해서 사용하는 것이 보안상 안전합니다.</p></blockquote>
+<p><strong>1단계: IAM 콘솔 접속</strong></p>
+<ul>
+<li>AWS 콘솔 → 서비스 검색 → &ldquo;IAM&rdquo; 입력 → Identity and Access Management 선택</li>
+</ul>
+<p><strong>2단계: 사용자 생성</strong></p>
+<pre tabindex="0"><code>사용자 이름: openwebui-deploy-user
+액세스 유형: ✅ 프로그래밍 방식 액세스
+</code></pre><p><strong>3단계: 권한 설정</strong>
+아래 정책들을 연결해주세요:</p>
+<ul>
+<li><code>AmazonEKSClusterPolicy</code></li>
+<li><code>AmazonEKSWorkerNodePolicy</code></li>
+<li><code>AmazonEKS_CNI_Policy</code></li>
+<li><code>AmazonEC2ContainerRegistryReadOnly</code></li>
+<li><code>AmazonS3FullAccess</code> (Terraform 상태 파일용)</li>
+<li><code>AmazonDynamoDBFullAccess</code> (Terraform 락용)</li>
+</ul>
+<p><strong>또는 사용자 정의 정책 사용:</strong></p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-json" data-lang="json"><span style="display:flex;"><span>{
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">&#34;Version&#34;</span>: <span style="color:#e6db74">&#34;2012-10-17&#34;</span>,
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">&#34;Statement&#34;</span>: [
+</span></span><span style="display:flex;"><span>    {
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">&#34;Effect&#34;</span>: <span style="color:#e6db74">&#34;Allow&#34;</span>,
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">&#34;Action&#34;</span>: [
+</span></span><span style="display:flex;"><span>        <span style="color:#e6db74">&#34;eks:*&#34;</span>,
+</span></span><span style="display:flex;"><span>        <span style="color:#e6db74">&#34;ec2:*&#34;</span>,
+</span></span><span style="display:flex;"><span>        <span style="color:#e6db74">&#34;iam:*&#34;</span>,
+</span></span><span style="display:flex;"><span>        <span style="color:#e6db74">&#34;s3:*&#34;</span>,
+</span></span><span style="display:flex;"><span>        <span style="color:#e6db74">&#34;dynamodb:*&#34;</span>,
+</span></span><span style="display:flex;"><span>        <span style="color:#e6db74">&#34;ecr:*&#34;</span>,
+</span></span><span style="display:flex;"><span>        <span style="color:#e6db74">&#34;logs:*&#34;</span>,
+</span></span><span style="display:flex;"><span>        <span style="color:#e6db74">&#34;cloudformation:*&#34;</span>
+</span></span><span style="display:flex;"><span>      ],
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">&#34;Resource&#34;</span>: <span style="color:#e6db74">&#34;*&#34;</span>
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>  ]
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><p><strong>4단계: 액세스 키 저장</strong></p>
+<pre tabindex="0"><code>⚠️ 중요: 액세스 키와 시크릿 키를 안전한 곳에 저장하세요!
+   나중에 다시 확인할 수 없습니다.
+
+Access Key ID: AKIA........................
+Secret Access Key: ........................................
+</code></pre><hr>
+<h2 id="2-필수-도구-설치">2️⃣ 필수 도구 설치<a hidden class="anchor" aria-hidden="true" href="#2-필수-도구-설치">#</a></h2>
+<h3 id="aws-cli-설치">AWS CLI 설치<a hidden class="anchor" aria-hidden="true" href="#aws-cli-설치">#</a></h3>
+<h4 id="-windows">🪟 Windows<a hidden class="anchor" aria-hidden="true" href="#-windows">#</a></h4>
+<p><strong>방법 1: MSI 설치 파일 (권장)</strong></p>
+<ol>
+<li><a href="https://awscli.amazonaws.com/AWSCLIV2.msi">AWS CLI Windows 설치 파일</a> 다운로드</li>
+<li>다운로드한 파일 실행하여 설치</li>
+<li>설치 완료 후 새 명령 프롬프트 열기</li>
+</ol>
+<p><strong>방법 2: 명령어 설치</strong></p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-powershell" data-lang="powershell"><span style="display:flex;"><span><span style="color:#75715e"># PowerShell에서 실행</span>
+</span></span><span style="display:flex;"><span>msiexec.exe /i https<span style="color:#960050;background-color:#1e0010">:</span>//awscli.amazonaws.com/AWSCLIV2.msi
+</span></span></code></pre></div><h4 id="-macos">🍎 macOS<a hidden class="anchor" aria-hidden="true" href="#-macos">#</a></h4>
+<p><strong>방법 1: PKG 파일 (권장)</strong></p>
+<ol>
+<li><a href="https://awscli.amazonaws.com/AWSCLIV2.pkg">AWS CLI macOS 설치 파일</a> 다운로드</li>
+<li>다운로드한 파일 실행하여 설치</li>
+</ol>
+<p><strong>방법 2: Homebrew</strong></p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>brew install awscli
+</span></span></code></pre></div><h4 id="-linux-ubuntudebian">🐧 Linux (Ubuntu/Debian)<a hidden class="anchor" aria-hidden="true" href="#-linux-ubuntudebian">#</a></h4>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span><span style="color:#75715e"># 필요한 패키지 설치</span>
+</span></span><span style="display:flex;"><span>sudo apt update
+</span></span><span style="display:flex;"><span>sudo apt install -y curl unzip
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># AWS CLI v2 다운로드 및 설치</span>
+</span></span><span style="display:flex;"><span>curl <span style="color:#e6db74">&#34;https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip&#34;</span> -o <span style="color:#e6db74">&#34;awscliv2.zip&#34;</span>
+</span></span><span style="display:flex;"><span>unzip awscliv2.zip
+</span></span><span style="display:flex;"><span>sudo ./aws/install
+</span></span></code></pre></div><h4 id="설치-확인">설치 확인<a hidden class="anchor" aria-hidden="true" href="#설치-확인">#</a></h4>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>aws --version
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># 예상 출력: aws-cli/2.x.x Python/3.x.x Linux/5.x.x botocore/2.x.x</span>
+</span></span></code></pre></div><h3 id="aws-cli-설정">AWS CLI 설정<a hidden class="anchor" aria-hidden="true" href="#aws-cli-설정">#</a></h3>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>aws configure
+</span></span></code></pre></div><p>입력 내용:</p>
+<pre tabindex="0"><code>AWS Access Key ID [None]: [위에서 생성한 액세스 키 입력]
+AWS Secret Access Key [None]: [위에서 생성한 시크릿 키 입력]
+Default region name [None]: ap-northeast-2
+Default output format [None]: json
+</code></pre><p><strong>설정 확인:</strong></p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>aws sts get-caller-identity
+</span></span></code></pre></div><p><strong>예상 출력:</strong></p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-json" data-lang="json"><span style="display:flex;"><span>{
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">&#34;UserId&#34;</span>: <span style="color:#e6db74">&#34;AIDACKCEVSQ6C2EXAMPLE&#34;</span>,
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">&#34;Account&#34;</span>: <span style="color:#e6db74">&#34;123456789012&#34;</span>,
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">&#34;Arn&#34;</span>: <span style="color:#e6db74">&#34;arn:aws:iam::123456789012:user/openwebui-deploy-user&#34;</span>
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><hr>
+<h3 id="terraform-설치">Terraform 설치<a hidden class="anchor" aria-hidden="true" href="#terraform-설치">#</a></h3>
+<h4 id="-windows-1">🪟 Windows<a hidden class="anchor" aria-hidden="true" href="#-windows-1">#</a></h4>
+<p><strong>방법 1: Chocolatey (권장)</strong></p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-powershell" data-lang="powershell"><span style="display:flex;"><span><span style="color:#75715e"># PowerShell을 관리자 권한으로 실행</span>
+</span></span><span style="display:flex;"><span>choco install terraform
+</span></span></code></pre></div><p><strong>방법 2: 직접 다운로드</strong></p>
+<ol>
+<li><a href="https://www.terraform.io/downloads.html">Terraform 다운로드 페이지</a>에서 Windows 버전 다운로드</li>
+<li>ZIP 파일 압축 해제</li>
+<li><code>terraform.exe</code>를 <code>C:\Windows\System32\</code> 폴더에 복사</li>
+</ol>
+<h4 id="-macos-1">🍎 macOS<a hidden class="anchor" aria-hidden="true" href="#-macos-1">#</a></h4>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span><span style="color:#75715e"># Homebrew 사용</span>
+</span></span><span style="display:flex;"><span>brew tap hashicorp/tap
+</span></span><span style="display:flex;"><span>brew install hashicorp/tap/terraform
+</span></span></code></pre></div><h4 id="-linux">🐧 Linux<a hidden class="anchor" aria-hidden="true" href="#-linux">#</a></h4>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span><span style="color:#75715e"># HashiCorp GPG 키 추가</span>
+</span></span><span style="display:flex;"><span>wget -O- https://apt.releases.hashicorp.com/gpg | sudo gpg --dearmor -o /usr/share/keyrings/hashicorp-archive-keyring.gpg
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># HashiCorp 리포지토리 추가</span>
+</span></span><span style="display:flex;"><span>echo <span style="color:#e6db74">&#34;deb [signed-by=/usr/share/keyrings/hashicorp-archive-keyring.gpg] https://apt.releases.hashicorp.com </span><span style="color:#66d9ef">$(</span>lsb_release -cs<span style="color:#66d9ef">)</span><span style="color:#e6db74"> main&#34;</span> | sudo tee /etc/apt/sources.list.d/hashicorp.list
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># 패키지 업데이트 및 Terraform 설치</span>
+</span></span><span style="display:flex;"><span>sudo apt update <span style="color:#f92672">&amp;&amp;</span> sudo apt install terraform
+</span></span></code></pre></div><h4 id="설치-확인-1">설치 확인<a hidden class="anchor" aria-hidden="true" href="#설치-확인-1">#</a></h4>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>terraform version
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># 예상 출력: Terraform v1.5.x</span>
+</span></span></code></pre></div><hr>
+<h3 id="kubectl-설치">kubectl 설치<a hidden class="anchor" aria-hidden="true" href="#kubectl-설치">#</a></h3>
+<h4 id="-windows-2">🪟 Windows<a hidden class="anchor" aria-hidden="true" href="#-windows-2">#</a></h4>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-powershell" data-lang="powershell"><span style="display:flex;"><span><span style="color:#75715e"># PowerShell에서 실행</span>
+</span></span><span style="display:flex;"><span>curl.exe -LO <span style="color:#e6db74">&#34;https://dl.k8s.io/release/v1.28.0/bin/windows/amd64/kubectl.exe&#34;</span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># kubectl.exe를 PATH가 설정된 폴더로 이동</span>
+</span></span></code></pre></div><h4 id="-macos-2">🍎 macOS<a hidden class="anchor" aria-hidden="true" href="#-macos-2">#</a></h4>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span><span style="color:#75715e"># Homebrew 사용</span>
+</span></span><span style="display:flex;"><span>brew install kubectl
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># 또는 직접 다운로드</span>
+</span></span><span style="display:flex;"><span>curl -LO <span style="color:#e6db74">&#34;https://dl.k8s.io/release/</span><span style="color:#66d9ef">$(</span>curl -L -s https://dl.k8s.io/release/stable.txt<span style="color:#66d9ef">)</span><span style="color:#e6db74">/bin/darwin/amd64/kubectl&#34;</span>
+</span></span><span style="display:flex;"><span>chmod +x ./kubectl
+</span></span><span style="display:flex;"><span>sudo mv ./kubectl /usr/local/bin/kubectl
+</span></span></code></pre></div><h4 id="-linux-1">🐧 Linux<a hidden class="anchor" aria-hidden="true" href="#-linux-1">#</a></h4>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>curl -LO <span style="color:#e6db74">&#34;https://dl.k8s.io/release/</span><span style="color:#66d9ef">$(</span>curl -L -s https://dl.k8s.io/release/stable.txt<span style="color:#66d9ef">)</span><span style="color:#e6db74">/bin/linux/amd64/kubectl&#34;</span>
+</span></span><span style="display:flex;"><span>chmod +x kubectl
+</span></span><span style="display:flex;"><span>sudo mv kubectl /usr/local/bin/
+</span></span></code></pre></div><h4 id="설치-확인-2">설치 확인<a hidden class="anchor" aria-hidden="true" href="#설치-확인-2">#</a></h4>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>kubectl version --client
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># 예상 출력: Client Version: v1.28.x</span>
+</span></span></code></pre></div><hr>
+<h3 id="docker-desktop-설치">Docker Desktop 설치<a hidden class="anchor" aria-hidden="true" href="#docker-desktop-설치">#</a></h3>
+<h4 id="-windows---macos">🪟 Windows &amp; 🍎 macOS<a hidden class="anchor" aria-hidden="true" href="#-windows---macos">#</a></h4>
+<ol>
+<li><a href="https://www.docker.com/products/docker-desktop/">Docker Desktop 다운로드 페이지</a>에서 운영체제에 맞는 버전 다운로드</li>
+<li>설치 파일 실행</li>
+<li>설치 완료 후 Docker Desktop 실행</li>
+<li>Docker 계정으로 로그인 (선택사항)</li>
+</ol>
+<h4 id="-linux-2">🐧 Linux<a hidden class="anchor" aria-hidden="true" href="#-linux-2">#</a></h4>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span><span style="color:#75715e"># Ubuntu/Debian</span>
+</span></span><span style="display:flex;"><span>sudo apt update
+</span></span><span style="display:flex;"><span>sudo apt install -y apt-transport-https ca-certificates curl gnupg lsb-release
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># Docker GPG 키 추가</span>
+</span></span><span style="display:flex;"><span>curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo gpg --dearmor -o /usr/share/keyrings/docker-archive-keyring.gpg
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># Docker 리포지토리 추가</span>
+</span></span><span style="display:flex;"><span>echo <span style="color:#e6db74">&#34;deb [arch=amd64 signed-by=/usr/share/keyrings/docker-archive-keyring.gpg] https://download.docker.com/linux/ubuntu </span><span style="color:#66d9ef">$(</span>lsb_release -cs<span style="color:#66d9ef">)</span><span style="color:#e6db74"> stable&#34;</span> | sudo tee /etc/apt/sources.list.d/docker.list &gt; /dev/null
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># Docker 설치</span>
+</span></span><span style="display:flex;"><span>sudo apt update
+</span></span><span style="display:flex;"><span>sudo apt install -y docker-ce docker-ce-cli containerd.io docker-compose-plugin
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># 현재 사용자를 docker 그룹에 추가</span>
+</span></span><span style="display:flex;"><span>sudo usermod -aG docker $USER
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># 시스템 재시작 또는 로그아웃/로그인</span>
+</span></span></code></pre></div><h4 id="설치-확인-3">설치 확인<a hidden class="anchor" aria-hidden="true" href="#설치-확인-3">#</a></h4>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>docker --version
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># 예상 출력: Docker version 24.x.x</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>docker run hello-world
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># 예상 출력: Hello from Docker! 메시지가 출력되어야 함</span>
+</span></span></code></pre></div><hr>
+<h3 id="git-설치-및-설정">Git 설치 및 설정<a hidden class="anchor" aria-hidden="true" href="#git-설치-및-설정">#</a></h3>
+<h4 id="설치">설치<a hidden class="anchor" aria-hidden="true" href="#설치">#</a></h4>
+<ul>
+<li><strong>Windows</strong>: <a href="https://git-scm.com/download/win">Git for Windows</a> 다운로드 및 설치</li>
+<li><strong>macOS</strong>: <code>brew install git</code> 또는 Xcode Command Line Tools</li>
+<li><strong>Linux</strong>: <code>sudo apt install git</code></li>
+</ul>
+<h4 id="git-설정">Git 설정<a hidden class="anchor" aria-hidden="true" href="#git-설정">#</a></h4>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>git config --global user.name <span style="color:#e6db74">&#34;Your Name&#34;</span>
+</span></span><span style="display:flex;"><span>git config --global user.email <span style="color:#e6db74">&#34;your.email@example.com&#34;</span>
+</span></span></code></pre></div><h4 id="설치-확인-4">설치 확인<a hidden class="anchor" aria-hidden="true" href="#설치-확인-4">#</a></h4>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>git --version
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># 예상 출력: git version 2.x.x</span>
+</span></span></code></pre></div><hr>
+<h2 id="3-github-설정">3️⃣ GitHub 설정<a hidden class="anchor" aria-hidden="true" href="#3-github-설정">#</a></h2>
+<h3 id="personal-access-token-생성">Personal Access Token 생성<a hidden class="anchor" aria-hidden="true" href="#personal-access-token-생성">#</a></h3>
+<ol>
+<li>
+<p><strong>GitHub 접속 및 설정</strong></p>
+<ul>
+<li>GitHub.com 로그인</li>
+<li>우측 상단 프로필 클릭 → Settings</li>
+</ul>
+</li>
+<li>
+<p><strong>Developer settings 접속</strong></p>
+<ul>
+<li>좌측 메뉴 맨 아래 &ldquo;Developer settings&rdquo; 클릭</li>
+<li>&ldquo;Personal access tokens&rdquo; → &ldquo;Tokens (classic)&rdquo; 클릭</li>
+</ul>
+</li>
+<li>
+<p><strong>토큰 생성</strong></p>
+<pre tabindex="0"><code>Note: OpenWebUI Deployment Token
+Expiration: 90 days (또는 원하는 기간)
+
+Select scopes:
+✅ repo (전체 선택)
+✅ workflow
+✅ write:packages
+✅ read:packages
+</code></pre></li>
+<li>
+<p><strong>토큰 저장</strong></p>
+<pre tabindex="0"><code>⚠️ 중요: 생성된 토큰을 안전한 곳에 저장하세요!
+ghp_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+</code></pre></li>
+</ol>
+<hr>
+<h2 id="4-작업-디렉토리-설정">4️⃣ 작업 디렉토리 설정<a hidden class="anchor" aria-hidden="true" href="#4-작업-디렉토리-설정">#</a></h2>
+<h3 id="프로젝트-폴더-생성">프로젝트 폴더 생성<a hidden class="anchor" aria-hidden="true" href="#프로젝트-폴더-생성">#</a></h3>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span><span style="color:#75715e"># 작업할 디렉토리 생성</span>
+</span></span><span style="display:flex;"><span>mkdir openwebui-aws-deployment
+</span></span><span style="display:flex;"><span>cd openwebui-aws-deployment
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># Git 초기화</span>
+</span></span><span style="display:flex;"><span>git init
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># 기본 폴더 구조 생성</span>
+</span></span><span style="display:flex;"><span>mkdir -p <span style="color:#f92672">{</span>terraform,kubernetes,docs,scripts<span style="color:#f92672">}</span>
+</span></span><span style="display:flex;"><span>mkdir -p .github/workflows
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># 디렉토리 구조 확인</span>
+</span></span><span style="display:flex;"><span>tree .
+</span></span></code></pre></div><p><strong>예상 구조:</strong></p>
+<pre tabindex="0"><code>openwebui-aws-deployment/
+├── .github/
+│   └── workflows/
+├── terraform/
+├── kubernetes/
+├── docs/
+├── scripts/
+└── README.md
+</code></pre><h3 id="gitignore-파일-생성">.gitignore 파일 생성<a hidden class="anchor" aria-hidden="true" href="#gitignore-파일-생성">#</a></h3>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>cat &gt; .gitignore <span style="color:#e6db74">&lt;&lt; &#39;EOF&#39;
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74"># Terraform
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">*.tfstate
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">*.tfstate.*
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">.terraform/
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">.terraform.lock.hcl
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">terraform.tfvars
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">*.auto.tfvars
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74"># AWS
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">.aws/
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74"># IDE
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">.vscode/
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">.idea/
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">*.swp
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">*.swo
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74"># OS
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">.DS_Store
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">Thumbs.db
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74"># Secrets
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">*.pem
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">*.key
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">secrets/
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">EOF</span>
+</span></span></code></pre></div><hr>
+<h2 id="5-vs-code-확장-프로그램-권장">5️⃣ VS Code 확장 프로그램 (권장)<a hidden class="anchor" aria-hidden="true" href="#5-vs-code-확장-프로그램-권장">#</a></h2>
+<p>VS Code를 사용하는 경우 아래 확장 프로그램을 설치하면 작업이 편해집니다:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-json" data-lang="json"><span style="display:flex;"><span>{
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">&#34;recommendations&#34;</span>: [
+</span></span><span style="display:flex;"><span>    <span style="color:#e6db74">&#34;hashicorp.terraform&#34;</span>,
+</span></span><span style="display:flex;"><span>    <span style="color:#e6db74">&#34;ms-kubernetes-tools.vscode-kubernetes-tools&#34;</span>, 
+</span></span><span style="display:flex;"><span>    <span style="color:#e6db74">&#34;ms-vscode.vscode-json&#34;</span>,
+</span></span><span style="display:flex;"><span>    <span style="color:#e6db74">&#34;redhat.vscode-yaml&#34;</span>,
+</span></span><span style="display:flex;"><span>    <span style="color:#e6db74">&#34;github.vscode-github-actions&#34;</span>,
+</span></span><span style="display:flex;"><span>    <span style="color:#e6db74">&#34;ms-vscode-remote.remote-containers&#34;</span>
+</span></span><span style="display:flex;"><span>  ]
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><hr>
+<h2 id="6-환경-변수-설정">6️⃣ 환경 변수 설정<a hidden class="anchor" aria-hidden="true" href="#6-환경-변수-설정">#</a></h2>
+<h3 id="환경-변수-템플릿-파일-생성">환경 변수 템플릿 파일 생성<a hidden class="anchor" aria-hidden="true" href="#환경-변수-템플릿-파일-생성">#</a></h3>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>cat &gt; .env.template <span style="color:#e6db74">&lt;&lt; &#39;EOF&#39;
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74"># AWS 설정
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">AWS_REGION=ap-northeast-2
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">AWS_ACCOUNT_ID=your-account-id
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74"># 프로젝트 설정
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">PROJECT_NAME=openwebui
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">ENVIRONMENT=dev
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">CLUSTER_NAME=openwebui-eks-dev
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74"># GitHub 설정  
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">GITHUB_TOKEN=your-github-token
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">GITHUB_REPOSITORY=your-username/openwebui-aws-deployment
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74"># Docker 설정 (선택사항)
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">DOCKER_USERNAME=your-docker-username
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">DOCKER_TOKEN=your-docker-token
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">EOF</span>
+</span></span></code></pre></div><h3 id="실제-환경-변수-파일-생성">실제 환경 변수 파일 생성<a hidden class="anchor" aria-hidden="true" href="#실제-환경-변수-파일-생성">#</a></h3>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>cp .env.template .env
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># .env 파일을 열어서 실제 값으로 수정하세요</span>
+</span></span></code></pre></div><hr>
+<h2 id="-최종-검증">✅ 최종 검증<a hidden class="anchor" aria-hidden="true" href="#-최종-검증">#</a></h2>
+<p>모든 설정이 완료되었다면 아래 명령어들을 실행해서 정상 작동하는지 확인해주세요:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span><span style="color:#75715e"># AWS 연결 확인</span>
+</span></span><span style="display:flex;"><span>echo <span style="color:#e6db74">&#34;=== AWS CLI 테스트 ===&#34;</span>
+</span></span><span style="display:flex;"><span>aws sts get-caller-identity
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># Terraform 확인</span>
+</span></span><span style="display:flex;"><span>echo <span style="color:#e6db74">&#34;=== Terraform 테스트 ===&#34;</span>
+</span></span><span style="display:flex;"><span>terraform version
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># kubectl 확인  </span>
+</span></span><span style="display:flex;"><span>echo <span style="color:#e6db74">&#34;=== kubectl 테스트 ===&#34;</span>
+</span></span><span style="display:flex;"><span>kubectl version --client
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># Docker 확인</span>
+</span></span><span style="display:flex;"><span>echo <span style="color:#e6db74">&#34;=== Docker 테스트 ===&#34;</span>
+</span></span><span style="display:flex;"><span>docker run --rm hello-world
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># Git 확인</span>
+</span></span><span style="display:flex;"><span>echo <span style="color:#e6db74">&#34;=== Git 테스트 ===&#34;</span>
+</span></span><span style="display:flex;"><span>git --version
+</span></span></code></pre></div><p><strong>모든 명령어가 오류 없이 실행되면 준비 완료입니다! 🎉</strong></p>
+<hr>
+<h2 id="-문제-해결">🚨 문제 해결<a hidden class="anchor" aria-hidden="true" href="#-문제-해결">#</a></h2>
+<h3 id="자주-발생하는-문제들">자주 발생하는 문제들<a hidden class="anchor" aria-hidden="true" href="#자주-발생하는-문제들">#</a></h3>
+<h4 id="1-aws-cli-자격-증명-오류">1. AWS CLI 자격 증명 오류<a hidden class="anchor" aria-hidden="true" href="#1-aws-cli-자격-증명-오류">#</a></h4>
+<p><strong>오류 메시지:</strong></p>
+<pre tabindex="0"><code>Unable to locate credentials. You can configure credentials by running &#34;aws configure&#34;.
+</code></pre><p><strong>해결 방법:</strong></p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span><span style="color:#75715e"># 설정 다시 실행</span>
+</span></span><span style="display:flex;"><span>aws configure
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># 또는 환경 변수로 설정</span>
+</span></span><span style="display:flex;"><span>export AWS_ACCESS_KEY_ID<span style="color:#f92672">=</span>your-access-key
+</span></span><span style="display:flex;"><span>export AWS_SECRET_ACCESS_KEY<span style="color:#f92672">=</span>your-secret-key
+</span></span><span style="display:flex;"><span>export AWS_DEFAULT_REGION<span style="color:#f92672">=</span>ap-northeast-2
+</span></span></code></pre></div><h4 id="2-docker-권한-오류-linux">2. Docker 권한 오류 (Linux)<a hidden class="anchor" aria-hidden="true" href="#2-docker-권한-오류-linux">#</a></h4>
+<p><strong>오류 메시지:</strong></p>
+<pre tabindex="0"><code>permission denied while trying to connect to the Docker daemon socket
+</code></pre><p><strong>해결 방법:</strong></p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span><span style="color:#75715e"># 현재 사용자를 docker 그룹에 추가</span>
+</span></span><span style="display:flex;"><span>sudo usermod -aG docker $USER
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># 로그아웃 후 다시 로그인 또는 재부팅</span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># 또는 임시로:</span>
+</span></span><span style="display:flex;"><span>newgrp docker
+</span></span></code></pre></div><h4 id="3-kubectl-명령어-찾을-수-없음">3. kubectl 명령어 찾을 수 없음<a hidden class="anchor" aria-hidden="true" href="#3-kubectl-명령어-찾을-수-없음">#</a></h4>
+<p><strong>해결 방법:</strong></p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span><span style="color:#75715e"># PATH 확인</span>
+</span></span><span style="display:flex;"><span>echo $PATH
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># kubectl 위치 확인</span>
+</span></span><span style="display:flex;"><span>which kubectl
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># 없다면 다시 설치하거나 PATH에 추가</span>
+</span></span><span style="display:flex;"><span>export PATH<span style="color:#f92672">=</span>$PATH:/usr/local/bin
+</span></span></code></pre></div><hr>
+<h2 id="-참고-자료">📚 참고 자료<a hidden class="anchor" aria-hidden="true" href="#-참고-자료">#</a></h2>
+<ul>
+<li><a href="https://docs.aws.amazon.com/cli/">AWS CLI 사용 설명서</a></li>
+<li><a href="https://www.terraform.io/docs">Terraform 공식 문서</a></li>
+<li><a href="https://kubernetes.io/docs/">Kubernetes 공식 문서</a></li>
+<li><a href="https://docs.docker.com/">Docker 공식 문서</a></li>
+<li><a href="https://docs.github.com/en/actions">GitHub Actions 문서</a></li>
+</ul>
+<hr>
+<h2 id="-다음-단계">⏭️ 다음 단계<a hidden class="anchor" aria-hidden="true" href="#-다음-단계">#</a></h2>
+<p>사전 준비가 완료되었다면 다음 문서로 진행하세요:</p>
+<ul>
+<li><strong>[02-aws-environment-setup.md]</strong> - AWS 환경 설정</li>
+<li><strong>[03-terraform-configuration.md]</strong> - Terraform 설정</li>
+</ul>
+<hr>
+<blockquote>
+<p><strong>💡 팁</strong>: 이 문서를 완료하는데 시간이 오래 걸리더라도 걱정하지 마세요. 한 번 제대로 설정해두면 앞으로의 작업이 훨씬 수월해집니다!</p></blockquote>
+
+
+  </div>
+
+  <footer class="post-footer">
+    <ul class="post-tags">
+    </ul>
+<nav class="paginav">
+  <a class="prev" href="http://localhost:65390/backend/%EB%B0%B0%ED%8F%AC-%EA%B2%80%EC%A6%9D-%EA%B0%80%EC%9D%B4%EB%93%9C/">
+    <span class="title">« Prev</span>
+    <br>
+    <span></span>
+  </a>
+  <a class="next" href="http://localhost:65390/backend/%EC%95%A0%ED%94%8C%EB%A6%AC%EC%BC%80%EC%9D%B4%EC%85%98-%EB%B0%B0%ED%8F%AC-%EA%B0%80%EC%9D%B4%EB%93%9C/">
+    <span class="title">Next »</span>
+    <br>
+    <span></span>
+  </a>
+</nav>
+
+  </footer>
+</article>
+    </main>
+    
+<footer class="footer">
+        <span>&copy; 2025 <a href="http://localhost:65390/">8dobibim Tech Blog</a></span> · 
+
+    <span>
+        Powered by
+        <a href="https://gohugo.io/" rel="noopener noreferrer" target="_blank">Hugo</a> &
+        <a href="https://github.com/adityatelange/hugo-PaperMod/" rel="noopener" target="_blank">PaperMod</a>
+    </span>
+</footer>
+<a href="#top" aria-label="go to top" title="Go to Top (Alt + G)" class="top-link" id="top-link" accesskey="g">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 12 6" fill="currentColor">
+        <path d="M12 6H0l6-6z" />
+    </svg>
+</a>
+
+<script>
+    let menu = document.getElementById('menu')
+    if (menu) {
+        menu.scrollLeft = localStorage.getItem("menu-scroll-position");
+        menu.onscroll = function () {
+            localStorage.setItem("menu-scroll-position", menu.scrollLeft);
+        }
+    }
+
+    document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+        anchor.addEventListener("click", function (e) {
+            e.preventDefault();
+            var id = this.getAttribute("href").substr(1);
+            if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+                document.querySelector(`[id='${decodeURIComponent(id)}']`).scrollIntoView({
+                    behavior: "smooth"
+                });
+            } else {
+                document.querySelector(`[id='${decodeURIComponent(id)}']`).scrollIntoView();
+            }
+            if (id === "top") {
+                history.replaceState(null, null, " ");
+            } else {
+                history.pushState(null, null, `#${id}`);
+            }
+        });
+    });
+
+</script>
+<script>
+    var mybutton = document.getElementById("top-link");
+    window.onscroll = function () {
+        if (document.body.scrollTop > 800 || document.documentElement.scrollTop > 800) {
+            mybutton.style.visibility = "visible";
+            mybutton.style.opacity = "1";
+        } else {
+            mybutton.style.visibility = "hidden";
+            mybutton.style.opacity = "0";
+        }
+    };
+
+</script>
+<script>
+    document.getElementById("theme-toggle").addEventListener("click", () => {
+        if (document.body.className.includes("dark")) {
+            document.body.classList.remove('dark');
+            localStorage.setItem("pref-theme", 'light');
+        } else {
+            document.body.classList.add('dark');
+            localStorage.setItem("pref-theme", 'dark');
+        }
+    })
+
+</script>
+<script>
+    document.querySelectorAll('pre > code').forEach((codeblock) => {
+        const container = codeblock.parentNode.parentNode;
+
+        const copybutton = document.createElement('button');
+        copybutton.classList.add('copy-code');
+        copybutton.innerHTML = 'copy';
+
+        function copyingDone() {
+            copybutton.innerHTML = 'copied!';
+            setTimeout(() => {
+                copybutton.innerHTML = 'copy';
+            }, 2000);
+        }
+
+        copybutton.addEventListener('click', (cb) => {
+            if ('clipboard' in navigator) {
+                navigator.clipboard.writeText(codeblock.textContent);
+                copyingDone();
+                return;
+            }
+
+            const range = document.createRange();
+            range.selectNodeContents(codeblock);
+            const selection = window.getSelection();
+            selection.removeAllRanges();
+            selection.addRange(range);
+            try {
+                document.execCommand('copy');
+                copyingDone();
+            } catch (e) { };
+            selection.removeRange(range);
+        });
+
+        if (container.classList.contains("highlight")) {
+            container.appendChild(copybutton);
+        } else if (container.parentNode.firstChild == container) {
+            
+        } else if (codeblock.parentNode.parentNode.parentNode.parentNode.parentNode.nodeName == "TABLE") {
+            
+            codeblock.parentNode.parentNode.parentNode.parentNode.parentNode.appendChild(copybutton);
+        } else {
+            
+            codeblock.parentNode.appendChild(copybutton);
+        }
+    });
+</script>
+</body>
+
+</html>

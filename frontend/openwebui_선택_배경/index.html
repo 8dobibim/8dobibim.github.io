@@ -1,0 +1,382 @@
+<!DOCTYPE html>
+<html lang="en" dir="auto">
+
+<head><script src="/livereload.js?mindelay=10&amp;v=2&amp;port=65390&amp;path=livereload" data-no-instant defer></script><meta charset="utf-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+<meta name="robots" content="noindex, nofollow">
+<title>8dobibim Tech Blog</title>
+<meta name="keywords" content="">
+<meta name="description" content="OpenWebUI를 프론트엔드 기반으로 선택한 배경
+📌 선택 배경
+OpenWebUI는 다양한 LLM(Large Language Model) API와의 연동을 지원하는 오픈소스 기반의 웹 인터페이스 플랫폼으로, 프론트엔드 중심의 아키텍처를 통해 높은 확장성과 사용자 친화적인 인터페이스를 제공합니다.
+저희 프로젝트에서는 OpenWebUI를 기반으로 사용함으로써 개발 효율성과 사용자 접근성, 그리고 멀티 LLM 실험 환경을 모두 만족시킬 수 있었기에 채택하게 되었습니다.
+
+1. 사용자 중심의 직관적인 인터페이스
+
+OpenWebUI는 사용자 친화적인 채팅 UI를 제공하며, 일반적인 ChatGPT 스타일의 인터랙션에 익숙한 사용자가 별도의 학습 없이도 쉽게 사용할 수 있습니다.
+프론트엔드 구조가 명확하게 분리되어 있어 UI/UX 개선이나 접근성 향상 작업을 독립적으로 수행하기에 용이하였습니다.
+기존 컴포넌트를 재사용하거나 확장하는 것도 간편하게 구현할 수 있었습니다.
+
+
+2. 다양한 LLM API 연동 지원 및 멀티 채팅 기능
+
+OpenWebUI는 OpenAI, Claude, Gemini, Cohere 등 여러 LLM API를 손쉽게 연동할 수 있는 구조를 기본적으로 제공하고 있습니다.
+특히 하나의 세션 내에서 여러 LLM을 동시에 선택·응답받을 수 있는 멀티 채팅 기능은 유사한 챗봇 서비스들과 차별화되는 OpenWebUI만의 강점입니다.
+이를 통해 다양한 모델을 비교 실험하거나, 특정 목적에 맞게 모델을 분기 활용하는 것이 용이하였습니다.
+
+
+3. 프론트엔드 중심 커스터마이징이 용이함
+
+전체 시스템이 프론트엔드 중심으로 구성되어 있어, 팀 내 프론트엔드 개발자 주도 하에 빠르게 커스터마이징을 진행할 수 있었습니다.
+테마 커스터마이징, 다국어 번역, 접근성 테마 적용 등 대부분의 기능이 프론트 코드만으로 구현 가능하였습니다.
+또한 Svelte, Vite 기반으로 구성되어 있어, 빌드 속도가 빠르고 프로토타이핑에도 유리하였습니다.
+
+
+4. 로컬 및 인하우스 환경 배포 최적화
+
+OpenWebUI는 백엔드 서버 없이도 로컬 환경에서 독립 실행이 가능하며, LiteLLM과 같은 API 프록시 서버와 연동하여 기업 내부망에서도 안전하게 작동할 수 있습니다.
+.env 환경변수 기반 설정과 함께 Docker 기반 배포를 공식적으로 지원하여, 다양한 환경에서 유연하게 적용할 수 있었습니다.
+실제 프로젝트에서는 GitHub Actions 및 Docker Hub를 활용하여 자동화된 빌드·배포 파이프라인을 구성하였습니다.
+
+
+5. 커뮤니티 기반의 오픈소스 성장성과 기여 경험
+
+OpenWebUI는 활발한 커뮤니티와 빠른 이슈 대응, 주기적인 릴리즈를 통해 오픈소스로서의 성장성과 신뢰성을 갖추고 있습니다.
+저희 팀은 공식 GitHub 저장소에 이슈와 PR을 제출하여, 한국어 번역 기여 및 접근성을 고려한 Colorblind 테마를 실제 릴리즈(v0.6.10)에 반영시키는 기여 경험도 하였습니다.
+이를 통해 오픈소스 생태계에 실질적인 기여를 할 수 있었으며, 향후 확장성에 대한 자신감도 얻게 되었습니다.
+
+
+✅ 결론
+OpenWebUI는 프론트엔드 중심 구조와 다양한 LLM 지원, 뛰어난 커스터마이징 유연성, 그리고 접근성 중심의 개선까지 모두 충족시키는 플랫폼이었습니다.
+특히 멀티 LLM 동시 채팅 기능은 실험적·비교적 측면에서 타 챗봇 서비스와 차별화되는 핵심 요소로, 본 프로젝트의 방향성과 매우 잘 부합하였습니다.
+저희는 OpenWebUI를 통해 더 많은 사용자에게 열려 있는 LLM 실험 및 서비스 환경을 구축할 수 있었습니다.">
+<meta name="author" content="">
+<link rel="canonical" href="http://localhost:65390/frontend/openwebui_%EC%84%A0%ED%83%9D_%EB%B0%B0%EA%B2%BD/">
+<link crossorigin="anonymous" href="/assets/css/stylesheet.36819bea596090d8b48cf10d9831382996197aa7e4fc86f792f7c08c9ca4d23b.css" integrity="sha256-NoGb6llgkNi0jPENmDE4KZYZeqfk/Ib3kvfAjJyk0js=" rel="preload stylesheet" as="style">
+<link rel="icon" href="http://localhost:65390/favicon.ico">
+<link rel="icon" type="image/png" sizes="16x16" href="http://localhost:65390/favicon-16x16.png">
+<link rel="icon" type="image/png" sizes="32x32" href="http://localhost:65390/favicon-32x32.png">
+<link rel="apple-touch-icon" href="http://localhost:65390/apple-touch-icon.png">
+<link rel="mask-icon" href="http://localhost:65390/safari-pinned-tab.svg">
+<meta name="theme-color" content="#2e2e33">
+<meta name="msapplication-TileColor" content="#2e2e33">
+<link rel="alternate" hreflang="en" href="http://localhost:65390/frontend/openwebui_%EC%84%A0%ED%83%9D_%EB%B0%B0%EA%B2%BD/">
+<noscript>
+    <style>
+        #theme-toggle,
+        .top-link {
+            display: none;
+        }
+
+    </style>
+    <style>
+        @media (prefers-color-scheme: dark) {
+            :root {
+                --theme: rgb(29, 30, 32);
+                --entry: rgb(46, 46, 51);
+                --primary: rgb(218, 218, 219);
+                --secondary: rgb(155, 156, 157);
+                --tertiary: rgb(65, 66, 68);
+                --content: rgb(196, 196, 197);
+                --code-block-bg: rgb(46, 46, 51);
+                --code-bg: rgb(55, 56, 62);
+                --border: rgb(51, 51, 51);
+            }
+
+            .list {
+                background: var(--theme);
+            }
+
+            .list:not(.dark)::-webkit-scrollbar-track {
+                background: 0 0;
+            }
+
+            .list:not(.dark)::-webkit-scrollbar-thumb {
+                border-color: var(--theme);
+            }
+        }
+
+    </style>
+</noscript>
+</head>
+
+<body class="" id="top">
+<script>
+    if (localStorage.getItem("pref-theme") === "dark") {
+        document.body.classList.add('dark');
+    } else if (localStorage.getItem("pref-theme") === "light") {
+        document.body.classList.remove('dark')
+    } else if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
+        document.body.classList.add('dark');
+    }
+
+</script>
+
+<header class="header">
+    <nav class="nav">
+        <div class="logo">
+            <a href="http://localhost:65390/" accesskey="h" title="8dobibim Tech Blog (Alt + H)">8dobibim Tech Blog</a>
+            <div class="logo-switches">
+                <button id="theme-toggle" accesskey="t" title="(Alt + T)" aria-label="Toggle theme">
+                    <svg id="moon" xmlns="http://www.w3.org/2000/svg" width="24" height="18" viewBox="0 0 24 24"
+                        fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                        stroke-linejoin="round">
+                        <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+                    </svg>
+                    <svg id="sun" xmlns="http://www.w3.org/2000/svg" width="24" height="18" viewBox="0 0 24 24"
+                        fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                        stroke-linejoin="round">
+                        <circle cx="12" cy="12" r="5"></circle>
+                        <line x1="12" y1="1" x2="12" y2="3"></line>
+                        <line x1="12" y1="21" x2="12" y2="23"></line>
+                        <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+                        <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+                        <line x1="1" y1="12" x2="3" y2="12"></line>
+                        <line x1="21" y1="12" x2="23" y2="12"></line>
+                        <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+                        <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+                    </svg>
+                </button>
+            </div>
+        </div>
+        <ul id="menu">
+            <li>
+                <a href="http://localhost:65390/frontend/" title="🖥 프론트엔드">
+                    <span>🖥 프론트엔드</span>
+                </a>
+            </li>
+            <li>
+                <a href="http://localhost:65390/backend/" title="💾 백엔드">
+                    <span>💾 백엔드</span>
+                </a>
+            </li>
+        </ul>
+    </nav>
+</header>
+<main class="main">
+
+<article class="post-single">
+  <header class="post-header">
+    <div class="breadcrumbs"><a href="http://localhost:65390/">Home</a>&nbsp;»&nbsp;<a href="http://localhost:65390/frontend/">Frontend 문서</a></div>
+    <h1 class="post-title entry-hint-parent">
+      
+    </h1>
+    <div class="post-meta">2 min&nbsp;·&nbsp;383 words
+
+</div>
+  </header> <div class="toc">
+    <details  open>
+        <summary accesskey="c" title="(Alt + C)">
+            <span class="details">Table of Contents</span>
+        </summary>
+
+        <div class="inner"><ul>
+                <li>
+                    <a href="#openwebui%eb%a5%bc-%ed%94%84%eb%a1%a0%ed%8a%b8%ec%97%94%eb%93%9c-%ea%b8%b0%eb%b0%98%ec%9c%bc%eb%a1%9c-%ec%84%a0%ed%83%9d%ed%95%9c-%eb%b0%b0%ea%b2%bd" aria-label="OpenWebUI를 프론트엔드 기반으로 선택한 배경">OpenWebUI를 프론트엔드 기반으로 선택한 배경</a><ul>
+                        
+                <li>
+                    <a href="#-%ec%84%a0%ed%83%9d-%eb%b0%b0%ea%b2%bd" aria-label="📌 선택 배경">📌 선택 배경</a></li>
+                <li>
+                    <a href="#1-%ec%82%ac%ec%9a%a9%ec%9e%90-%ec%a4%91%ec%8b%ac%ec%9d%98-%ec%a7%81%ea%b4%80%ec%a0%81%ec%9d%b8-%ec%9d%b8%ed%84%b0%ed%8e%98%ec%9d%b4%ec%8a%a4" aria-label="1. 사용자 중심의 직관적인 인터페이스">1. 사용자 중심의 직관적인 인터페이스</a></li>
+                <li>
+                    <a href="#2-%eb%8b%a4%ec%96%91%ed%95%9c-llm-api-%ec%97%b0%eb%8f%99-%ec%a7%80%ec%9b%90-%eb%b0%8f-%eb%a9%80%ed%8b%b0-%ec%b1%84%ed%8c%85-%ea%b8%b0%eb%8a%a5" aria-label="2. 다양한 LLM API 연동 지원 및 멀티 채팅 기능">2. 다양한 LLM API 연동 지원 및 멀티 채팅 기능</a></li>
+                <li>
+                    <a href="#3-%ed%94%84%eb%a1%a0%ed%8a%b8%ec%97%94%eb%93%9c-%ec%a4%91%ec%8b%ac-%ec%bb%a4%ec%8a%a4%ed%84%b0%eb%a7%88%ec%9d%b4%ec%a7%95%ec%9d%b4-%ec%9a%a9%ec%9d%b4%ed%95%a8" aria-label="3. 프론트엔드 중심 커스터마이징이 용이함">3. 프론트엔드 중심 커스터마이징이 용이함</a></li>
+                <li>
+                    <a href="#4-%eb%a1%9c%ec%bb%ac-%eb%b0%8f-%ec%9d%b8%ed%95%98%ec%9a%b0%ec%8a%a4-%ed%99%98%ea%b2%bd-%eb%b0%b0%ed%8f%ac-%ec%b5%9c%ec%a0%81%ed%99%94" aria-label="4. 로컬 및 인하우스 환경 배포 최적화">4. 로컬 및 인하우스 환경 배포 최적화</a></li>
+                <li>
+                    <a href="#5-%ec%bb%a4%eb%ae%a4%eb%8b%88%ed%8b%b0-%ea%b8%b0%eb%b0%98%ec%9d%98-%ec%98%a4%ed%94%88%ec%86%8c%ec%8a%a4-%ec%84%b1%ec%9e%a5%ec%84%b1%ea%b3%bc-%ea%b8%b0%ec%97%ac-%ea%b2%bd%ed%97%98" aria-label="5. 커뮤니티 기반의 오픈소스 성장성과 기여 경험">5. 커뮤니티 기반의 오픈소스 성장성과 기여 경험</a></li>
+                <li>
+                    <a href="#-%ea%b2%b0%eb%a1%a0" aria-label="✅ 결론">✅ 결론</a></li>
+                <li>
+                    <a href="#-%ec%b0%b8%ea%b3%a0-%ec%9e%90%eb%a3%8c" aria-label="📚 참고 자료">📚 참고 자료</a>
+                </li>
+            </ul>
+            </li>
+            </ul>
+        </div>
+    </details>
+</div>
+
+  <div class="post-content"><h1 id="openwebui를-프론트엔드-기반으로-선택한-배경">OpenWebUI를 프론트엔드 기반으로 선택한 배경<a hidden class="anchor" aria-hidden="true" href="#openwebui를-프론트엔드-기반으로-선택한-배경">#</a></h1>
+<h2 id="-선택-배경">📌 선택 배경<a hidden class="anchor" aria-hidden="true" href="#-선택-배경">#</a></h2>
+<p>OpenWebUI는 다양한 LLM(Large Language Model) API와의 연동을 지원하는 <strong>오픈소스 기반의 웹 인터페이스 플랫폼</strong>으로, 프론트엔드 중심의 아키텍처를 통해 높은 확장성과 사용자 친화적인 인터페이스를 제공합니다.</p>
+<p>저희 프로젝트에서는 OpenWebUI를 기반으로 사용함으로써 <strong>개발 효율성과 사용자 접근성</strong>, 그리고 <strong>멀티 LLM 실험 환경</strong>을 모두 만족시킬 수 있었기에 채택하게 되었습니다.</p>
+<hr>
+<h2 id="1-사용자-중심의-직관적인-인터페이스">1. 사용자 중심의 직관적인 인터페이스<a hidden class="anchor" aria-hidden="true" href="#1-사용자-중심의-직관적인-인터페이스">#</a></h2>
+<ul>
+<li>OpenWebUI는 사용자 친화적인 채팅 UI를 제공하며, 일반적인 ChatGPT 스타일의 인터랙션에 익숙한 사용자가 별도의 학습 없이도 쉽게 사용할 수 있습니다.</li>
+<li>프론트엔드 구조가 명확하게 분리되어 있어 <strong>UI/UX 개선</strong>이나 <strong>접근성 향상 작업</strong>을 독립적으로 수행하기에 용이하였습니다.</li>
+<li>기존 컴포넌트를 재사용하거나 확장하는 것도 간편하게 구현할 수 있었습니다.</li>
+</ul>
+<hr>
+<h2 id="2-다양한-llm-api-연동-지원-및-멀티-채팅-기능">2. 다양한 LLM API 연동 지원 및 멀티 채팅 기능<a hidden class="anchor" aria-hidden="true" href="#2-다양한-llm-api-연동-지원-및-멀티-채팅-기능">#</a></h2>
+<ul>
+<li>OpenWebUI는 OpenAI, Claude, Gemini, Cohere 등 여러 LLM API를 손쉽게 연동할 수 있는 구조를 기본적으로 제공하고 있습니다.</li>
+<li>특히 하나의 세션 내에서 여러 LLM을 동시에 선택·응답받을 수 있는 <strong>멀티 채팅 기능</strong>은 유사한 챗봇 서비스들과 차별화되는 OpenWebUI만의 강점입니다.</li>
+<li>이를 통해 다양한 모델을 <strong>비교 실험</strong>하거나, 특정 목적에 맞게 모델을 <strong>분기 활용</strong>하는 것이 용이하였습니다.</li>
+</ul>
+<hr>
+<h2 id="3-프론트엔드-중심-커스터마이징이-용이함">3. 프론트엔드 중심 커스터마이징이 용이함<a hidden class="anchor" aria-hidden="true" href="#3-프론트엔드-중심-커스터마이징이-용이함">#</a></h2>
+<ul>
+<li>전체 시스템이 프론트엔드 중심으로 구성되어 있어, 팀 내 <strong>프론트엔드 개발자 주도 하에</strong> 빠르게 커스터마이징을 진행할 수 있었습니다.</li>
+<li>테마 커스터마이징, 다국어 번역, 접근성 테마 적용 등 대부분의 기능이 프론트 코드만으로 구현 가능하였습니다.</li>
+<li>또한 <code>Svelte</code>, <code>Vite</code> 기반으로 구성되어 있어, 빌드 속도가 빠르고 프로토타이핑에도 유리하였습니다.</li>
+</ul>
+<hr>
+<h2 id="4-로컬-및-인하우스-환경-배포-최적화">4. 로컬 및 인하우스 환경 배포 최적화<a hidden class="anchor" aria-hidden="true" href="#4-로컬-및-인하우스-환경-배포-최적화">#</a></h2>
+<ul>
+<li>OpenWebUI는 백엔드 서버 없이도 로컬 환경에서 독립 실행이 가능하며, <strong>LiteLLM과 같은 API 프록시 서버</strong>와 연동하여 기업 내부망에서도 안전하게 작동할 수 있습니다.</li>
+<li><code>.env</code> 환경변수 기반 설정과 함께 <strong>Docker 기반 배포</strong>를 공식적으로 지원하여, 다양한 환경에서 유연하게 적용할 수 있었습니다.</li>
+<li>실제 프로젝트에서는 <strong>GitHub Actions 및 Docker Hub</strong>를 활용하여 자동화된 빌드·배포 파이프라인을 구성하였습니다.</li>
+</ul>
+<hr>
+<h2 id="5-커뮤니티-기반의-오픈소스-성장성과-기여-경험">5. 커뮤니티 기반의 오픈소스 성장성과 기여 경험<a hidden class="anchor" aria-hidden="true" href="#5-커뮤니티-기반의-오픈소스-성장성과-기여-경험">#</a></h2>
+<ul>
+<li>OpenWebUI는 활발한 커뮤니티와 빠른 이슈 대응, 주기적인 릴리즈를 통해 오픈소스로서의 성장성과 신뢰성을 갖추고 있습니다.</li>
+<li>저희 팀은 공식 GitHub 저장소에 이슈와 PR을 제출하여, <strong>한국어 번역 기여</strong> 및 <strong>접근성을 고려한 Colorblind 테마</strong>를 실제 릴리즈(v0.6.10)에 반영시키는 기여 경험도 하였습니다.</li>
+<li>이를 통해 <strong>오픈소스 생태계에 실질적인 기여</strong>를 할 수 있었으며, 향후 확장성에 대한 자신감도 얻게 되었습니다.</li>
+</ul>
+<hr>
+<h2 id="-결론">✅ 결론<a hidden class="anchor" aria-hidden="true" href="#-결론">#</a></h2>
+<p>OpenWebUI는 프론트엔드 중심 구조와 다양한 LLM 지원, 뛰어난 커스터마이징 유연성, 그리고 접근성 중심의 개선까지 모두 충족시키는 플랫폼이었습니다.<br>
+특히 <strong>멀티 LLM 동시 채팅 기능</strong>은 실험적·비교적 측면에서 타 챗봇 서비스와 차별화되는 핵심 요소로, 본 프로젝트의 방향성과 매우 잘 부합하였습니다.<br>
+저희는 OpenWebUI를 통해 <strong>더 많은 사용자에게 열려 있는 LLM 실험 및 서비스 환경</strong>을 구축할 수 있었습니다.</p>
+<h2 id="-참고-자료">📚 참고 자료<a hidden class="anchor" aria-hidden="true" href="#-참고-자료">#</a></h2>
+<ul>
+<li><a href="https://github.com/open-webui/open-webui">OpenWebUI GitHub Repository</a></li>
+<li><a href="https://docs.openwebui.com">OpenWebUI 공식 Documentation</a></li>
+<li><a href="https://github.com/BerriAI/litellm">LiteLLM</a></li>
+</ul>
+
+
+  </div>
+
+  <footer class="post-footer">
+    <ul class="post-tags">
+    </ul>
+
+  </footer>
+</article>
+    </main>
+    
+<footer class="footer">
+        <span>&copy; 2025 <a href="http://localhost:65390/">8dobibim Tech Blog</a></span> · 
+
+    <span>
+        Powered by
+        <a href="https://gohugo.io/" rel="noopener noreferrer" target="_blank">Hugo</a> &
+        <a href="https://github.com/adityatelange/hugo-PaperMod/" rel="noopener" target="_blank">PaperMod</a>
+    </span>
+</footer>
+<a href="#top" aria-label="go to top" title="Go to Top (Alt + G)" class="top-link" id="top-link" accesskey="g">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 12 6" fill="currentColor">
+        <path d="M12 6H0l6-6z" />
+    </svg>
+</a>
+
+<script>
+    let menu = document.getElementById('menu')
+    if (menu) {
+        menu.scrollLeft = localStorage.getItem("menu-scroll-position");
+        menu.onscroll = function () {
+            localStorage.setItem("menu-scroll-position", menu.scrollLeft);
+        }
+    }
+
+    document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+        anchor.addEventListener("click", function (e) {
+            e.preventDefault();
+            var id = this.getAttribute("href").substr(1);
+            if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+                document.querySelector(`[id='${decodeURIComponent(id)}']`).scrollIntoView({
+                    behavior: "smooth"
+                });
+            } else {
+                document.querySelector(`[id='${decodeURIComponent(id)}']`).scrollIntoView();
+            }
+            if (id === "top") {
+                history.replaceState(null, null, " ");
+            } else {
+                history.pushState(null, null, `#${id}`);
+            }
+        });
+    });
+
+</script>
+<script>
+    var mybutton = document.getElementById("top-link");
+    window.onscroll = function () {
+        if (document.body.scrollTop > 800 || document.documentElement.scrollTop > 800) {
+            mybutton.style.visibility = "visible";
+            mybutton.style.opacity = "1";
+        } else {
+            mybutton.style.visibility = "hidden";
+            mybutton.style.opacity = "0";
+        }
+    };
+
+</script>
+<script>
+    document.getElementById("theme-toggle").addEventListener("click", () => {
+        if (document.body.className.includes("dark")) {
+            document.body.classList.remove('dark');
+            localStorage.setItem("pref-theme", 'light');
+        } else {
+            document.body.classList.add('dark');
+            localStorage.setItem("pref-theme", 'dark');
+        }
+    })
+
+</script>
+<script>
+    document.querySelectorAll('pre > code').forEach((codeblock) => {
+        const container = codeblock.parentNode.parentNode;
+
+        const copybutton = document.createElement('button');
+        copybutton.classList.add('copy-code');
+        copybutton.innerHTML = 'copy';
+
+        function copyingDone() {
+            copybutton.innerHTML = 'copied!';
+            setTimeout(() => {
+                copybutton.innerHTML = 'copy';
+            }, 2000);
+        }
+
+        copybutton.addEventListener('click', (cb) => {
+            if ('clipboard' in navigator) {
+                navigator.clipboard.writeText(codeblock.textContent);
+                copyingDone();
+                return;
+            }
+
+            const range = document.createRange();
+            range.selectNodeContents(codeblock);
+            const selection = window.getSelection();
+            selection.removeAllRanges();
+            selection.addRange(range);
+            try {
+                document.execCommand('copy');
+                copyingDone();
+            } catch (e) { };
+            selection.removeRange(range);
+        });
+
+        if (container.classList.contains("highlight")) {
+            container.appendChild(copybutton);
+        } else if (container.parentNode.firstChild == container) {
+            
+        } else if (codeblock.parentNode.parentNode.parentNode.parentNode.parentNode.nodeName == "TABLE") {
+            
+            codeblock.parentNode.parentNode.parentNode.parentNode.parentNode.appendChild(copybutton);
+        } else {
+            
+            codeblock.parentNode.appendChild(copybutton);
+        }
+    });
+</script>
+</body>
+
+</html>

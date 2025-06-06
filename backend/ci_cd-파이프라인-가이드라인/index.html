@@ -1,0 +1,912 @@
+<!DOCTYPE html>
+<html lang="en" dir="auto">
+
+<head><script src="/livereload.js?mindelay=10&amp;v=2&amp;port=65390&amp;path=livereload" data-no-instant defer></script><meta charset="utf-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+<meta name="robots" content="noindex, nofollow">
+<title>8dobibim Tech Blog</title>
+<meta name="keywords" content="">
+<meta name="description" content="🚀 AWS EKS CI/CD 파이프라인 구축 가이드
+
+⏱️ 예상 소요시간: 45-60분
+💡 난이도: 중급
+📋 목표: GitHub Actions를 사용하여 AWS EKS에 OpenWebUI 애플리케이션을 자동 배포하는 CI/CD 파이프라인 구축
+📁 전체 코드: GitHub에서 확인하기
+
+📋 전체 구조 개요
+파이프라인 단계별 흐름
+1. GitHub Push 트리거
+2. AWS 인증 및 환경 설정
+3. Terraform으로 인프라 구축
+4. EKS 클러스터 설정
+5. 필수 컴포넌트 설치
+6. ArgoCD 설치 및 설정
+7. 애플리케이션 배포
+8. 헬스체크 및 롤백
+
+🔐 Step 1: GitHub Secrets 및 기본 설정
+필요한 Secrets 목록
+# GitHub 리포지토리 → Settings → Secrets and variables → Actions
+
+# AWS 인증
+AWS_ACCESS_KEY_ID
+AWS_SECRET_ACCESS_KEY
+
+# API 키들
+GEMINI_API_KEY
+AZURE_API_KEY
+AZURE_API_BASE
+AZURE_API_VERSION
+
+# 데이터베이스
+POSTGRES_DB
+POSTGRES_USER
+POSTGRES_PASSWORD
+DATABASE_URL
+
+# LiteLLM
+LITELLM_MASTER_KEY
+LITELLM_SALT_KEY
+워크플로우 기본 설정
+name: Deploy to AWS EKS
+
+on:
+  push:
+    branches:
+      - main  # main 브랜치에 푸시될 때만 실행
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest  # Ubuntu 최신 버전 사용
+    
+    env:
+      # Terraform 작업 디렉토리
+      TF_WORKING_DIR: ./terraform-related/AWS_terraform_grafana
+      # ArgoCD 초기 비밀번호 해시 (admin)
+      ARGOCD_PASSWORD_HASH: $2a$10$8K9jKpK7a9c6xL8zFiZ65uHpYz9ROzAyl3PzGp6u2Fj0CeLccL5tK
+🔍 설명:">
+<meta name="author" content="">
+<link rel="canonical" href="http://localhost:65390/backend/ci_cd-%ED%8C%8C%EC%9D%B4%ED%94%84%EB%9D%BC%EC%9D%B8-%EA%B0%80%EC%9D%B4%EB%93%9C%EB%9D%BC%EC%9D%B8/">
+<link crossorigin="anonymous" href="/assets/css/stylesheet.36819bea596090d8b48cf10d9831382996197aa7e4fc86f792f7c08c9ca4d23b.css" integrity="sha256-NoGb6llgkNi0jPENmDE4KZYZeqfk/Ib3kvfAjJyk0js=" rel="preload stylesheet" as="style">
+<link rel="icon" href="http://localhost:65390/favicon.ico">
+<link rel="icon" type="image/png" sizes="16x16" href="http://localhost:65390/favicon-16x16.png">
+<link rel="icon" type="image/png" sizes="32x32" href="http://localhost:65390/favicon-32x32.png">
+<link rel="apple-touch-icon" href="http://localhost:65390/apple-touch-icon.png">
+<link rel="mask-icon" href="http://localhost:65390/safari-pinned-tab.svg">
+<meta name="theme-color" content="#2e2e33">
+<meta name="msapplication-TileColor" content="#2e2e33">
+<link rel="alternate" hreflang="en" href="http://localhost:65390/backend/ci_cd-%ED%8C%8C%EC%9D%B4%ED%94%84%EB%9D%BC%EC%9D%B8-%EA%B0%80%EC%9D%B4%EB%93%9C%EB%9D%BC%EC%9D%B8/">
+<noscript>
+    <style>
+        #theme-toggle,
+        .top-link {
+            display: none;
+        }
+
+    </style>
+    <style>
+        @media (prefers-color-scheme: dark) {
+            :root {
+                --theme: rgb(29, 30, 32);
+                --entry: rgb(46, 46, 51);
+                --primary: rgb(218, 218, 219);
+                --secondary: rgb(155, 156, 157);
+                --tertiary: rgb(65, 66, 68);
+                --content: rgb(196, 196, 197);
+                --code-block-bg: rgb(46, 46, 51);
+                --code-bg: rgb(55, 56, 62);
+                --border: rgb(51, 51, 51);
+            }
+
+            .list {
+                background: var(--theme);
+            }
+
+            .list:not(.dark)::-webkit-scrollbar-track {
+                background: 0 0;
+            }
+
+            .list:not(.dark)::-webkit-scrollbar-thumb {
+                border-color: var(--theme);
+            }
+        }
+
+    </style>
+</noscript>
+</head>
+
+<body class="" id="top">
+<script>
+    if (localStorage.getItem("pref-theme") === "dark") {
+        document.body.classList.add('dark');
+    } else if (localStorage.getItem("pref-theme") === "light") {
+        document.body.classList.remove('dark')
+    } else if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
+        document.body.classList.add('dark');
+    }
+
+</script>
+
+<header class="header">
+    <nav class="nav">
+        <div class="logo">
+            <a href="http://localhost:65390/" accesskey="h" title="8dobibim Tech Blog (Alt + H)">8dobibim Tech Blog</a>
+            <div class="logo-switches">
+                <button id="theme-toggle" accesskey="t" title="(Alt + T)" aria-label="Toggle theme">
+                    <svg id="moon" xmlns="http://www.w3.org/2000/svg" width="24" height="18" viewBox="0 0 24 24"
+                        fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                        stroke-linejoin="round">
+                        <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+                    </svg>
+                    <svg id="sun" xmlns="http://www.w3.org/2000/svg" width="24" height="18" viewBox="0 0 24 24"
+                        fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                        stroke-linejoin="round">
+                        <circle cx="12" cy="12" r="5"></circle>
+                        <line x1="12" y1="1" x2="12" y2="3"></line>
+                        <line x1="12" y1="21" x2="12" y2="23"></line>
+                        <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+                        <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+                        <line x1="1" y1="12" x2="3" y2="12"></line>
+                        <line x1="21" y1="12" x2="23" y2="12"></line>
+                        <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+                        <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+                    </svg>
+                </button>
+            </div>
+        </div>
+        <ul id="menu">
+            <li>
+                <a href="http://localhost:65390/frontend/" title="🖥 프론트엔드">
+                    <span>🖥 프론트엔드</span>
+                </a>
+            </li>
+            <li>
+                <a href="http://localhost:65390/backend/" title="💾 백엔드">
+                    <span>💾 백엔드</span>
+                </a>
+            </li>
+        </ul>
+    </nav>
+</header>
+<main class="main">
+
+<article class="post-single">
+  <header class="post-header">
+    <div class="breadcrumbs"><a href="http://localhost:65390/">Home</a>&nbsp;»&nbsp;<a href="http://localhost:65390/backend/">Backend 문서</a></div>
+    <h1 class="post-title entry-hint-parent">
+      
+    </h1>
+    <div class="post-meta">8 min&nbsp;·&nbsp;1584 words
+
+</div>
+  </header> <div class="toc">
+    <details  open>
+        <summary accesskey="c" title="(Alt + C)">
+            <span class="details">Table of Contents</span>
+        </summary>
+
+        <div class="inner"><ul>
+                <li>
+                    <a href="#-aws-eks-cicd-%ed%8c%8c%ec%9d%b4%ed%94%84%eb%9d%bc%ec%9d%b8-%ea%b5%ac%ec%b6%95-%ea%b0%80%ec%9d%b4%eb%93%9c" aria-label="🚀 AWS EKS CI/CD 파이프라인 구축 가이드">🚀 AWS EKS CI/CD 파이프라인 구축 가이드</a><ul>
+                        
+                <li>
+                    <a href="#-%ec%a0%84%ec%b2%b4-%ea%b5%ac%ec%a1%b0-%ea%b0%9c%ec%9a%94" aria-label="📋 전체 구조 개요">📋 전체 구조 개요</a><ul>
+                        
+                <li>
+                    <a href="#%ed%8c%8c%ec%9d%b4%ed%94%84%eb%9d%bc%ec%9d%b8-%eb%8b%a8%ea%b3%84%eb%b3%84-%ed%9d%90%eb%a6%84" aria-label="파이프라인 단계별 흐름">파이프라인 단계별 흐름</a></li></ul>
+                </li>
+                <li>
+                    <a href="#-step-1-github-secrets-%eb%b0%8f-%ea%b8%b0%eb%b3%b8-%ec%84%a4%ec%a0%95" aria-label="🔐 Step 1: GitHub Secrets 및 기본 설정">🔐 Step 1: GitHub Secrets 및 기본 설정</a><ul>
+                        
+                <li>
+                    <a href="#%ed%95%84%ec%9a%94%ed%95%9c-secrets-%eb%aa%a9%eb%a1%9d" aria-label="필요한 Secrets 목록">필요한 Secrets 목록</a></li>
+                <li>
+                    <a href="#%ec%9b%8c%ed%81%ac%ed%94%8c%eb%a1%9c%ec%9a%b0-%ea%b8%b0%eb%b3%b8-%ec%84%a4%ec%a0%95" aria-label="워크플로우 기본 설정">워크플로우 기본 설정</a></li></ul>
+                </li>
+                <li>
+                    <a href="#-step-2-terraform-%ec%9d%b8%ed%94%84%eb%9d%bc-%ea%b5%ac%ec%b6%95" aria-label="🏗️ Step 2: Terraform 인프라 구축">🏗️ Step 2: Terraform 인프라 구축</a><ul>
+                        
+                <li>
+                    <a href="#2-1-%ea%b8%b0%eb%b3%b8-%ec%84%a4%ec%a0%95-%eb%8b%a8%ea%b3%84" aria-label="2-1. 기본 설정 단계">2-1. 기본 설정 단계</a></li>
+                <li>
+                    <a href="#2-2-terraform-%eb%b3%80%ec%88%98-%ec%84%a4%ec%a0%95" aria-label="2-2. Terraform 변수 설정">2-2. Terraform 변수 설정</a></li>
+                <li>
+                    <a href="#2-3-terraform-%ec%8b%a4%ed%96%89" aria-label="2-3. Terraform 실행">2-3. Terraform 실행</a></li></ul>
+                </li>
+                <li>
+                    <a href="#-step-3-eks-%ed%81%b4%eb%9f%ac%ec%8a%a4%ed%84%b0-%ec%84%a4%ec%a0%95" aria-label="☸️ Step 3: EKS 클러스터 설정">☸️ Step 3: EKS 클러스터 설정</a><ul>
+                        
+                <li>
+                    <a href="#3-1-kubeconfig-%ec%97%85%eb%8d%b0%ec%9d%b4%ed%8a%b8" aria-label="3-1. Kubeconfig 업데이트">3-1. Kubeconfig 업데이트</a></li>
+                <li>
+                    <a href="#3-2-aws-auth-configmap-%ec%84%a4%ec%a0%95" aria-label="3-2. AWS Auth ConfigMap 설정">3-2. AWS Auth ConfigMap 설정</a></li></ul>
+                </li>
+                <li>
+                    <a href="#-step-4-%ed%95%84%ec%88%98-%ec%bb%b4%ed%8f%ac%eb%84%8c%ed%8a%b8-%ec%84%a4%ec%b9%98" aria-label="🛠️ Step 4: 필수 컴포넌트 설치">🛠️ Step 4: 필수 컴포넌트 설치</a><ul>
+                        
+                <li>
+                    <a href="#4-1-helm-%ec%84%a4%ec%b9%98" aria-label="4-1. Helm 설치">4-1. Helm 설치</a></li>
+                <li>
+                    <a href="#4-2-aws-load-balancer-controller" aria-label="4-2. AWS Load Balancer Controller">4-2. AWS Load Balancer Controller</a></li>
+                <li>
+                    <a href="#4-3-metrics-server" aria-label="4-3. Metrics Server">4-3. Metrics Server</a></li>
+                <li>
+                    <a href="#4-4-ebs-csi-driver" aria-label="4-4. EBS CSI Driver">4-4. EBS CSI Driver</a></li>
+                <li>
+                    <a href="#4-5-storageclass-%ec%83%9d%ec%84%b1" aria-label="4-5. StorageClass 생성">4-5. StorageClass 생성</a></li></ul>
+                </li>
+                <li>
+                    <a href="#-step-5-argocd-%ec%84%a4%ec%b9%98-%eb%b0%8f-%ec%84%a4%ec%a0%95" aria-label="🚢 Step 5: ArgoCD 설치 및 설정">🚢 Step 5: ArgoCD 설치 및 설정</a><ul>
+                        
+                <li>
+                    <a href="#5-1-argocd-%ec%84%a4%ec%b9%98" aria-label="5-1. ArgoCD 설치">5-1. ArgoCD 설치</a></li>
+                <li>
+                    <a href="#5-2-argocd-%ec%a4%80%eb%b9%84-%eb%8c%80%ea%b8%b0" aria-label="5-2. ArgoCD 준비 대기">5-2. ArgoCD 준비 대기</a></li>
+                <li>
+                    <a href="#5-3-loadbalancer-%ec%84%9c%eb%b9%84%ec%8a%a4-%eb%85%b8%ec%b6%9c" aria-label="5-3. LoadBalancer 서비스 노출">5-3. LoadBalancer 서비스 노출</a></li>
+                <li>
+                    <a href="#5-4-argocd-application-%ec%83%9d%ec%84%b1" aria-label="5-4. ArgoCD Application 생성">5-4. ArgoCD Application 생성</a></li></ul>
+                </li>
+                <li>
+                    <a href="#-step-6-%ec%95%a0%ed%94%8c%eb%a6%ac%ec%bc%80%ec%9d%b4%ec%85%98-%eb%b0%b0%ed%8f%ac" aria-label="📦 Step 6: 애플리케이션 배포">📦 Step 6: 애플리케이션 배포</a><ul>
+                        
+                <li>
+                    <a href="#6-1-kubernetes-%eb%a7%a4%eb%8b%88%ed%8e%98%ec%8a%a4%ed%8a%b8-%ec%a0%81%ec%9a%a9" aria-label="6-1. Kubernetes 매니페스트 적용">6-1. Kubernetes 매니페스트 적용</a></li>
+                <li>
+                    <a href="#6-2-%eb%b0%b0%ed%8f%ac-%ec%83%81%ed%83%9c-%ed%99%95%ec%9d%b8" aria-label="6-2. 배포 상태 확인">6-2. 배포 상태 확인</a></li></ul>
+                </li>
+                <li>
+                    <a href="#-step-7-%ed%97%ac%ec%8a%a4%ec%b2%b4%ed%81%ac-%eb%b0%8f-%eb%a7%88%eb%ac%b4%eb%a6%ac" aria-label="✅ Step 7: 헬스체크 및 마무리">✅ Step 7: 헬스체크 및 마무리</a><ul>
+                        
+                <li>
+                    <a href="#7-1-%ed%97%ac%ec%8a%a4%ec%b2%b4%ed%81%ac" aria-label="7-1. 헬스체크">7-1. 헬스체크</a></li>
+                <li>
+                    <a href="#7-2-%ec%8b%a4%ed%8c%a8-%ec%8b%9c-%eb%a1%a4%eb%b0%b1" aria-label="7-2. 실패 시 롤백">7-2. 실패 시 롤백</a></li>
+                <li>
+                    <a href="#7-3-load-balancer-url-%ed%99%95%ec%9d%b8" aria-label="7-3. Load Balancer URL 확인">7-3. Load Balancer URL 확인</a></li></ul>
+                </li>
+                <li>
+                    <a href="#-%ed%8a%b8%eb%9f%ac%eb%b8%94%ec%8a%88%ed%8c%85-%ea%b0%80%ec%9d%b4%eb%93%9c" aria-label="🎯 트러블슈팅 가이드">🎯 트러블슈팅 가이드</a><ul>
+                        
+                <li>
+                    <a href="#%ec%9d%bc%eb%b0%98%ec%a0%81%ec%9d%b8-%eb%ac%b8%ec%a0%9c-%ed%95%b4%ea%b2%b0" aria-label="일반적인 문제 해결">일반적인 문제 해결</a><ul>
+                        
+                <li>
+                    <a href="#1-terraform-%ec%8b%a4%ed%8c%a8" aria-label="1. Terraform 실패">1. Terraform 실패</a></li>
+                <li>
+                    <a href="#2-%eb%85%b8%eb%93%9c%ea%b0%80-%ec%a4%80%eb%b9%84%eb%90%98%ec%a7%80-%ec%95%8a%ec%9d%8c" aria-label="2. 노드가 준비되지 않음">2. 노드가 준비되지 않음</a></li>
+                <li>
+                    <a href="#3-pod%ea%b0%80-%ec%8b%9c%ec%9e%91%eb%90%98%ec%a7%80-%ec%95%8a%ec%9d%8c" aria-label="3. Pod가 시작되지 않음">3. Pod가 시작되지 않음</a></li>
+                <li>
+                    <a href="#4-loadbalancer%ea%b0%80-%ec%83%9d%ec%84%b1%eb%90%98%ec%a7%80-%ec%95%8a%ec%9d%8c" aria-label="4. LoadBalancer가 생성되지 않음">4. LoadBalancer가 생성되지 않음</a></li></ul>
+                </li></ul>
+                </li>
+                <li>
+                    <a href="#-%eb%aa%a8%eb%8b%88%ed%84%b0%eb%a7%81-%eb%b0%8f-%eb%a1%9c%ea%b9%85" aria-label="📈 모니터링 및 로깅">📈 모니터링 및 로깅</a><ul>
+                        
+                <li>
+                    <a href="#github-actions-%eb%a1%9c%ea%b7%b8" aria-label="GitHub Actions 로그">GitHub Actions 로그</a></li>
+                <li>
+                    <a href="#kubectl-%eb%aa%85%eb%a0%b9%ec%96%b4%eb%a1%9c-%ed%99%95%ec%9d%b8" aria-label="kubectl 명령어로 확인">kubectl 명령어로 확인</a></li></ul>
+                </li>
+                <li>
+                    <a href="#-%ec%a7%80%ec%86%8d%ec%a0%81%ec%9d%b8-%ea%b0%9c%ec%84%a0" aria-label="🔄 지속적인 개선">🔄 지속적인 개선</a><ul>
+                        
+                <li>
+                    <a href="#%ed%8c%8c%ec%9d%b4%ed%94%84%eb%9d%bc%ec%9d%b8-%ec%b5%9c%ec%a0%81%ed%99%94" aria-label="파이프라인 최적화">파이프라인 최적화</a></li>
+                <li>
+                    <a href="#%eb%b3%b4%ec%95%88-%ea%b0%95%ed%99%94" aria-label="보안 강화">보안 강화</a>
+                </li>
+            </ul>
+            </li>
+            </ul>
+            </li>
+            </ul>
+        </div>
+    </details>
+</div>
+
+  <div class="post-content"><h1 id="-aws-eks-cicd-파이프라인-구축-가이드">🚀 AWS EKS CI/CD 파이프라인 구축 가이드<a hidden class="anchor" aria-hidden="true" href="#-aws-eks-cicd-파이프라인-구축-가이드">#</a></h1>
+<blockquote>
+<p><strong>⏱️ 예상 소요시간</strong>: 45-60분<br>
+<strong>💡 난이도</strong>: 중급<br>
+<strong>📋 목표</strong>: GitHub Actions를 사용하여 AWS EKS에 OpenWebUI 애플리케이션을 자동 배포하는 CI/CD 파이프라인 구축<br>
+<strong>📁 전체 코드</strong>: <a href="https://github.com/8dobibim/combined/blob/main/8dobibim_back/.github/workflows/cicd.yml">GitHub에서 확인하기</a></p></blockquote>
+<hr>
+<h2 id="-전체-구조-개요">📋 전체 구조 개요<a hidden class="anchor" aria-hidden="true" href="#-전체-구조-개요">#</a></h2>
+<h3 id="파이프라인-단계별-흐름">파이프라인 단계별 흐름<a hidden class="anchor" aria-hidden="true" href="#파이프라인-단계별-흐름">#</a></h3>
+<pre tabindex="0"><code>1. GitHub Push 트리거
+2. AWS 인증 및 환경 설정
+3. Terraform으로 인프라 구축
+4. EKS 클러스터 설정
+5. 필수 컴포넌트 설치
+6. ArgoCD 설치 및 설정
+7. 애플리케이션 배포
+8. 헬스체크 및 롤백
+</code></pre><hr>
+<h2 id="-step-1-github-secrets-및-기본-설정">🔐 Step 1: GitHub Secrets 및 기본 설정<a hidden class="anchor" aria-hidden="true" href="#-step-1-github-secrets-및-기본-설정">#</a></h2>
+<h3 id="필요한-secrets-목록">필요한 Secrets 목록<a hidden class="anchor" aria-hidden="true" href="#필요한-secrets-목록">#</a></h3>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-yaml" data-lang="yaml"><span style="display:flex;"><span><span style="color:#75715e"># GitHub 리포지토리 → Settings → Secrets and variables → Actions</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># AWS 인증</span>
+</span></span><span style="display:flex;"><span><span style="color:#ae81ff">AWS_ACCESS_KEY_ID</span>
+</span></span><span style="display:flex;"><span><span style="color:#ae81ff">AWS_SECRET_ACCESS_KEY</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># API 키들</span>
+</span></span><span style="display:flex;"><span><span style="color:#ae81ff">GEMINI_API_KEY</span>
+</span></span><span style="display:flex;"><span><span style="color:#ae81ff">AZURE_API_KEY</span>
+</span></span><span style="display:flex;"><span><span style="color:#ae81ff">AZURE_API_BASE</span>
+</span></span><span style="display:flex;"><span><span style="color:#ae81ff">AZURE_API_VERSION</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># 데이터베이스</span>
+</span></span><span style="display:flex;"><span><span style="color:#ae81ff">POSTGRES_DB</span>
+</span></span><span style="display:flex;"><span><span style="color:#ae81ff">POSTGRES_USER</span>
+</span></span><span style="display:flex;"><span><span style="color:#ae81ff">POSTGRES_PASSWORD</span>
+</span></span><span style="display:flex;"><span><span style="color:#ae81ff">DATABASE_URL</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># LiteLLM</span>
+</span></span><span style="display:flex;"><span><span style="color:#ae81ff">LITELLM_MASTER_KEY</span>
+</span></span><span style="display:flex;"><span><span style="color:#ae81ff">LITELLM_SALT_KEY</span>
+</span></span></code></pre></div><h3 id="워크플로우-기본-설정">워크플로우 기본 설정<a hidden class="anchor" aria-hidden="true" href="#워크플로우-기본-설정">#</a></h3>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-yaml" data-lang="yaml"><span style="display:flex;"><span><span style="color:#f92672">name</span>: <span style="color:#ae81ff">Deploy to AWS EKS</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">on</span>:
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">push</span>:
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">branches</span>:
+</span></span><span style="display:flex;"><span>      - <span style="color:#ae81ff">main </span> <span style="color:#75715e"># main 브랜치에 푸시될 때만 실행</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">jobs</span>:
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">deploy</span>:
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">runs-on</span>: <span style="color:#ae81ff">ubuntu-latest </span> <span style="color:#75715e"># Ubuntu 최신 버전 사용</span>
+</span></span><span style="display:flex;"><span>    
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">env</span>:
+</span></span><span style="display:flex;"><span>      <span style="color:#75715e"># Terraform 작업 디렉토리</span>
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">TF_WORKING_DIR</span>: <span style="color:#ae81ff">./terraform-related/AWS_terraform_grafana</span>
+</span></span><span style="display:flex;"><span>      <span style="color:#75715e"># ArgoCD 초기 비밀번호 해시 (admin)</span>
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">ARGOCD_PASSWORD_HASH</span>: <span style="color:#ae81ff">$2a$10$8K9jKpK7a9c6xL8zFiZ65uHpYz9ROzAyl3PzGp6u2Fj0CeLccL5tK</span>
+</span></span></code></pre></div><p><strong>🔍 설명</strong>:</p>
+<ul>
+<li><code>on.push.branches</code>: 특정 브랜치에 코드가 푸시될 때만 파이프라인 실행</li>
+<li><code>env</code>: 워크플로우 전체에서 사용할 환경 변수 정의</li>
+<li><code>ARGOCD_PASSWORD_HASH</code>: bcrypt로 해시된 ArgoCD admin 비밀번호</li>
+</ul>
+<hr>
+<h2 id="-step-2-terraform-인프라-구축">🏗️ Step 2: Terraform 인프라 구축<a hidden class="anchor" aria-hidden="true" href="#-step-2-terraform-인프라-구축">#</a></h2>
+<h3 id="2-1-기본-설정-단계">2-1. 기본 설정 단계<a hidden class="anchor" aria-hidden="true" href="#2-1-기본-설정-단계">#</a></h3>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-yaml" data-lang="yaml"><span style="display:flex;"><span><span style="color:#f92672">steps</span>:
+</span></span><span style="display:flex;"><span>  <span style="color:#75715e"># 코드 체크아웃</span>
+</span></span><span style="display:flex;"><span>  - <span style="color:#f92672">name</span>: <span style="color:#ae81ff">Checkout code</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">uses</span>: <span style="color:#ae81ff">actions/checkout@v4</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>  <span style="color:#75715e"># Terraform CLI 설치</span>
+</span></span><span style="display:flex;"><span>  - <span style="color:#f92672">name</span>: <span style="color:#ae81ff">Setup Terraform</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">uses</span>: <span style="color:#ae81ff">hashicorp/setup-terraform@v2</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>  <span style="color:#75715e"># AWS 인증 설정</span>
+</span></span><span style="display:flex;"><span>  - <span style="color:#f92672">name</span>: <span style="color:#ae81ff">Configure AWS Credentials</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">uses</span>: <span style="color:#ae81ff">aws-actions/configure-aws-credentials@v4</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">with</span>:
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">aws-access-key-id</span>: <span style="color:#ae81ff">${{ secrets.AWS_ACCESS_KEY_ID }}</span>
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">aws-secret-access-key</span>: <span style="color:#ae81ff">${{ secrets.AWS_SECRET_ACCESS_KEY }}</span>
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">aws-region</span>: <span style="color:#ae81ff">${{ vars.AWS_REGION || &#39;ap-northeast-2&#39; }}</span>
+</span></span></code></pre></div><p><strong>🔍 설명</strong>:</p>
+<ul>
+<li><code>actions/checkout@v4</code>: 리포지토리 코드를 가져옴</li>
+<li><code>hashicorp/setup-terraform@v2</code>: Terraform CLI 설치</li>
+<li>AWS 인증 정보는 GitHub Secrets에서 가져옴</li>
+<li>리전은 Variables 또는 기본값(서울) 사용</li>
+</ul>
+<h3 id="2-2-terraform-변수-설정">2-2. Terraform 변수 설정<a hidden class="anchor" aria-hidden="true" href="#2-2-terraform-변수-설정">#</a></h3>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-yaml" data-lang="yaml"><span style="display:flex;"><span>  - <span style="color:#f92672">name</span>: <span style="color:#ae81ff">Set Secrets as Environment Variables</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">run</span>: |<span style="color:#e6db74">
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">      # Terraform 변수로 사용할 환경 변수 설정
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">      echo &#34;TF_VAR_gemini_api_key=${{ secrets.GEMINI_API_KEY }}&#34; &gt;&gt; $GITHUB_ENV
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">      echo &#34;TF_VAR_azure_api_key=${{ secrets.AZURE_API_KEY }}&#34; &gt;&gt; $GITHUB_ENV
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">      echo &#34;TF_VAR_azure_api_base=${{ secrets.AZURE_API_BASE }}&#34; &gt;&gt; $GITHUB_ENV
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">      echo &#34;TF_VAR_azure_api_version=${{ secrets.AZURE_API_VERSION }}&#34; &gt;&gt; $GITHUB_ENV
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">      echo &#34;TF_VAR_postgres_db=${{ secrets.POSTGRES_DB }}&#34; &gt;&gt; $GITHUB_ENV
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">      echo &#34;TF_VAR_postgres_user=${{ secrets.POSTGRES_USER }}&#34; &gt;&gt; $GITHUB_ENV
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">      echo &#34;TF_VAR_postgres_password=${{ secrets.POSTGRES_PASSWORD }}&#34; &gt;&gt; $GITHUB_ENV
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">      echo &#34;TF_VAR_database_url=${{ secrets.DATABASE_URL }}&#34; &gt;&gt; $GITHUB_ENV
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">      echo &#34;TF_VAR_litellm_master_key=${{ secrets.LITELLM_MASTER_KEY }}&#34; &gt;&gt; $GITHUB_ENV
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">      echo &#34;TF_VAR_litellm_salt_key=${{ secrets.LITELLM_SALT_KEY }}&#34; &gt;&gt; $GITHUB_ENV</span>
+</span></span></code></pre></div><p><strong>🔍 설명</strong>:</p>
+<ul>
+<li><code>TF_VAR_</code> 접두사: Terraform이 자동으로 변수로 인식</li>
+<li><code>$GITHUB_ENV</code>: 이후 단계에서도 사용 가능한 환경 변수</li>
+<li>모든 민감한 정보는 GitHub Secrets에서 가져옴</li>
+</ul>
+<h3 id="2-3-terraform-실행">2-3. Terraform 실행<a hidden class="anchor" aria-hidden="true" href="#2-3-terraform-실행">#</a></h3>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-yaml" data-lang="yaml"><span style="display:flex;"><span>  <span style="color:#75715e"># Terraform 초기화</span>
+</span></span><span style="display:flex;"><span>  - <span style="color:#f92672">name</span>: <span style="color:#ae81ff">Terraform Init</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">run</span>: <span style="color:#ae81ff">terraform init</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">working-directory</span>: <span style="color:#ae81ff">${{ env.TF_WORKING_DIR }}</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>  <span style="color:#75715e"># 실행 계획 확인</span>
+</span></span><span style="display:flex;"><span>  - <span style="color:#f92672">name</span>: <span style="color:#ae81ff">Terraform Plan</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">run</span>: <span style="color:#ae81ff">terraform plan -var-file=&#34;terraform.tfvars&#34; -input=false</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">working-directory</span>: <span style="color:#ae81ff">${{ env.TF_WORKING_DIR }}</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>  <span style="color:#75715e"># 인프라 생성/업데이트</span>
+</span></span><span style="display:flex;"><span>  - <span style="color:#f92672">name</span>: <span style="color:#ae81ff">Terraform Apply</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">run</span>: <span style="color:#ae81ff">terraform apply -auto-approve -var-file=&#34;terraform.tfvars&#34; -input=false</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">working-directory</span>: <span style="color:#ae81ff">${{ env.TF_WORKING_DIR }}</span>
+</span></span></code></pre></div><p><strong>🔍 설명</strong>:</p>
+<ul>
+<li><code>terraform init</code>: 프로바이더 다운로드 및 백엔드 초기화</li>
+<li><code>terraform plan</code>: 변경사항 미리보기</li>
+<li><code>terraform apply</code>: 실제 인프라 생성</li>
+<li><code>-auto-approve</code>: 대화형 승인 건너뛰기</li>
+<li><code>-input=false</code>: 대화형 입력 비활성화</li>
+</ul>
+<hr>
+<h2 id="-step-3-eks-클러스터-설정">☸️ Step 3: EKS 클러스터 설정<a hidden class="anchor" aria-hidden="true" href="#-step-3-eks-클러스터-설정">#</a></h2>
+<h3 id="3-1-kubeconfig-업데이트">3-1. Kubeconfig 업데이트<a hidden class="anchor" aria-hidden="true" href="#3-1-kubeconfig-업데이트">#</a></h3>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-yaml" data-lang="yaml"><span style="display:flex;"><span>  - <span style="color:#f92672">name</span>: <span style="color:#ae81ff">Update Kubeconfig</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">run</span>: <span style="color:#ae81ff">aws eks update-kubeconfig --region ap-northeast-2 --name openwebui</span>
+</span></span></code></pre></div><p><strong>🔍 설명</strong>:</p>
+<ul>
+<li>EKS 클러스터에 연결하기 위한 kubeconfig 파일 생성</li>
+<li><code>--name openwebui</code>: 클러스터 이름 지정</li>
+</ul>
+<h3 id="3-2-aws-auth-configmap-설정">3-2. AWS Auth ConfigMap 설정<a hidden class="anchor" aria-hidden="true" href="#3-2-aws-auth-configmap-설정">#</a></h3>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-yaml" data-lang="yaml"><span style="display:flex;"><span>  - <span style="color:#f92672">name</span>: <span style="color:#ae81ff">Apply aws-auth ConfigMap and wait for node</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">run</span>: |<span style="color:#e6db74">
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">      # 노드그룹의 IAM Role ARN 가져오기
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">      echo &#34;Getting nodegroup role ARN...&#34;
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">      NODE_ROLE_ARN=$(aws eks describe-nodegroup \
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">        --cluster-name openwebui \
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">        --nodegroup-name openwebui-nodegroup \
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">        --query &#39;nodegroup.nodeRole&#39; \
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">        --output text)
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">      # aws-auth ConfigMap 생성
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">      echo &#34;Generating aws-auth ConfigMap with correct ARN: $NODE_ROLE_ARN&#34;
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">      cat &gt; aws-auth.yaml &lt;&lt; EOF
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">      apiVersion: v1
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">      kind: ConfigMap
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">      metadata:
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">        name: aws-auth
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">        namespace: kube-system
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">      data:
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">        mapRoles: |
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">          - rolearn: $NODE_ROLE_ARN
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">            username: system:node:{{EC2PrivateDNSName}}
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">            groups:
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">              - system:bootstrappers
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">              - system:nodes
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">      EOF
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">      # ConfigMap 적용
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">      echo &#34;Applying generated aws-auth ConfigMap...&#34;
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">      kubectl apply -f aws-auth.yaml -n kube-system
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">      # 노드가 등록될 때까지 대기 (최대 5분)
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">      echo &#34;Waiting for EKS node to register (up to 5 minutes)...&#34;
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">      for i in {1..30}; do
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">        COUNT=$(kubectl get nodes --no-headers 2&gt;/dev/null | wc -l)
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">        if [ &#34;$COUNT&#34; -gt 0 ]; then
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">          echo &#34;✅ EKS node registered!&#34;
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">          break
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">        fi
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">        echo &#34;⏳ Still waiting for node... ($i/30)&#34;
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">        sleep 10
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">      done
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">      # 타임아웃 처리
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">      if [ &#34;$COUNT&#34; -eq 0 ]; then
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">        echo &#34;❌ Timeout: No EKS nodes registered after 5 minutes.&#34;
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">        kubectl get pods -n kube-system
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">        kubectl describe configmap aws-auth -n kube-system
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">        exit 1
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">      fi</span>
+</span></span></code></pre></div><p><strong>🔍 설명</strong>:</p>
+<ul>
+<li><code>aws-auth</code> ConfigMap: EC2 노드가 EKS 클러스터에 조인하도록 권한 부여</li>
+<li>노드 등록 대기: 최대 5분간 10초 간격으로 확인</li>
+<li>실패 시 디버깅 정보 출력</li>
+</ul>
+<hr>
+<h2 id="-step-4-필수-컴포넌트-설치">🛠️ Step 4: 필수 컴포넌트 설치<a hidden class="anchor" aria-hidden="true" href="#-step-4-필수-컴포넌트-설치">#</a></h2>
+<h3 id="4-1-helm-설치">4-1. Helm 설치<a hidden class="anchor" aria-hidden="true" href="#4-1-helm-설치">#</a></h3>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-yaml" data-lang="yaml"><span style="display:flex;"><span>  - <span style="color:#f92672">name</span>: <span style="color:#ae81ff">Install Helm</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">uses</span>: <span style="color:#ae81ff">azure/setup-helm@v3</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">with</span>:
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">version</span>: <span style="color:#e6db74">&#39;latest&#39;</span>
+</span></span></code></pre></div><p><strong>🔍 설명</strong>:</p>
+<ul>
+<li>Helm: Kubernetes 패키지 매니저</li>
+<li>차트를 통해 복잡한 애플리케이션을 쉽게 배포</li>
+</ul>
+<h3 id="4-2-aws-load-balancer-controller">4-2. AWS Load Balancer Controller<a hidden class="anchor" aria-hidden="true" href="#4-2-aws-load-balancer-controller">#</a></h3>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-yaml" data-lang="yaml"><span style="display:flex;"><span>  - <span style="color:#f92672">name</span>: <span style="color:#ae81ff">Install AWS Load Balancer Controller</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">run</span>: |<span style="color:#e6db74">
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">      # IAM Policy 다운로드
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">      curl -O https://raw.githubusercontent.com/kubernetes-sigs/aws-load-balancer-controller/v2.7.0/docs/install/iam_policy.json
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">      
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">      # IAM Policy 생성 (이미 있으면 무시)
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">      aws iam create-policy \
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">        --policy-name AWSLoadBalancerControllerIAMPolicy-${{ github.run_id }} \
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">        --policy-document file://iam_policy.json || true
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">      
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">      # CRDs 설치
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">      kubectl apply -k &#34;https://github.com/aws/eks-charts/stable/aws-load-balancer-controller/crds?ref=master&#34;
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">      
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">      # Helm repo 추가 및 업데이트
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">      helm repo add eks https://aws.github.io/eks-charts
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">      helm repo update
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">      
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">      # Controller 설치
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">      helm install aws-load-balancer-controller eks/aws-load-balancer-controller \
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">        -n kube-system \
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">        --set clusterName=openwebui \
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">        --set serviceAccount.create=true</span>
+</span></span></code></pre></div><p><strong>🔍 설명</strong>:</p>
+<ul>
+<li>AWS Load Balancer Controller: ALB/NLB 자동 생성 관리</li>
+<li>IAM Policy: Controller가 AWS 리소스를 관리할 권한</li>
+<li>CRDs: Custom Resource Definitions 설치</li>
+</ul>
+<h3 id="4-3-metrics-server">4-3. Metrics Server<a hidden class="anchor" aria-hidden="true" href="#4-3-metrics-server">#</a></h3>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-yaml" data-lang="yaml"><span style="display:flex;"><span>  - <span style="color:#f92672">name</span>: <span style="color:#ae81ff">Install Metrics Server</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">run</span>: |<span style="color:#e6db74">
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">      kubectl apply -f https://github.com/kubernetes-sigs/metrics-server/releases/latest/download/components.yaml</span>
+</span></span></code></pre></div><p><strong>🔍 설명</strong>:</p>
+<ul>
+<li>CPU/메모리 사용량 수집</li>
+<li>HPA(Horizontal Pod Autoscaler) 동작에 필요</li>
+</ul>
+<h3 id="4-4-ebs-csi-driver">4-4. EBS CSI Driver<a hidden class="anchor" aria-hidden="true" href="#4-4-ebs-csi-driver">#</a></h3>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-yaml" data-lang="yaml"><span style="display:flex;"><span>  - <span style="color:#f92672">name</span>: <span style="color:#ae81ff">Install EBS CSI Driver</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">run</span>: |<span style="color:#e6db74">
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">      # EBS CSI Driver addon 추가
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">      aws eks create-addon \
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">        --cluster-name openwebui \
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">        --addon-name aws-ebs-csi-driver \
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">        --resolve-conflicts OVERWRITE || true
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">      
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">      # Addon이 준비될 때까지 대기
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">      sleep 60</span>
+</span></span></code></pre></div><p><strong>🔍 설명</strong>:</p>
+<ul>
+<li>EBS CSI Driver: EBS 볼륨을 Kubernetes에서 사용</li>
+<li>EKS Addon으로 설치하여 자동 업데이트 지원</li>
+</ul>
+<h3 id="4-5-storageclass-생성">4-5. StorageClass 생성<a hidden class="anchor" aria-hidden="true" href="#4-5-storageclass-생성">#</a></h3>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-yaml" data-lang="yaml"><span style="display:flex;"><span>  - <span style="color:#f92672">name</span>: <span style="color:#ae81ff">Create StorageClass</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">run</span>: |<span style="color:#e6db74">
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">      cat &lt;&lt;EOF | kubectl apply -f -
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">      apiVersion: storage.k8s.io/v1
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">      kind: StorageClass
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">      metadata:
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">        name: gp3
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">      provisioner: ebs.csi.aws.com
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">      parameters:
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">        type: gp3
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">        fsType: ext4
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">      volumeBindingMode: WaitForFirstConsumer
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">      allowVolumeExpansion: true
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">      EOF</span>
+</span></span></code></pre></div><p><strong>🔍 설명</strong>:</p>
+<ul>
+<li>GP3: 최신 EBS 볼륨 타입 (성능/비용 최적화)</li>
+<li><code>WaitForFirstConsumer</code>: Pod가 스케줄링된 AZ에 볼륨 생성</li>
+<li><code>allowVolumeExpansion</code>: 볼륨 크기 확장 허용</li>
+</ul>
+<hr>
+<h2 id="-step-5-argocd-설치-및-설정">🚢 Step 5: ArgoCD 설치 및 설정<a hidden class="anchor" aria-hidden="true" href="#-step-5-argocd-설치-및-설정">#</a></h2>
+<h3 id="5-1-argocd-설치">5-1. ArgoCD 설치<a hidden class="anchor" aria-hidden="true" href="#5-1-argocd-설치">#</a></h3>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-yaml" data-lang="yaml"><span style="display:flex;"><span>  - <span style="color:#f92672">name</span>: <span style="color:#ae81ff">Install ArgoCD</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">run</span>: |<span style="color:#e6db74">
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">      # ArgoCD 네임스페이스 생성
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">      kubectl create namespace argocd --dry-run=client -o yaml | kubectl apply -f -
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">      
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">      # ArgoCD 매니페스트 적용
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">      kubectl apply -n argocd -f https://raw.githubusercontent.com/argoproj/argo-cd/stable/manifests/install.yaml</span>
+</span></span></code></pre></div><p><strong>🔍 설명</strong>:</p>
+<ul>
+<li><code>--dry-run=client</code>: 이미 존재해도 오류 없이 처리</li>
+<li>ArgoCD: GitOps 기반 지속적 배포 도구</li>
+</ul>
+<h3 id="5-2-argocd-준비-대기">5-2. ArgoCD 준비 대기<a hidden class="anchor" aria-hidden="true" href="#5-2-argocd-준비-대기">#</a></h3>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-yaml" data-lang="yaml"><span style="display:flex;"><span>  - <span style="color:#f92672">name</span>: <span style="color:#ae81ff">Wait for ArgoCD to be Ready</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">run</span>: |<span style="color:#e6db74">
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">      echo &#34;Waiting for ArgoCD server pod to be ready...&#34;
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">      kubectl wait --for=condition=available --timeout=180s deployment/argocd-server -n argocd</span>
+</span></span></code></pre></div><h3 id="5-3-loadbalancer-서비스-노출">5-3. LoadBalancer 서비스 노출<a hidden class="anchor" aria-hidden="true" href="#5-3-loadbalancer-서비스-노출">#</a></h3>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-yaml" data-lang="yaml"><span style="display:flex;"><span>  - <span style="color:#f92672">name</span>: <span style="color:#ae81ff">Expose ArgoCD Server with LoadBalancer</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">run</span>: <span style="color:#ae81ff">kubectl apply -f argocd/argocd-server-service.yaml</span>
+</span></span></code></pre></div><h3 id="5-4-argocd-application-생성">5-4. ArgoCD Application 생성<a hidden class="anchor" aria-hidden="true" href="#5-4-argocd-application-생성">#</a></h3>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-yaml" data-lang="yaml"><span style="display:flex;"><span>  - <span style="color:#f92672">name</span>: <span style="color:#ae81ff">Apply ArgoCD Application</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">run</span>: <span style="color:#ae81ff">kubectl apply -f argocd/argocd-app.yaml</span>
+</span></span></code></pre></div><hr>
+<h2 id="-step-6-애플리케이션-배포">📦 Step 6: 애플리케이션 배포<a hidden class="anchor" aria-hidden="true" href="#-step-6-애플리케이션-배포">#</a></h2>
+<h3 id="6-1-kubernetes-매니페스트-적용">6-1. Kubernetes 매니페스트 적용<a hidden class="anchor" aria-hidden="true" href="#6-1-kubernetes-매니페스트-적용">#</a></h3>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-yaml" data-lang="yaml"><span style="display:flex;"><span>  - <span style="color:#f92672">name</span>: <span style="color:#ae81ff">Apply Kubernetes Manifests</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">run</span>: |<span style="color:#e6db74">
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">      # 스토리지 관련 리소스
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">      if [ -d &#34;kubernetes/manifests/storage&#34; ]; then
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">        kubectl apply -f kubernetes/manifests/storage/
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">      fi
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">      
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">      # 데이터베이스
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">      if [ -d &#34;kubernetes/manifests/database&#34; ]; then
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">        kubectl apply -f kubernetes/manifests/database/
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">      fi
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">      
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">      # 기본 매니페스트
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">      kubectl apply -f kubernetes/manifests/
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">      
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">      # 오토스케일링
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">      if [ -d &#34;kubernetes/manifests/autoscaling&#34; ]; then
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">        kubectl apply -f kubernetes/manifests/autoscaling/
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">      fi
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">      
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">      # 네트워크 정책
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">      if [ -d &#34;kubernetes/manifests/network&#34; ]; then
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">        kubectl apply -f kubernetes/manifests/network/
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">      fi
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">      
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">      # Ingress
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">      if [ -d &#34;kubernetes/manifests/ingress&#34; ]; then
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">        kubectl apply -f kubernetes/manifests/ingress/
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">      fi
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">      
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">      # 모니터링
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">      if [ -d &#34;kubernetes/manifests/monitoring&#34; ]; then
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">        kubectl apply -f kubernetes/manifests/monitoring/
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">      fi</span>
+</span></span></code></pre></div><p><strong>🔍 설명</strong>:</p>
+<ul>
+<li>순서대로 리소스 생성 (의존성 고려)</li>
+<li>디렉토리가 있는 경우에만 적용</li>
+</ul>
+<h3 id="6-2-배포-상태-확인">6-2. 배포 상태 확인<a hidden class="anchor" aria-hidden="true" href="#6-2-배포-상태-확인">#</a></h3>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-yaml" data-lang="yaml"><span style="display:flex;"><span>  - <span style="color:#f92672">name</span>: <span style="color:#ae81ff">Wait for Deployments</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">run</span>: |<span style="color:#e6db74">
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">      for DEPLOY in openwebui-v1 openwebui-v2 litellm nginx-ab-proxy; do
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">        if kubectl get deployment &#34;$DEPLOY&#34; -n default &amp;&gt; /dev/null; then
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">          echo &#34;Waiting for deployment $DEPLOY to complete...&#34;
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">          kubectl rollout status deployment/&#34;$DEPLOY&#34; -n default --timeout=300s
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">        else
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">          echo &#34;Deployment $DEPLOY not found. Skipping.&#34;
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">        fi
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">      done</span>
+</span></span></code></pre></div><p><strong>🔍 설명</strong>:</p>
+<ul>
+<li>각 배포가 완료될 때까지 대기</li>
+<li>존재하지 않는 배포는 건너뛰기</li>
+</ul>
+<hr>
+<h2 id="-step-7-헬스체크-및-마무리">✅ Step 7: 헬스체크 및 마무리<a hidden class="anchor" aria-hidden="true" href="#-step-7-헬스체크-및-마무리">#</a></h2>
+<h3 id="7-1-헬스체크">7-1. 헬스체크<a hidden class="anchor" aria-hidden="true" href="#7-1-헬스체크">#</a></h3>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-yaml" data-lang="yaml"><span style="display:flex;"><span>  - <span style="color:#f92672">name</span>: <span style="color:#ae81ff">Health Check</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">run</span>: |<span style="color:#e6db74">
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">      echo &#34;Waiting for all pods to be ready...&#34;
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">      kubectl wait --for=condition=ready pod -l app=openwebui-v1 --timeout=300s || true
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">      kubectl wait --for=condition=ready pod -l app=litellm --timeout=300s || true
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">      kubectl wait --for=condition=ready pod -l app=nginx-ab-proxy --timeout=300s || true</span>
+</span></span></code></pre></div><h3 id="7-2-실패-시-롤백">7-2. 실패 시 롤백<a hidden class="anchor" aria-hidden="true" href="#7-2-실패-시-롤백">#</a></h3>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-yaml" data-lang="yaml"><span style="display:flex;"><span>  - <span style="color:#f92672">name</span>: <span style="color:#ae81ff">Rollback on Failure</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">if</span>: <span style="color:#ae81ff">failure()</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">run</span>: |<span style="color:#e6db74">
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">      echo &#34;Deployment failed. Rolling back...&#34;
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">      kubectl rollout undo deployment/openwebui-v1 || true
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">      kubectl rollout undo deployment/openwebui-v2 || true
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">      kubectl rollout undo deployment/litellm || true
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">      kubectl rollout undo deployment/nginx-ab-proxy || true
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">      exit 1</span>
+</span></span></code></pre></div><h3 id="7-3-load-balancer-url-확인">7-3. Load Balancer URL 확인<a hidden class="anchor" aria-hidden="true" href="#7-3-load-balancer-url-확인">#</a></h3>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-yaml" data-lang="yaml"><span style="display:flex;"><span>  - <span style="color:#f92672">name</span>: <span style="color:#ae81ff">Get Load Balancer URL</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">run</span>: |<span style="color:#e6db74">
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">      echo &#34;Waiting for Load Balancer to be ready...&#34;
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">      sleep 30
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">      
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">      # ArgoCD LoadBalancer URL
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">      ARGOCD_LB=$(kubectl get svc argocd-server -n argocd -o jsonpath=&#39;{.status.loadBalancer.ingress[0].hostname}&#39; || echo &#34;Not ready&#34;)
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">      echo &#34;ArgoCD available at: http://$ARGOCD_LB&#34;
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">      
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">      # Application LoadBalancer URL
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">      if kubectl get ingress openwebui-ingress -n default 2&gt;/dev/null; then
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">        LB_URL=$(kubectl get ingress openwebui-ingress -n default -o jsonpath=&#39;{.status.loadBalancer.ingress[0].hostname}&#39; || echo &#34;Not ready&#34;)
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">        echo &#34;Application available at: http://$LB_URL&#34;
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">      fi</span>
+</span></span></code></pre></div><hr>
+<h2 id="-트러블슈팅-가이드">🎯 트러블슈팅 가이드<a hidden class="anchor" aria-hidden="true" href="#-트러블슈팅-가이드">#</a></h2>
+<h3 id="일반적인-문제-해결">일반적인 문제 해결<a hidden class="anchor" aria-hidden="true" href="#일반적인-문제-해결">#</a></h3>
+<h4 id="1-terraform-실패">1. Terraform 실패<a hidden class="anchor" aria-hidden="true" href="#1-terraform-실패">#</a></h4>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span><span style="color:#75715e"># 상태 확인</span>
+</span></span><span style="display:flex;"><span>terraform show
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># 특정 리소스만 재생성</span>
+</span></span><span style="display:flex;"><span>terraform apply -replace<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;aws_eks_cluster.openwebui&#34;</span>
+</span></span></code></pre></div><h4 id="2-노드가-준비되지-않음">2. 노드가 준비되지 않음<a hidden class="anchor" aria-hidden="true" href="#2-노드가-준비되지-않음">#</a></h4>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span><span style="color:#75715e"># 노드 상태 확인</span>
+</span></span><span style="display:flex;"><span>kubectl get nodes
+</span></span><span style="display:flex;"><span>kubectl describe nodes
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># aws-auth ConfigMap 확인</span>
+</span></span><span style="display:flex;"><span>kubectl get configmap aws-auth -n kube-system -o yaml
+</span></span></code></pre></div><h4 id="3-pod가-시작되지-않음">3. Pod가 시작되지 않음<a hidden class="anchor" aria-hidden="true" href="#3-pod가-시작되지-않음">#</a></h4>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span><span style="color:#75715e"># Pod 상태 확인</span>
+</span></span><span style="display:flex;"><span>kubectl get pods -A
+</span></span><span style="display:flex;"><span>kubectl describe pod &lt;pod-name&gt;
+</span></span><span style="display:flex;"><span>kubectl logs &lt;pod-name&gt;
+</span></span></code></pre></div><h4 id="4-loadbalancer가-생성되지-않음">4. LoadBalancer가 생성되지 않음<a hidden class="anchor" aria-hidden="true" href="#4-loadbalancer가-생성되지-않음">#</a></h4>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span><span style="color:#75715e"># AWS Load Balancer Controller 로그 확인</span>
+</span></span><span style="display:flex;"><span>kubectl logs -n kube-system deployment/aws-load-balancer-controller
+</span></span></code></pre></div><hr>
+<h2 id="-모니터링-및-로깅">📈 모니터링 및 로깅<a hidden class="anchor" aria-hidden="true" href="#-모니터링-및-로깅">#</a></h2>
+<h3 id="github-actions-로그">GitHub Actions 로그<a hidden class="anchor" aria-hidden="true" href="#github-actions-로그">#</a></h3>
+<ul>
+<li>Actions 탭에서 각 단계별 로그 확인</li>
+<li>실패한 단계 클릭하여 상세 로그 확인</li>
+</ul>
+<h3 id="kubectl-명령어로-확인">kubectl 명령어로 확인<a hidden class="anchor" aria-hidden="true" href="#kubectl-명령어로-확인">#</a></h3>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span><span style="color:#75715e"># 전체 리소스 상태</span>
+</span></span><span style="display:flex;"><span>kubectl get all -A
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># 이벤트 확인</span>
+</span></span><span style="display:flex;"><span>kubectl get events -A --sort-by<span style="color:#f92672">=</span><span style="color:#e6db74">&#39;.lastTimestamp&#39;</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># 특정 네임스페이스 리소스</span>
+</span></span><span style="display:flex;"><span>kubectl get all -n argocd
+</span></span></code></pre></div><hr>
+<h2 id="-지속적인-개선">🔄 지속적인 개선<a hidden class="anchor" aria-hidden="true" href="#-지속적인-개선">#</a></h2>
+<h3 id="파이프라인-최적화">파이프라인 최적화<a hidden class="anchor" aria-hidden="true" href="#파이프라인-최적화">#</a></h3>
+<ol>
+<li><strong>병렬 처리</strong>: 독립적인 작업은 병렬로 실행</li>
+<li><strong>캐싱</strong>: Docker 이미지, Terraform 상태 캐싱</li>
+<li><strong>조건부 실행</strong>: 변경된 부분만 배포</li>
+</ol>
+<h3 id="보안-강화">보안 강화<a hidden class="anchor" aria-hidden="true" href="#보안-강화">#</a></h3>
+<ol>
+<li><strong>IRSA</strong>: Pod별 IAM 역할 사용</li>
+<li><strong>Network Policy</strong>: Pod 간 통신 제한</li>
+<li><strong>Secret 관리</strong>: AWS Secrets Manager 활용</li>
+</ol>
+<p>이제 완전한 CI/CD 파이프라인이 구축되었습니다! 🎉</p>
+
+
+  </div>
+
+  <footer class="post-footer">
+    <ul class="post-tags">
+    </ul>
+<nav class="paginav">
+  <a class="prev" href="http://localhost:65390/backend/aws-%ED%99%98%EA%B2%BD-%EC%84%A4%EC%A0%95/">
+    <span class="title">« Prev</span>
+    <br>
+    <span></span>
+  </a>
+  <a class="next" href="http://localhost:65390/backend/eks-%ED%81%B4%EB%9F%AC%EC%8A%A4%ED%84%B0-%EB%B0%B0%ED%8F%AC-%EA%B0%80%EC%9D%B4%EB%93%9C/">
+    <span class="title">Next »</span>
+    <br>
+    <span></span>
+  </a>
+</nav>
+
+  </footer>
+</article>
+    </main>
+    
+<footer class="footer">
+        <span>&copy; 2025 <a href="http://localhost:65390/">8dobibim Tech Blog</a></span> · 
+
+    <span>
+        Powered by
+        <a href="https://gohugo.io/" rel="noopener noreferrer" target="_blank">Hugo</a> &
+        <a href="https://github.com/adityatelange/hugo-PaperMod/" rel="noopener" target="_blank">PaperMod</a>
+    </span>
+</footer>
+<a href="#top" aria-label="go to top" title="Go to Top (Alt + G)" class="top-link" id="top-link" accesskey="g">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 12 6" fill="currentColor">
+        <path d="M12 6H0l6-6z" />
+    </svg>
+</a>
+
+<script>
+    let menu = document.getElementById('menu')
+    if (menu) {
+        menu.scrollLeft = localStorage.getItem("menu-scroll-position");
+        menu.onscroll = function () {
+            localStorage.setItem("menu-scroll-position", menu.scrollLeft);
+        }
+    }
+
+    document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+        anchor.addEventListener("click", function (e) {
+            e.preventDefault();
+            var id = this.getAttribute("href").substr(1);
+            if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+                document.querySelector(`[id='${decodeURIComponent(id)}']`).scrollIntoView({
+                    behavior: "smooth"
+                });
+            } else {
+                document.querySelector(`[id='${decodeURIComponent(id)}']`).scrollIntoView();
+            }
+            if (id === "top") {
+                history.replaceState(null, null, " ");
+            } else {
+                history.pushState(null, null, `#${id}`);
+            }
+        });
+    });
+
+</script>
+<script>
+    var mybutton = document.getElementById("top-link");
+    window.onscroll = function () {
+        if (document.body.scrollTop > 800 || document.documentElement.scrollTop > 800) {
+            mybutton.style.visibility = "visible";
+            mybutton.style.opacity = "1";
+        } else {
+            mybutton.style.visibility = "hidden";
+            mybutton.style.opacity = "0";
+        }
+    };
+
+</script>
+<script>
+    document.getElementById("theme-toggle").addEventListener("click", () => {
+        if (document.body.className.includes("dark")) {
+            document.body.classList.remove('dark');
+            localStorage.setItem("pref-theme", 'light');
+        } else {
+            document.body.classList.add('dark');
+            localStorage.setItem("pref-theme", 'dark');
+        }
+    })
+
+</script>
+<script>
+    document.querySelectorAll('pre > code').forEach((codeblock) => {
+        const container = codeblock.parentNode.parentNode;
+
+        const copybutton = document.createElement('button');
+        copybutton.classList.add('copy-code');
+        copybutton.innerHTML = 'copy';
+
+        function copyingDone() {
+            copybutton.innerHTML = 'copied!';
+            setTimeout(() => {
+                copybutton.innerHTML = 'copy';
+            }, 2000);
+        }
+
+        copybutton.addEventListener('click', (cb) => {
+            if ('clipboard' in navigator) {
+                navigator.clipboard.writeText(codeblock.textContent);
+                copyingDone();
+                return;
+            }
+
+            const range = document.createRange();
+            range.selectNodeContents(codeblock);
+            const selection = window.getSelection();
+            selection.removeAllRanges();
+            selection.addRange(range);
+            try {
+                document.execCommand('copy');
+                copyingDone();
+            } catch (e) { };
+            selection.removeRange(range);
+        });
+
+        if (container.classList.contains("highlight")) {
+            container.appendChild(copybutton);
+        } else if (container.parentNode.firstChild == container) {
+            
+        } else if (codeblock.parentNode.parentNode.parentNode.parentNode.parentNode.nodeName == "TABLE") {
+            
+            codeblock.parentNode.parentNode.parentNode.parentNode.parentNode.appendChild(copybutton);
+        } else {
+            
+            codeblock.parentNode.appendChild(copybutton);
+        }
+    });
+</script>
+</body>
+
+</html>

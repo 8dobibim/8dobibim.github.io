@@ -1,0 +1,1285 @@
+<!DOCTYPE html>
+<html lang="en" dir="auto">
+
+<head><script src="/livereload.js?mindelay=10&amp;v=2&amp;port=65390&amp;path=livereload" data-no-instant defer></script><meta charset="utf-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+<meta name="robots" content="noindex, nofollow">
+<title>8dobibim Tech Blog</title>
+<meta name="keywords" content="">
+<meta name="description" content="🏗️ 실제 프로젝트 기반 Terraform 구성 가이드
+
+⏱️ 예상 소요시간: 60-90분
+💡 난이도: 중급
+📋 목표: Terraform을 사용하여 AWS EKS 클러스터와 애플리케이션 스택 구축
+📁 전체 코드: GitHub에서 확인하기
+
+📁 프로젝트 구조
+terraform-related/
+└── AWS_terraform_grafana/
+    ├── main.tf           # 메인 리소스 정의
+    ├── variables.tf      # 변수 선언
+    ├── versions.tf       # 프로바이더 버전
+    ├── terraform.tfvars  # 변수 값 (Git 제외)
+    └── tfvars.example    # 변수 예시 파일
+
+🔧 Step 1: 프로바이더 및 버전 설정
+versions.tf
+terraform {
+  required_providers {
+    kubernetes = {
+      source  = &#34;hashicorp/kubernetes&#34;
+      version = &#34;2.23.0&#34;
+    }
+    aws = {
+      source  = &#34;hashicorp/aws&#34;
+      version = &#34;5.45.0&#34;
+    }
+  }
+}
+🔍 설명:">
+<meta name="author" content="">
+<link rel="canonical" href="http://localhost:65390/backend/terraform-%EC%84%A4%EC%A0%95/">
+<link crossorigin="anonymous" href="/assets/css/stylesheet.36819bea596090d8b48cf10d9831382996197aa7e4fc86f792f7c08c9ca4d23b.css" integrity="sha256-NoGb6llgkNi0jPENmDE4KZYZeqfk/Ib3kvfAjJyk0js=" rel="preload stylesheet" as="style">
+<link rel="icon" href="http://localhost:65390/favicon.ico">
+<link rel="icon" type="image/png" sizes="16x16" href="http://localhost:65390/favicon-16x16.png">
+<link rel="icon" type="image/png" sizes="32x32" href="http://localhost:65390/favicon-32x32.png">
+<link rel="apple-touch-icon" href="http://localhost:65390/apple-touch-icon.png">
+<link rel="mask-icon" href="http://localhost:65390/safari-pinned-tab.svg">
+<meta name="theme-color" content="#2e2e33">
+<meta name="msapplication-TileColor" content="#2e2e33">
+<link rel="alternate" hreflang="en" href="http://localhost:65390/backend/terraform-%EC%84%A4%EC%A0%95/">
+<noscript>
+    <style>
+        #theme-toggle,
+        .top-link {
+            display: none;
+        }
+
+    </style>
+    <style>
+        @media (prefers-color-scheme: dark) {
+            :root {
+                --theme: rgb(29, 30, 32);
+                --entry: rgb(46, 46, 51);
+                --primary: rgb(218, 218, 219);
+                --secondary: rgb(155, 156, 157);
+                --tertiary: rgb(65, 66, 68);
+                --content: rgb(196, 196, 197);
+                --code-block-bg: rgb(46, 46, 51);
+                --code-bg: rgb(55, 56, 62);
+                --border: rgb(51, 51, 51);
+            }
+
+            .list {
+                background: var(--theme);
+            }
+
+            .list:not(.dark)::-webkit-scrollbar-track {
+                background: 0 0;
+            }
+
+            .list:not(.dark)::-webkit-scrollbar-thumb {
+                border-color: var(--theme);
+            }
+        }
+
+    </style>
+</noscript>
+</head>
+
+<body class="" id="top">
+<script>
+    if (localStorage.getItem("pref-theme") === "dark") {
+        document.body.classList.add('dark');
+    } else if (localStorage.getItem("pref-theme") === "light") {
+        document.body.classList.remove('dark')
+    } else if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
+        document.body.classList.add('dark');
+    }
+
+</script>
+
+<header class="header">
+    <nav class="nav">
+        <div class="logo">
+            <a href="http://localhost:65390/" accesskey="h" title="8dobibim Tech Blog (Alt + H)">8dobibim Tech Blog</a>
+            <div class="logo-switches">
+                <button id="theme-toggle" accesskey="t" title="(Alt + T)" aria-label="Toggle theme">
+                    <svg id="moon" xmlns="http://www.w3.org/2000/svg" width="24" height="18" viewBox="0 0 24 24"
+                        fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                        stroke-linejoin="round">
+                        <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+                    </svg>
+                    <svg id="sun" xmlns="http://www.w3.org/2000/svg" width="24" height="18" viewBox="0 0 24 24"
+                        fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                        stroke-linejoin="round">
+                        <circle cx="12" cy="12" r="5"></circle>
+                        <line x1="12" y1="1" x2="12" y2="3"></line>
+                        <line x1="12" y1="21" x2="12" y2="23"></line>
+                        <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+                        <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+                        <line x1="1" y1="12" x2="3" y2="12"></line>
+                        <line x1="21" y1="12" x2="23" y2="12"></line>
+                        <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+                        <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+                    </svg>
+                </button>
+            </div>
+        </div>
+        <ul id="menu">
+            <li>
+                <a href="http://localhost:65390/frontend/" title="🖥 프론트엔드">
+                    <span>🖥 프론트엔드</span>
+                </a>
+            </li>
+            <li>
+                <a href="http://localhost:65390/backend/" title="💾 백엔드">
+                    <span>💾 백엔드</span>
+                </a>
+            </li>
+        </ul>
+    </nav>
+</header>
+<main class="main">
+
+<article class="post-single">
+  <header class="post-header">
+    <div class="breadcrumbs"><a href="http://localhost:65390/">Home</a>&nbsp;»&nbsp;<a href="http://localhost:65390/backend/">Backend 문서</a></div>
+    <h1 class="post-title entry-hint-parent">
+      
+    </h1>
+    <div class="post-meta">10 min&nbsp;·&nbsp;2101 words
+
+</div>
+  </header> <div class="toc">
+    <details  open>
+        <summary accesskey="c" title="(Alt + C)">
+            <span class="details">Table of Contents</span>
+        </summary>
+
+        <div class="inner"><ul>
+                <li>
+                    <a href="#-%ec%8b%a4%ec%a0%9c-%ed%94%84%eb%a1%9c%ec%a0%9d%ed%8a%b8-%ea%b8%b0%eb%b0%98-terraform-%ea%b5%ac%ec%84%b1-%ea%b0%80%ec%9d%b4%eb%93%9c" aria-label="🏗️ 실제 프로젝트 기반 Terraform 구성 가이드">🏗️ 실제 프로젝트 기반 Terraform 구성 가이드</a><ul>
+                        
+                <li>
+                    <a href="#-%ed%94%84%eb%a1%9c%ec%a0%9d%ed%8a%b8-%ea%b5%ac%ec%a1%b0" aria-label="📁 프로젝트 구조">📁 프로젝트 구조</a></li>
+                <li>
+                    <a href="#-step-1-%ed%94%84%eb%a1%9c%eb%b0%94%ec%9d%b4%eb%8d%94-%eb%b0%8f-%eb%b2%84%ec%a0%84-%ec%84%a4%ec%a0%95" aria-label="🔧 Step 1: 프로바이더 및 버전 설정">🔧 Step 1: 프로바이더 및 버전 설정</a><ul>
+                        
+                <li>
+                    <a href="#versionstf" aria-label="versions.tf">versions.tf</a></li></ul>
+                </li>
+                <li>
+                    <a href="#-step-2-%eb%84%a4%ed%8a%b8%ec%9b%8c%ed%81%ac-%ec%9d%b8%ed%94%84%eb%9d%bc-%ea%b5%ac%ec%84%b1" aria-label="🌐 Step 2: 네트워크 인프라 구성">🌐 Step 2: 네트워크 인프라 구성</a><ul>
+                        
+                <li>
+                    <a href="#2-1-%ed%94%84%eb%a1%9c%eb%b0%94%ec%9d%b4%eb%8d%94-%ec%84%a4%ec%a0%95" aria-label="2-1. 프로바이더 설정">2-1. 프로바이더 설정</a></li>
+                <li>
+                    <a href="#2-2-vpc-%ec%83%9d%ec%84%b1" aria-label="2-2. VPC 생성">2-2. VPC 생성</a></li>
+                <li>
+                    <a href="#2-3-%ec%84%9c%eb%b8%8c%eb%84%b7-%ea%b5%ac%ec%84%b1" aria-label="2-3. 서브넷 구성">2-3. 서브넷 구성</a></li>
+                <li>
+                    <a href="#2-4-%ec%9d%b8%ed%84%b0%eb%84%b7-%ec%97%b0%ea%b2%b0-%ec%84%a4%ec%a0%95" aria-label="2-4. 인터넷 연결 설정">2-4. 인터넷 연결 설정</a></li></ul>
+                </li>
+                <li>
+                    <a href="#-step-3-%eb%b3%b4%ec%95%88-%ea%b7%b8%eb%a3%b9-%ec%84%a4%ec%a0%95" aria-label="🔒 Step 3: 보안 그룹 설정">🔒 Step 3: 보안 그룹 설정</a><ul>
+                        
+                <li>
+                    <a href="#3-1-eks-%ed%81%b4%eb%9f%ac%ec%8a%a4%ed%84%b0-%eb%b3%b4%ec%95%88-%ea%b7%b8%eb%a3%b9" aria-label="3-1. EKS 클러스터 보안 그룹">3-1. EKS 클러스터 보안 그룹</a></li>
+                <li>
+                    <a href="#3-2-%ec%95%a0%ed%94%8c%eb%a6%ac%ec%bc%80%ec%9d%b4%ec%85%98%eb%b3%84-%ed%8f%ac%ed%8a%b8-%ea%b0%9c%eb%b0%a9" aria-label="3-2. 애플리케이션별 포트 개방">3-2. 애플리케이션별 포트 개방</a></li></ul>
+                </li>
+                <li>
+                    <a href="#-step-4-iam-%ec%97%ad%ed%95%a0-%ec%84%a4%ec%a0%95" aria-label="👤 Step 4: IAM 역할 설정">👤 Step 4: IAM 역할 설정</a><ul>
+                        
+                <li>
+                    <a href="#4-1-eks-%ed%81%b4%eb%9f%ac%ec%8a%a4%ed%84%b0-%ec%97%ad%ed%95%a0" aria-label="4-1. EKS 클러스터 역할">4-1. EKS 클러스터 역할</a></li>
+                <li>
+                    <a href="#4-2-%eb%85%b8%eb%93%9c-%ea%b7%b8%eb%a3%b9-%ec%97%ad%ed%95%a0" aria-label="4-2. 노드 그룹 역할">4-2. 노드 그룹 역할</a></li></ul>
+                </li>
+                <li>
+                    <a href="#-step-5-eks-%ed%81%b4%eb%9f%ac%ec%8a%a4%ed%84%b0-%ea%b5%ac%ec%84%b1" aria-label="⚙️ Step 5: EKS 클러스터 구성">⚙️ Step 5: EKS 클러스터 구성</a><ul>
+                        
+                <li>
+                    <a href="#5-1-eks-%ed%81%b4%eb%9f%ac%ec%8a%a4%ed%84%b0-%ec%83%9d%ec%84%b1" aria-label="5-1. EKS 클러스터 생성">5-1. EKS 클러스터 생성</a></li>
+                <li>
+                    <a href="#5-2-%eb%85%b8%eb%93%9c-%ea%b7%b8%eb%a3%b9-%ec%83%9d%ec%84%b1" aria-label="5-2. 노드 그룹 생성">5-2. 노드 그룹 생성</a></li>
+                <li>
+                    <a href="#5-3-eks-%ec%95%a0%eb%93%9c%ec%98%a8-%ec%84%a4%ec%b9%98" aria-label="5-3. EKS 애드온 설치">5-3. EKS 애드온 설치</a></li></ul>
+                </li>
+                <li>
+                    <a href="#-step-6-postgresql-%eb%8d%b0%ec%9d%b4%ed%84%b0%eb%b2%a0%ec%9d%b4%ec%8a%a4-%ea%b5%ac%ec%84%b1" aria-label="🐘 Step 6: PostgreSQL 데이터베이스 구성">🐘 Step 6: PostgreSQL 데이터베이스 구성</a><ul>
+                        
+                <li>
+                    <a href="#6-1-%ec%98%81%ea%b5%ac-%eb%b3%bc%eb%a5%a8-%ed%81%b4%eb%a0%88%ec%9e%84" aria-label="6-1. 영구 볼륨 클레임">6-1. 영구 볼륨 클레임</a></li>
+                <li>
+                    <a href="#6-2-postgresql-%eb%b0%b0%ed%8f%ac" aria-label="6-2. PostgreSQL 배포">6-2. PostgreSQL 배포</a></li>
+                <li>
+                    <a href="#6-3-postgresql-%ec%84%9c%eb%b9%84%ec%8a%a4" aria-label="6-3. PostgreSQL 서비스">6-3. PostgreSQL 서비스</a></li></ul>
+                </li>
+                <li>
+                    <a href="#-step-7-litellm-%ed%94%84%eb%a1%9d%ec%8b%9c-%ea%b5%ac%ec%84%b1" aria-label="🤖 Step 7: LiteLLM 프록시 구성">🤖 Step 7: LiteLLM 프록시 구성</a><ul>
+                        
+                <li>
+                    <a href="#7-1-litellm-%eb%b0%b0%ed%8f%ac" aria-label="7-1. LiteLLM 배포">7-1. LiteLLM 배포</a></li>
+                <li>
+                    <a href="#7-2-litellm-%ec%84%9c%eb%b9%84%ec%8a%a4-loadbalancer" aria-label="7-2. LiteLLM 서비스 (LoadBalancer)">7-2. LiteLLM 서비스 (LoadBalancer)</a></li></ul>
+                </li>
+                <li>
+                    <a href="#-step-8-openwebui-%ea%b5%ac%ec%84%b1" aria-label="🌐 Step 8: OpenWebUI 구성">🌐 Step 8: OpenWebUI 구성</a><ul>
+                        
+                <li>
+                    <a href="#8-1-openwebui-%eb%b0%b0%ed%8f%ac" aria-label="8-1. OpenWebUI 배포">8-1. OpenWebUI 배포</a></li>
+                <li>
+                    <a href="#8-2-openwebui-%ec%84%9c%eb%b9%84%ec%8a%a4" aria-label="8-2. OpenWebUI 서비스">8-2. OpenWebUI 서비스</a></li></ul>
+                </li>
+                <li>
+                    <a href="#-step-9-%eb%aa%a8%eb%8b%88%ed%84%b0%eb%a7%81-%ec%8a%a4%ed%83%9d" aria-label="📊 Step 9: 모니터링 스택">📊 Step 9: 모니터링 스택</a><ul>
+                        
+                <li>
+                    <a href="#9-1-prometheus-%eb%b0%b0%ed%8f%ac" aria-label="9-1. Prometheus 배포">9-1. Prometheus 배포</a></li>
+                <li>
+                    <a href="#9-2-grafana-%eb%b0%b0%ed%8f%ac" aria-label="9-2. Grafana 배포">9-2. Grafana 배포</a></li></ul>
+                </li>
+                <li>
+                    <a href="#-step-10-%eb%b3%80%ec%88%98-%ec%84%a4%ec%a0%95" aria-label="📝 Step 10: 변수 설정">📝 Step 10: 변수 설정</a><ul>
+                        
+                <li>
+                    <a href="#variablestf-%ec%a3%bc%ec%9a%94-%eb%b3%80%ec%88%98" aria-label="variables.tf (주요 변수)">variables.tf (주요 변수)</a></li>
+                <li>
+                    <a href="#terraformtfvarsexample" aria-label="terraform.tfvars.example">terraform.tfvars.example</a></li></ul>
+                </li>
+                <li>
+                    <a href="#-%eb%b0%b0%ed%8f%ac-%ec%8b%a4%ed%96%89-%ea%b0%80%ec%9d%b4%eb%93%9c" aria-label="🚀 배포 실행 가이드">🚀 배포 실행 가이드</a><ul>
+                        
+                <li>
+                    <a href="#1-%ec%82%ac%ec%a0%84-%ec%a4%80%eb%b9%84" aria-label="1. 사전 준비">1. 사전 준비</a></li>
+                <li>
+                    <a href="#2-%eb%b3%80%ec%88%98-%ed%8c%8c%ec%9d%bc-%ec%a4%80%eb%b9%84" aria-label="2. 변수 파일 준비">2. 변수 파일 준비</a></li>
+                <li>
+                    <a href="#3-terraform-%ec%8b%a4%ed%96%89" aria-label="3. Terraform 실행">3. Terraform 실행</a></li>
+                <li>
+                    <a href="#4-kubectl-%ec%84%a4%ec%a0%95" aria-label="4. kubectl 설정">4. kubectl 설정</a></li>
+                <li>
+                    <a href="#5-%ec%84%9c%eb%b9%84%ec%8a%a4-url-%ed%99%95%ec%9d%b8" aria-label="5. 서비스 URL 확인">5. 서비스 URL 확인</a></li></ul>
+                </li>
+                <li>
+                    <a href="#-%eb%b9%84%ec%9a%a9-%ec%b5%9c%ec%a0%81%ed%99%94-%ed%8c%81" aria-label="💰 비용 최적화 팁">💰 비용 최적화 팁</a><ul>
+                        
+                <li>
+                    <a href="#%ea%b0%9c%eb%b0%9c-%ed%99%98%ea%b2%bd-%ec%84%a4%ec%a0%95" aria-label="개발 환경 설정">개발 환경 설정</a></li>
+                <li>
+                    <a href="#%eb%a6%ac%ec%86%8c%ec%8a%a4-%ec%a0%95%eb%a6%ac" aria-label="리소스 정리">리소스 정리</a>
+                </li>
+            </ul>
+            </li>
+            </ul>
+            </li>
+            </ul>
+        </div>
+    </details>
+</div>
+
+  <div class="post-content"><h1 id="-실제-프로젝트-기반-terraform-구성-가이드">🏗️ 실제 프로젝트 기반 Terraform 구성 가이드<a hidden class="anchor" aria-hidden="true" href="#-실제-프로젝트-기반-terraform-구성-가이드">#</a></h1>
+<blockquote>
+<p><strong>⏱️ 예상 소요시간</strong>: 60-90분<br>
+<strong>💡 난이도</strong>: 중급<br>
+<strong>📋 목표</strong>: Terraform을 사용하여 AWS EKS 클러스터와 애플리케이션 스택 구축<br>
+<strong>📁 전체 코드</strong>: <a href="https://github.com/8dobibim/combined/tree/main/8dobibim_back/terraform-related/AWS_terraform_grafana">GitHub에서 확인하기</a></p></blockquote>
+<hr>
+<h2 id="-프로젝트-구조">📁 프로젝트 구조<a hidden class="anchor" aria-hidden="true" href="#-프로젝트-구조">#</a></h2>
+<pre tabindex="0"><code>terraform-related/
+└── AWS_terraform_grafana/
+    ├── main.tf           # 메인 리소스 정의
+    ├── variables.tf      # 변수 선언
+    ├── versions.tf       # 프로바이더 버전
+    ├── terraform.tfvars  # 변수 값 (Git 제외)
+    └── tfvars.example    # 변수 예시 파일
+</code></pre><hr>
+<h2 id="-step-1-프로바이더-및-버전-설정">🔧 Step 1: 프로바이더 및 버전 설정<a hidden class="anchor" aria-hidden="true" href="#-step-1-프로바이더-및-버전-설정">#</a></h2>
+<h3 id="versionstf">versions.tf<a hidden class="anchor" aria-hidden="true" href="#versionstf">#</a></h3>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-hcl" data-lang="hcl"><span style="display:flex;"><span><span style="color:#66d9ef">terraform</span> {
+</span></span><span style="display:flex;"><span>  <span style="color:#66d9ef">required_providers</span> {
+</span></span><span style="display:flex;"><span>    kubernetes <span style="color:#f92672">=</span> {
+</span></span><span style="display:flex;"><span>      source  <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;hashicorp/kubernetes&#34;</span>
+</span></span><span style="display:flex;"><span>      version <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;2.23.0&#34;</span>
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>    aws <span style="color:#f92672">=</span> {
+</span></span><span style="display:flex;"><span>      source  <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;hashicorp/aws&#34;</span>
+</span></span><span style="display:flex;"><span>      version <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;5.45.0&#34;</span>
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>  }
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><p><strong>🔍 설명</strong>:</p>
+<ul>
+<li>AWS와 Kubernetes 프로바이더 사용</li>
+<li>버전을 고정하여 일관성 보장</li>
+</ul>
+<hr>
+<h2 id="-step-2-네트워크-인프라-구성">🌐 Step 2: 네트워크 인프라 구성<a hidden class="anchor" aria-hidden="true" href="#-step-2-네트워크-인프라-구성">#</a></h2>
+<h3 id="2-1-프로바이더-설정">2-1. 프로바이더 설정<a hidden class="anchor" aria-hidden="true" href="#2-1-프로바이더-설정">#</a></h3>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-hcl" data-lang="hcl"><span style="display:flex;"><span><span style="color:#66d9ef">provider</span> <span style="color:#e6db74">&#34;aws&#34;</span> {
+</span></span><span style="display:flex;"><span>  region  <span style="color:#f92672">=</span> <span style="color:#66d9ef">var</span>.<span style="color:#66d9ef">aws_region</span>
+</span></span><span style="display:flex;"><span>  profile <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;llm&#34;</span><span style="color:#75715e">  # AWS CLI 프로파일 사용
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>}<span style="color:#75715e">
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e">
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"># EKS 인증 정보
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span><span style="color:#66d9ef">data</span> <span style="color:#e6db74">&#34;aws_eks_cluster_auth&#34; &#34;main&#34;</span> {
+</span></span><span style="display:flex;"><span>  name <span style="color:#f92672">=</span> <span style="color:#66d9ef">aws_eks_cluster</span>.<span style="color:#66d9ef">main</span>.<span style="color:#66d9ef">name</span>
+</span></span><span style="display:flex;"><span>}<span style="color:#75715e">
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e">
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"># Kubernetes 프로바이더 (EKS 연동)
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span><span style="color:#66d9ef">provider</span> <span style="color:#e6db74">&#34;kubernetes&#34;</span> {
+</span></span><span style="display:flex;"><span>  alias                  <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;eks&#34;</span>
+</span></span><span style="display:flex;"><span>  host                   <span style="color:#f92672">=</span> <span style="color:#66d9ef">aws_eks_cluster</span>.<span style="color:#66d9ef">main</span>.<span style="color:#66d9ef">endpoint</span>
+</span></span><span style="display:flex;"><span>  cluster_ca_certificate <span style="color:#f92672">=</span> <span style="color:#66d9ef">base64decode</span>(<span style="color:#66d9ef">aws_eks_cluster</span>.<span style="color:#66d9ef">main</span>.<span style="color:#66d9ef">certificate_authority</span>[<span style="color:#ae81ff">0</span>].<span style="color:#66d9ef">data</span>)
+</span></span><span style="display:flex;"><span>  token                  <span style="color:#f92672">=</span> <span style="color:#66d9ef">data</span>.<span style="color:#66d9ef">aws_eks_cluster_auth</span>.<span style="color:#66d9ef">main</span>.<span style="color:#66d9ef">token</span>
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><p><strong>🔍 설명</strong>:</p>
+<ul>
+<li><code>profile</code>: AWS CLI에 설정된 프로파일 사용</li>
+<li>EKS 클러스터 생성 후 자동으로 인증 정보 가져옴</li>
+<li>Kubernetes 프로바이더는 EKS 엔드포인트와 연동</li>
+</ul>
+<h3 id="2-2-vpc-생성">2-2. VPC 생성<a hidden class="anchor" aria-hidden="true" href="#2-2-vpc-생성">#</a></h3>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-hcl" data-lang="hcl"><span style="display:flex;"><span><span style="color:#66d9ef">resource</span> <span style="color:#e6db74">&#34;aws_vpc&#34; &#34;main&#34;</span> {
+</span></span><span style="display:flex;"><span>  cidr_block <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;10.38.0.0/16&#34;</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>  tags <span style="color:#f92672">=</span> {
+</span></span><span style="display:flex;"><span>    Name <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;llm-project-eks-vpc&#34;</span>
+</span></span><span style="display:flex;"><span>  }
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><p><strong>🔍 설명</strong>:</p>
+<ul>
+<li>전용 VPC 생성 (10.38.0.0/16 대역)</li>
+<li>충분한 IP 주소 공간 확보 (65,536개)</li>
+</ul>
+<h3 id="2-3-서브넷-구성">2-3. 서브넷 구성<a hidden class="anchor" aria-hidden="true" href="#2-3-서브넷-구성">#</a></h3>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-hcl" data-lang="hcl"><span style="display:flex;"><span><span style="color:#75715e"># 서브넷 1 (가용영역 2b)
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span><span style="color:#66d9ef">resource</span> <span style="color:#e6db74">&#34;aws_subnet&#34; &#34;subnet_1&#34;</span> {
+</span></span><span style="display:flex;"><span>  vpc_id                  <span style="color:#f92672">=</span> <span style="color:#66d9ef">aws_vpc</span>.<span style="color:#66d9ef">main</span>.<span style="color:#66d9ef">id</span>
+</span></span><span style="display:flex;"><span>  cidr_block              <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;10.38.1.0/24&#34;</span>
+</span></span><span style="display:flex;"><span>  availability_zone       <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;ap-northeast-2b&#34;</span>
+</span></span><span style="display:flex;"><span>  map_public_ip_on_launch <span style="color:#f92672">=</span> <span style="color:#66d9ef">true</span>
+</span></span><span style="display:flex;"><span>  
+</span></span><span style="display:flex;"><span>  tags <span style="color:#f92672">=</span> {
+</span></span><span style="display:flex;"><span>    Name <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;llm-subnet-1&#34;</span>
+</span></span><span style="display:flex;"><span>  }
+</span></span><span style="display:flex;"><span>}<span style="color:#75715e">
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e">
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"># 서브넷 2 (가용영역 2c)
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span><span style="color:#66d9ef">resource</span> <span style="color:#e6db74">&#34;aws_subnet&#34; &#34;subnet_2&#34;</span> {
+</span></span><span style="display:flex;"><span>  vpc_id                  <span style="color:#f92672">=</span> <span style="color:#66d9ef">aws_vpc</span>.<span style="color:#66d9ef">main</span>.<span style="color:#66d9ef">id</span>
+</span></span><span style="display:flex;"><span>  cidr_block              <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;10.38.2.0/24&#34;</span>
+</span></span><span style="display:flex;"><span>  availability_zone       <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;ap-northeast-2c&#34;</span>
+</span></span><span style="display:flex;"><span>  map_public_ip_on_launch <span style="color:#f92672">=</span> <span style="color:#66d9ef">true</span>
+</span></span><span style="display:flex;"><span>  
+</span></span><span style="display:flex;"><span>  tags <span style="color:#f92672">=</span> {
+</span></span><span style="display:flex;"><span>    Name <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;llm-subnet-2&#34;</span>
+</span></span><span style="display:flex;"><span>  }
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><p><strong>🔍 설명</strong>:</p>
+<ul>
+<li>2개의 가용영역에 서브넷 배치 (고가용성)</li>
+<li>Public IP 자동 할당 설정</li>
+<li>각 서브넷은 256개의 IP 주소 제공</li>
+</ul>
+<h3 id="2-4-인터넷-연결-설정">2-4. 인터넷 연결 설정<a hidden class="anchor" aria-hidden="true" href="#2-4-인터넷-연결-설정">#</a></h3>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-hcl" data-lang="hcl"><span style="display:flex;"><span><span style="color:#75715e"># 인터넷 게이트웨이
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span><span style="color:#66d9ef">resource</span> <span style="color:#e6db74">&#34;aws_internet_gateway&#34; &#34;main&#34;</span> {
+</span></span><span style="display:flex;"><span>  vpc_id <span style="color:#f92672">=</span> <span style="color:#66d9ef">aws_vpc</span>.<span style="color:#66d9ef">main</span>.<span style="color:#66d9ef">id</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>  tags <span style="color:#f92672">=</span> {
+</span></span><span style="display:flex;"><span>    Name <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;llm-project-eks-igw&#34;</span>
+</span></span><span style="display:flex;"><span>  }
+</span></span><span style="display:flex;"><span>}<span style="color:#75715e">
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e">
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"># 라우팅 테이블
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span><span style="color:#66d9ef">resource</span> <span style="color:#e6db74">&#34;aws_route_table&#34; &#34;main&#34;</span> {
+</span></span><span style="display:flex;"><span>  vpc_id <span style="color:#f92672">=</span> <span style="color:#66d9ef">aws_vpc</span>.<span style="color:#66d9ef">main</span>.<span style="color:#66d9ef">id</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>  <span style="color:#66d9ef">route</span> {
+</span></span><span style="display:flex;"><span>    cidr_block <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;0.0.0.0/0&#34;</span>
+</span></span><span style="display:flex;"><span>    gateway_id <span style="color:#f92672">=</span> <span style="color:#66d9ef">aws_internet_gateway</span>.<span style="color:#66d9ef">main</span>.<span style="color:#66d9ef">id</span>
+</span></span><span style="display:flex;"><span>  }
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>  tags <span style="color:#f92672">=</span> {
+</span></span><span style="display:flex;"><span>    Name <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;llm-project-eks-rt&#34;</span>
+</span></span><span style="display:flex;"><span>  }
+</span></span><span style="display:flex;"><span>}<span style="color:#75715e">
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e">
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"># 서브넷과 라우팅 테이블 연결
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span><span style="color:#66d9ef">resource</span> <span style="color:#e6db74">&#34;aws_route_table_association&#34; &#34;subnet_1&#34;</span> {
+</span></span><span style="display:flex;"><span>  subnet_id      <span style="color:#f92672">=</span> <span style="color:#66d9ef">aws_subnet</span>.<span style="color:#66d9ef">subnet_1</span>.<span style="color:#66d9ef">id</span>
+</span></span><span style="display:flex;"><span>  route_table_id <span style="color:#f92672">=</span> <span style="color:#66d9ef">aws_route_table</span>.<span style="color:#66d9ef">main</span>.<span style="color:#66d9ef">id</span>
+</span></span><span style="display:flex;"><span>}
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">resource</span> <span style="color:#e6db74">&#34;aws_route_table_association&#34; &#34;subnet_2&#34;</span> {
+</span></span><span style="display:flex;"><span>  subnet_id      <span style="color:#f92672">=</span> <span style="color:#66d9ef">aws_subnet</span>.<span style="color:#66d9ef">subnet_2</span>.<span style="color:#66d9ef">id</span>
+</span></span><span style="display:flex;"><span>  route_table_id <span style="color:#f92672">=</span> <span style="color:#66d9ef">aws_route_table</span>.<span style="color:#66d9ef">main</span>.<span style="color:#66d9ef">id</span>
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><p><strong>🔍 설명</strong>:</p>
+<ul>
+<li>인터넷 게이트웨이로 외부 통신 활성화</li>
+<li>모든 외부 트래픽(0.0.0.0/0)을 IGW로 라우팅</li>
+</ul>
+<hr>
+<h2 id="-step-3-보안-그룹-설정">🔒 Step 3: 보안 그룹 설정<a hidden class="anchor" aria-hidden="true" href="#-step-3-보안-그룹-설정">#</a></h2>
+<h3 id="3-1-eks-클러스터-보안-그룹">3-1. EKS 클러스터 보안 그룹<a hidden class="anchor" aria-hidden="true" href="#3-1-eks-클러스터-보안-그룹">#</a></h3>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-hcl" data-lang="hcl"><span style="display:flex;"><span><span style="color:#66d9ef">resource</span> <span style="color:#e6db74">&#34;aws_security_group&#34; &#34;eks_cluster_sg&#34;</span> {
+</span></span><span style="display:flex;"><span>  name        <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;llm-project-eks-sg&#34;</span>
+</span></span><span style="display:flex;"><span>  description <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;Security group for EKS cluster&#34;</span>
+</span></span><span style="display:flex;"><span>  vpc_id      <span style="color:#f92672">=</span> <span style="color:#66d9ef">aws_vpc</span>.<span style="color:#66d9ef">main</span>.<span style="color:#66d9ef">id</span><span style="color:#75715e">
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e">
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e">  # VPC 내부 통신 허용
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>  <span style="color:#66d9ef">ingress</span> {
+</span></span><span style="display:flex;"><span>    from_port   <span style="color:#f92672">=</span> <span style="color:#ae81ff">0</span>
+</span></span><span style="display:flex;"><span>    to_port     <span style="color:#f92672">=</span> <span style="color:#ae81ff">0</span>
+</span></span><span style="display:flex;"><span>    protocol    <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;-1&#34;</span>
+</span></span><span style="display:flex;"><span>    cidr_blocks <span style="color:#f92672">=</span> [<span style="color:#e6db74">&#34;10.38.0.0/16&#34;</span>]
+</span></span><span style="display:flex;"><span>  }<span style="color:#75715e">
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e">
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e">  # 모든 아웃바운드 허용
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>  <span style="color:#66d9ef">egress</span> {
+</span></span><span style="display:flex;"><span>    from_port   <span style="color:#f92672">=</span> <span style="color:#ae81ff">0</span>
+</span></span><span style="display:flex;"><span>    to_port     <span style="color:#f92672">=</span> <span style="color:#ae81ff">0</span>
+</span></span><span style="display:flex;"><span>    protocol    <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;-1&#34;</span>
+</span></span><span style="display:flex;"><span>    cidr_blocks <span style="color:#f92672">=</span> [<span style="color:#e6db74">&#34;0.0.0.0/0&#34;</span>]
+</span></span><span style="display:flex;"><span>  }
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><h3 id="3-2-애플리케이션별-포트-개방">3-2. 애플리케이션별 포트 개방<a hidden class="anchor" aria-hidden="true" href="#3-2-애플리케이션별-포트-개방">#</a></h3>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-hcl" data-lang="hcl"><span style="display:flex;"><span><span style="color:#75715e"># Grafana 포트 (3000-3001)
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span><span style="color:#66d9ef">resource</span> <span style="color:#e6db74">&#34;aws_security_group_rule&#34; &#34;allow_openwebui_grafana&#34;</span> {
+</span></span><span style="display:flex;"><span>  type              <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;ingress&#34;</span>
+</span></span><span style="display:flex;"><span>  from_port         <span style="color:#f92672">=</span> <span style="color:#ae81ff">3000</span>
+</span></span><span style="display:flex;"><span>  to_port           <span style="color:#f92672">=</span> <span style="color:#ae81ff">3001</span>
+</span></span><span style="display:flex;"><span>  protocol          <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;tcp&#34;</span>
+</span></span><span style="display:flex;"><span>  cidr_blocks       <span style="color:#f92672">=</span> [<span style="color:#e6db74">&#34;0.0.0.0/0&#34;</span>]
+</span></span><span style="display:flex;"><span>  security_group_id <span style="color:#f92672">=</span> <span style="color:#66d9ef">aws_security_group</span>.<span style="color:#66d9ef">eks_cluster_sg</span>.<span style="color:#66d9ef">id</span>
+</span></span><span style="display:flex;"><span>}<span style="color:#75715e">
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e">
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"># Prometheus 포트 (9090)
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span><span style="color:#66d9ef">resource</span> <span style="color:#e6db74">&#34;aws_security_group_rule&#34; &#34;allow_prometheus&#34;</span> {
+</span></span><span style="display:flex;"><span>  type              <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;ingress&#34;</span>
+</span></span><span style="display:flex;"><span>  from_port         <span style="color:#f92672">=</span> <span style="color:#ae81ff">9090</span>
+</span></span><span style="display:flex;"><span>  to_port           <span style="color:#f92672">=</span> <span style="color:#ae81ff">9090</span>
+</span></span><span style="display:flex;"><span>  protocol          <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;tcp&#34;</span>
+</span></span><span style="display:flex;"><span>  cidr_blocks       <span style="color:#f92672">=</span> [<span style="color:#e6db74">&#34;0.0.0.0/0&#34;</span>]
+</span></span><span style="display:flex;"><span>  security_group_id <span style="color:#f92672">=</span> <span style="color:#66d9ef">aws_security_group</span>.<span style="color:#66d9ef">eks_cluster_sg</span>.<span style="color:#66d9ef">id</span>
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><p><strong>🔍 설명</strong>:</p>
+<ul>
+<li>VPC 내부는 모든 포트 통신 허용</li>
+<li>특정 서비스 포트만 인터넷에서 접근 가능</li>
+</ul>
+<hr>
+<h2 id="-step-4-iam-역할-설정">👤 Step 4: IAM 역할 설정<a hidden class="anchor" aria-hidden="true" href="#-step-4-iam-역할-설정">#</a></h2>
+<h3 id="4-1-eks-클러스터-역할">4-1. EKS 클러스터 역할<a hidden class="anchor" aria-hidden="true" href="#4-1-eks-클러스터-역할">#</a></h3>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-hcl" data-lang="hcl"><span style="display:flex;"><span><span style="color:#66d9ef">resource</span> <span style="color:#e6db74">&#34;aws_iam_role&#34; &#34;eks_cluster_role&#34;</span> {
+</span></span><span style="display:flex;"><span>  name <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;llm-project-eks-eks-cluster-role-v3&#34;</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>  assume_role_policy <span style="color:#f92672">=</span> <span style="color:#66d9ef">jsonencode</span>({
+</span></span><span style="display:flex;"><span>    Version <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;2012-10-17&#34;</span>,
+</span></span><span style="display:flex;"><span>    Statement <span style="color:#f92672">=</span> [{
+</span></span><span style="display:flex;"><span>      Effect    <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;Allow&#34;</span>,
+</span></span><span style="display:flex;"><span>      Principal <span style="color:#f92672">=</span> { Service <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;eks.amazonaws.com&#34;</span> },
+</span></span><span style="display:flex;"><span>      Action    <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;sts:AssumeRole&#34;</span>
+</span></span><span style="display:flex;"><span>    }]
+</span></span><span style="display:flex;"><span>  })
+</span></span><span style="display:flex;"><span>}<span style="color:#75715e">
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e">
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"># EKS 클러스터 정책 연결
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span><span style="color:#66d9ef">resource</span> <span style="color:#e6db74">&#34;aws_iam_role_policy_attachment&#34; &#34;eks_cluster_policy&#34;</span> {
+</span></span><span style="display:flex;"><span>  policy_arn <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;arn:aws:iam::aws:policy/AmazonEKSClusterPolicy&#34;</span>
+</span></span><span style="display:flex;"><span>  role       <span style="color:#f92672">=</span> <span style="color:#66d9ef">aws_iam_role</span>.<span style="color:#66d9ef">eks_cluster_role</span>.<span style="color:#66d9ef">name</span>
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><h3 id="4-2-노드-그룹-역할">4-2. 노드 그룹 역할<a hidden class="anchor" aria-hidden="true" href="#4-2-노드-그룹-역할">#</a></h3>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-hcl" data-lang="hcl"><span style="display:flex;"><span><span style="color:#66d9ef">resource</span> <span style="color:#e6db74">&#34;aws_iam_role&#34; &#34;eks_node_role&#34;</span> {
+</span></span><span style="display:flex;"><span>  name <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;llm-project-eks-eks-node-role-v3&#34;</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>  assume_role_policy <span style="color:#f92672">=</span> <span style="color:#66d9ef">jsonencode</span>({
+</span></span><span style="display:flex;"><span>    Version <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;2012-10-17&#34;</span>,
+</span></span><span style="display:flex;"><span>    Statement <span style="color:#f92672">=</span> [{
+</span></span><span style="display:flex;"><span>      Effect    <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;Allow&#34;</span>,
+</span></span><span style="display:flex;"><span>      Principal <span style="color:#f92672">=</span> { Service <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;ec2.amazonaws.com&#34;</span> },
+</span></span><span style="display:flex;"><span>      Action    <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;sts:AssumeRole&#34;</span>
+</span></span><span style="display:flex;"><span>    }]
+</span></span><span style="display:flex;"><span>  })
+</span></span><span style="display:flex;"><span>}<span style="color:#75715e">
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e">
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"># 필수 정책 연결
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span><span style="color:#66d9ef">resource</span> <span style="color:#e6db74">&#34;aws_iam_role_policy_attachment&#34; &#34;eks_worker_node_policy&#34;</span> {
+</span></span><span style="display:flex;"><span>  policy_arn <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;arn:aws:iam::aws:policy/AmazonEKSWorkerNodePolicy&#34;</span>
+</span></span><span style="display:flex;"><span>  role       <span style="color:#f92672">=</span> <span style="color:#66d9ef">aws_iam_role</span>.<span style="color:#66d9ef">eks_node_role</span>.<span style="color:#66d9ef">name</span>
+</span></span><span style="display:flex;"><span>}
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">resource</span> <span style="color:#e6db74">&#34;aws_iam_role_policy_attachment&#34; &#34;eks_cni_policy&#34;</span> {
+</span></span><span style="display:flex;"><span>  policy_arn <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;arn:aws:iam::aws:policy/AmazonEKS_CNI_Policy&#34;</span>
+</span></span><span style="display:flex;"><span>  role       <span style="color:#f92672">=</span> <span style="color:#66d9ef">aws_iam_role</span>.<span style="color:#66d9ef">eks_node_role</span>.<span style="color:#66d9ef">name</span>
+</span></span><span style="display:flex;"><span>}
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">resource</span> <span style="color:#e6db74">&#34;aws_iam_role_policy_attachment&#34; &#34;eks_container_registry_policy&#34;</span> {
+</span></span><span style="display:flex;"><span>  policy_arn <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;arn:aws:iam::aws:policy/AmazonEC2ContainerRegistryReadOnly&#34;</span>
+</span></span><span style="display:flex;"><span>  role       <span style="color:#f92672">=</span> <span style="color:#66d9ef">aws_iam_role</span>.<span style="color:#66d9ef">eks_node_role</span>.<span style="color:#66d9ef">name</span>
+</span></span><span style="display:flex;"><span>}<span style="color:#75715e">
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e">
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"># EBS CSI 드라이버 정책 (영구 스토리지용)
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span><span style="color:#66d9ef">resource</span> <span style="color:#e6db74">&#34;aws_iam_role_policy_attachment&#34; &#34;ebs_csi_policy&#34;</span> {
+</span></span><span style="display:flex;"><span>  policy_arn <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;arn:aws:iam::aws:policy/service-role/AmazonEBSCSIDriverPolicy&#34;</span>
+</span></span><span style="display:flex;"><span>  role       <span style="color:#f92672">=</span> <span style="color:#66d9ef">aws_iam_role</span>.<span style="color:#66d9ef">eks_node_role</span>.<span style="color:#66d9ef">name</span>
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><p><strong>🔍 설명</strong>:</p>
+<ul>
+<li>EKS 클러스터와 노드에 필요한 최소 권한만 부여</li>
+<li>EBS CSI 드라이버로 영구 볼륨 사용 가능</li>
+</ul>
+<hr>
+<h2 id="-step-5-eks-클러스터-구성">⚙️ Step 5: EKS 클러스터 구성<a hidden class="anchor" aria-hidden="true" href="#-step-5-eks-클러스터-구성">#</a></h2>
+<h3 id="5-1-eks-클러스터-생성">5-1. EKS 클러스터 생성<a hidden class="anchor" aria-hidden="true" href="#5-1-eks-클러스터-생성">#</a></h3>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-hcl" data-lang="hcl"><span style="display:flex;"><span><span style="color:#66d9ef">resource</span> <span style="color:#e6db74">&#34;aws_eks_cluster&#34; &#34;main&#34;</span> {
+</span></span><span style="display:flex;"><span>  name     <span style="color:#f92672">=</span> <span style="color:#66d9ef">var</span>.<span style="color:#66d9ef">cluster_name</span>
+</span></span><span style="display:flex;"><span>  role_arn <span style="color:#f92672">=</span> <span style="color:#66d9ef">aws_iam_role</span>.<span style="color:#66d9ef">eks_cluster_role</span>.<span style="color:#66d9ef">arn</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>  <span style="color:#66d9ef">vpc_config</span> {
+</span></span><span style="display:flex;"><span>    subnet_ids              <span style="color:#f92672">=</span> <span style="color:#66d9ef">var</span>.<span style="color:#66d9ef">private_subnet_ids</span>
+</span></span><span style="display:flex;"><span>    security_group_ids      <span style="color:#f92672">=</span> [<span style="color:#66d9ef">aws_security_group</span>.<span style="color:#66d9ef">eks_cluster_sg</span>.<span style="color:#66d9ef">id</span>]
+</span></span><span style="display:flex;"><span>    endpoint_private_access <span style="color:#f92672">=</span> <span style="color:#66d9ef">true</span>
+</span></span><span style="display:flex;"><span>    endpoint_public_access  <span style="color:#f92672">=</span> <span style="color:#66d9ef">true</span>
+</span></span><span style="display:flex;"><span>  }
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>  <span style="color:#66d9ef">kubernetes_network_config</span> {
+</span></span><span style="display:flex;"><span>    service_ipv4_cidr <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;172.20.0.0/16&#34;</span>
+</span></span><span style="display:flex;"><span>  }
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>  depends_on <span style="color:#f92672">=</span> [<span style="color:#66d9ef">aws_iam_role_policy_attachment</span>.<span style="color:#66d9ef">eks_cluster_policy</span>]
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><p><strong>🔍 설명</strong>:</p>
+<ul>
+<li>Private/Public 엔드포인트 모두 활성화</li>
+<li>서비스 네트워크는 172.20.0.0/16 사용 (VPC와 겹치지 않음)</li>
+</ul>
+<h3 id="5-2-노드-그룹-생성">5-2. 노드 그룹 생성<a hidden class="anchor" aria-hidden="true" href="#5-2-노드-그룹-생성">#</a></h3>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-hcl" data-lang="hcl"><span style="display:flex;"><span><span style="color:#66d9ef">resource</span> <span style="color:#e6db74">&#34;aws_eks_node_group&#34; &#34;nodes&#34;</span> {
+</span></span><span style="display:flex;"><span>  cluster_name    <span style="color:#f92672">=</span> <span style="color:#66d9ef">aws_eks_cluster</span>.<span style="color:#66d9ef">main</span>.<span style="color:#66d9ef">name</span>
+</span></span><span style="display:flex;"><span>  node_group_name <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;${var.cluster_name}-nodes&#34;</span>
+</span></span><span style="display:flex;"><span>  node_role_arn   <span style="color:#f92672">=</span> <span style="color:#66d9ef">aws_iam_role</span>.<span style="color:#66d9ef">eks_node_role</span>.<span style="color:#66d9ef">arn</span>
+</span></span><span style="display:flex;"><span>  subnet_ids      <span style="color:#f92672">=</span> <span style="color:#66d9ef">var</span>.<span style="color:#66d9ef">private_subnet_ids</span>
+</span></span><span style="display:flex;"><span>  instance_types  <span style="color:#f92672">=</span> [<span style="color:#66d9ef">var</span>.<span style="color:#66d9ef">instance_type</span>]
+</span></span><span style="display:flex;"><span>  
+</span></span><span style="display:flex;"><span>  <span style="color:#66d9ef">scaling_config</span> {
+</span></span><span style="display:flex;"><span>    desired_size <span style="color:#f92672">=</span> <span style="color:#66d9ef">var</span>.<span style="color:#66d9ef">node_group_desired_capacity</span>
+</span></span><span style="display:flex;"><span>    min_size     <span style="color:#f92672">=</span> <span style="color:#66d9ef">var</span>.<span style="color:#66d9ef">node_group_min_capacity</span>
+</span></span><span style="display:flex;"><span>    max_size     <span style="color:#f92672">=</span> <span style="color:#66d9ef">var</span>.<span style="color:#66d9ef">node_group_max_capacity</span>
+</span></span><span style="display:flex;"><span>  }
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>  depends_on <span style="color:#f92672">=</span> [
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">aws_iam_role_policy_attachment</span>.<span style="color:#66d9ef">eks_worker_node_policy</span>,
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">aws_iam_role_policy_attachment</span>.<span style="color:#66d9ef">eks_cni_policy</span>,
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">aws_iam_role_policy_attachment</span>.<span style="color:#66d9ef">eks_container_registry_policy</span>,
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">aws_iam_role_policy_attachment</span>.<span style="color:#66d9ef">ebs_csi_policy</span>
+</span></span><span style="display:flex;"><span>  ]
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><p><strong>🔍 설명</strong>:</p>
+<ul>
+<li>오토스케일링 설정 (1~3개 노드)</li>
+<li>t3.xlarge 인스턴스 사용 (4 vCPU, 16GB RAM)</li>
+</ul>
+<h3 id="5-3-eks-애드온-설치">5-3. EKS 애드온 설치<a hidden class="anchor" aria-hidden="true" href="#5-3-eks-애드온-설치">#</a></h3>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-hcl" data-lang="hcl"><span style="display:flex;"><span><span style="color:#66d9ef">resource</span> <span style="color:#e6db74">&#34;aws_eks_addon&#34; &#34;ebs_csi_driver&#34;</span> {
+</span></span><span style="display:flex;"><span>  cluster_name <span style="color:#f92672">=</span> <span style="color:#66d9ef">aws_eks_cluster</span>.<span style="color:#66d9ef">main</span>.<span style="color:#66d9ef">name</span>
+</span></span><span style="display:flex;"><span>  addon_name   <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;aws-ebs-csi-driver&#34;</span>
+</span></span><span style="display:flex;"><span>  
+</span></span><span style="display:flex;"><span>  depends_on <span style="color:#f92672">=</span> [
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">aws_eks_cluster</span>.<span style="color:#66d9ef">main</span>,
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">aws_iam_role_policy_attachment</span>.<span style="color:#66d9ef">ebs_csi_policy</span>
+</span></span><span style="display:flex;"><span>  ]
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><hr>
+<h2 id="-step-6-postgresql-데이터베이스-구성">🐘 Step 6: PostgreSQL 데이터베이스 구성<a hidden class="anchor" aria-hidden="true" href="#-step-6-postgresql-데이터베이스-구성">#</a></h2>
+<h3 id="6-1-영구-볼륨-클레임">6-1. 영구 볼륨 클레임<a hidden class="anchor" aria-hidden="true" href="#6-1-영구-볼륨-클레임">#</a></h3>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-hcl" data-lang="hcl"><span style="display:flex;"><span><span style="color:#66d9ef">resource</span> <span style="color:#e6db74">&#34;kubernetes_persistent_volume_claim&#34; &#34;postgres_pvc&#34;</span> {
+</span></span><span style="display:flex;"><span>  provider   <span style="color:#f92672">=</span> <span style="color:#66d9ef">kubernetes</span>.<span style="color:#66d9ef">eks</span>
+</span></span><span style="display:flex;"><span>  depends_on <span style="color:#f92672">=</span> [
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">aws_eks_node_group</span>.<span style="color:#66d9ef">nodes</span>,
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">aws_eks_addon</span>.<span style="color:#66d9ef">ebs_csi_driver</span>
+</span></span><span style="display:flex;"><span>  ]
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>  <span style="color:#66d9ef">metadata</span> {
+</span></span><span style="display:flex;"><span>    name      <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;postgres-pvc&#34;</span>
+</span></span><span style="display:flex;"><span>    namespace <span style="color:#f92672">=</span> <span style="color:#66d9ef">var</span>.<span style="color:#66d9ef">namespace</span>
+</span></span><span style="display:flex;"><span>  }
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>  <span style="color:#66d9ef">spec</span> {
+</span></span><span style="display:flex;"><span>    access_modes <span style="color:#f92672">=</span> [<span style="color:#e6db74">&#34;ReadWriteOnce&#34;</span>]
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">resources</span> {
+</span></span><span style="display:flex;"><span>      requests <span style="color:#f92672">=</span> { storage <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;5Gi&#34;</span> }
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>    storage_class_name <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;gp2-immediate&#34;</span>
+</span></span><span style="display:flex;"><span>  }
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><h3 id="6-2-postgresql-배포">6-2. PostgreSQL 배포<a hidden class="anchor" aria-hidden="true" href="#6-2-postgresql-배포">#</a></h3>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-hcl" data-lang="hcl"><span style="display:flex;"><span><span style="color:#66d9ef">resource</span> <span style="color:#e6db74">&#34;kubernetes_deployment&#34; &#34;postgres_deployment&#34;</span> {
+</span></span><span style="display:flex;"><span>  provider   <span style="color:#f92672">=</span> <span style="color:#66d9ef">kubernetes</span>.<span style="color:#66d9ef">eks</span>
+</span></span><span style="display:flex;"><span>  depends_on <span style="color:#f92672">=</span> [
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">aws_eks_node_group</span>.<span style="color:#66d9ef">nodes</span>,
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">kubernetes_persistent_volume_claim</span>.<span style="color:#66d9ef">postgres_pvc</span>
+</span></span><span style="display:flex;"><span>  ]
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>  <span style="color:#66d9ef">metadata</span> {
+</span></span><span style="display:flex;"><span>    name      <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;postgres&#34;</span>
+</span></span><span style="display:flex;"><span>    namespace <span style="color:#f92672">=</span> <span style="color:#66d9ef">var</span>.<span style="color:#66d9ef">namespace</span>
+</span></span><span style="display:flex;"><span>    labels <span style="color:#f92672">=</span> {
+</span></span><span style="display:flex;"><span>      app <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;postgres&#34;</span>
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>  }
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>  <span style="color:#66d9ef">spec</span> {
+</span></span><span style="display:flex;"><span>    replicas <span style="color:#f92672">=</span> <span style="color:#ae81ff">1</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">selector</span> {
+</span></span><span style="display:flex;"><span>      match_labels <span style="color:#f92672">=</span> {
+</span></span><span style="display:flex;"><span>        app <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;postgres&#34;</span>
+</span></span><span style="display:flex;"><span>      }
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">template</span> {
+</span></span><span style="display:flex;"><span>      <span style="color:#66d9ef">metadata</span> {
+</span></span><span style="display:flex;"><span>        labels <span style="color:#f92672">=</span> {
+</span></span><span style="display:flex;"><span>          app <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;postgres&#34;</span>
+</span></span><span style="display:flex;"><span>        }
+</span></span><span style="display:flex;"><span>      }
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>      <span style="color:#66d9ef">spec</span> {
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">container</span> {
+</span></span><span style="display:flex;"><span>          name  <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;postgres&#34;</span>
+</span></span><span style="display:flex;"><span>          image <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;postgres:13&#34;</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>          <span style="color:#66d9ef">env</span> {
+</span></span><span style="display:flex;"><span>            name  <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;POSTGRES_DB&#34;</span>
+</span></span><span style="display:flex;"><span>            value <span style="color:#f92672">=</span> <span style="color:#66d9ef">var</span>.<span style="color:#66d9ef">postgres_db</span>
+</span></span><span style="display:flex;"><span>          }
+</span></span><span style="display:flex;"><span>          <span style="color:#66d9ef">env</span> {
+</span></span><span style="display:flex;"><span>            name  <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;POSTGRES_USER&#34;</span>
+</span></span><span style="display:flex;"><span>            value <span style="color:#f92672">=</span> <span style="color:#66d9ef">var</span>.<span style="color:#66d9ef">postgres_user</span>
+</span></span><span style="display:flex;"><span>          }
+</span></span><span style="display:flex;"><span>          <span style="color:#66d9ef">env</span> {
+</span></span><span style="display:flex;"><span>            name  <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;POSTGRES_PASSWORD&#34;</span>
+</span></span><span style="display:flex;"><span>            value <span style="color:#f92672">=</span> <span style="color:#66d9ef">var</span>.<span style="color:#66d9ef">postgres_password</span>
+</span></span><span style="display:flex;"><span>          }
+</span></span><span style="display:flex;"><span>          <span style="color:#66d9ef">env</span> {
+</span></span><span style="display:flex;"><span>            name  <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;PGDATA&#34;</span>
+</span></span><span style="display:flex;"><span>            value <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;/var/lib/postgresql/data/pgdata&#34;</span>
+</span></span><span style="display:flex;"><span>          }
+</span></span><span style="display:flex;"><span>          
+</span></span><span style="display:flex;"><span>          <span style="color:#66d9ef">port</span> {
+</span></span><span style="display:flex;"><span>            container_port <span style="color:#f92672">=</span> <span style="color:#ae81ff">5432</span>
+</span></span><span style="display:flex;"><span>          }
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>          <span style="color:#66d9ef">volume_mount</span> {
+</span></span><span style="display:flex;"><span>            mount_path <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;/var/lib/postgresql/data&#34;</span>
+</span></span><span style="display:flex;"><span>            name       <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;postgres-storage&#34;</span>
+</span></span><span style="display:flex;"><span>          }
+</span></span><span style="display:flex;"><span>        }
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">volume</span> {
+</span></span><span style="display:flex;"><span>          name <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;postgres-storage&#34;</span>
+</span></span><span style="display:flex;"><span>          <span style="color:#66d9ef">persistent_volume_claim</span> {
+</span></span><span style="display:flex;"><span>            claim_name <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;postgres-pvc&#34;</span>
+</span></span><span style="display:flex;"><span>          }
+</span></span><span style="display:flex;"><span>        }
+</span></span><span style="display:flex;"><span>      }
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>  }
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><h3 id="6-3-postgresql-서비스">6-3. PostgreSQL 서비스<a hidden class="anchor" aria-hidden="true" href="#6-3-postgresql-서비스">#</a></h3>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-hcl" data-lang="hcl"><span style="display:flex;"><span><span style="color:#66d9ef">resource</span> <span style="color:#e6db74">&#34;kubernetes_service&#34; &#34;postgres_service&#34;</span> {
+</span></span><span style="display:flex;"><span>  provider   <span style="color:#f92672">=</span> <span style="color:#66d9ef">kubernetes</span>.<span style="color:#66d9ef">eks</span>
+</span></span><span style="display:flex;"><span>  depends_on <span style="color:#f92672">=</span> [<span style="color:#66d9ef">aws_eks_node_group</span>.<span style="color:#66d9ef">nodes</span>]
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>  <span style="color:#66d9ef">metadata</span> {
+</span></span><span style="display:flex;"><span>    name      <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;postgres-service&#34;</span>
+</span></span><span style="display:flex;"><span>    namespace <span style="color:#f92672">=</span> <span style="color:#66d9ef">var</span>.<span style="color:#66d9ef">namespace</span>
+</span></span><span style="display:flex;"><span>  }
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>  <span style="color:#66d9ef">spec</span> {
+</span></span><span style="display:flex;"><span>    selector <span style="color:#f92672">=</span> {
+</span></span><span style="display:flex;"><span>      app <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;postgres&#34;</span>
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">port</span> {
+</span></span><span style="display:flex;"><span>      port        <span style="color:#f92672">=</span> <span style="color:#ae81ff">5432</span>
+</span></span><span style="display:flex;"><span>      target_port <span style="color:#f92672">=</span> <span style="color:#ae81ff">5432</span>
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>    type <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;ClusterIP&#34;</span>
+</span></span><span style="display:flex;"><span>  }
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><p><strong>🔍 설명</strong>:</p>
+<ul>
+<li>5GB EBS 볼륨으로 데이터 영구 저장</li>
+<li>ClusterIP로 내부 통신만 허용</li>
+<li>PGDATA 경로를 서브디렉토리로 설정 (권한 문제 방지)</li>
+</ul>
+<hr>
+<h2 id="-step-7-litellm-프록시-구성">🤖 Step 7: LiteLLM 프록시 구성<a hidden class="anchor" aria-hidden="true" href="#-step-7-litellm-프록시-구성">#</a></h2>
+<h3 id="7-1-litellm-배포">7-1. LiteLLM 배포<a hidden class="anchor" aria-hidden="true" href="#7-1-litellm-배포">#</a></h3>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-hcl" data-lang="hcl"><span style="display:flex;"><span><span style="color:#66d9ef">resource</span> <span style="color:#e6db74">&#34;kubernetes_deployment&#34; &#34;litellm_deployment&#34;</span> {
+</span></span><span style="display:flex;"><span>  provider   <span style="color:#f92672">=</span> <span style="color:#66d9ef">kubernetes</span>.<span style="color:#66d9ef">eks</span>
+</span></span><span style="display:flex;"><span>  depends_on <span style="color:#f92672">=</span> [<span style="color:#66d9ef">aws_eks_node_group</span>.<span style="color:#66d9ef">nodes</span>]
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>  <span style="color:#66d9ef">metadata</span> {
+</span></span><span style="display:flex;"><span>    name      <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;litellm&#34;</span>
+</span></span><span style="display:flex;"><span>    namespace <span style="color:#f92672">=</span> <span style="color:#66d9ef">var</span>.<span style="color:#66d9ef">namespace</span>
+</span></span><span style="display:flex;"><span>    labels <span style="color:#f92672">=</span> {
+</span></span><span style="display:flex;"><span>      app <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;litellm&#34;</span>
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>  }
+</span></span><span style="display:flex;"><span>  
+</span></span><span style="display:flex;"><span>  <span style="color:#66d9ef">spec</span> {
+</span></span><span style="display:flex;"><span>    replicas <span style="color:#f92672">=</span> <span style="color:#ae81ff">1</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">selector</span> {
+</span></span><span style="display:flex;"><span>      match_labels <span style="color:#f92672">=</span> {
+</span></span><span style="display:flex;"><span>        app <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;litellm&#34;</span>
+</span></span><span style="display:flex;"><span>      }
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>    
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">template</span> {
+</span></span><span style="display:flex;"><span>      <span style="color:#66d9ef">metadata</span> {
+</span></span><span style="display:flex;"><span>        labels <span style="color:#f92672">=</span> {
+</span></span><span style="display:flex;"><span>          app <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;litellm&#34;</span>
+</span></span><span style="display:flex;"><span>        }
+</span></span><span style="display:flex;"><span>      }
+</span></span><span style="display:flex;"><span>      
+</span></span><span style="display:flex;"><span>      <span style="color:#66d9ef">spec</span> {
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">container</span> {
+</span></span><span style="display:flex;"><span>          name  <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;litellm&#34;</span>
+</span></span><span style="display:flex;"><span>          image <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;ghcr.io/berriai/litellm:main&#34;</span><span style="color:#75715e">
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e">          
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e">          # Azure OpenAI 설정
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>          <span style="color:#66d9ef">env</span> {
+</span></span><span style="display:flex;"><span>            name  <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;AZURE_API_KEY&#34;</span>
+</span></span><span style="display:flex;"><span>            value <span style="color:#f92672">=</span> <span style="color:#66d9ef">var</span>.<span style="color:#66d9ef">AZURE_API_KEY</span>
+</span></span><span style="display:flex;"><span>          }
+</span></span><span style="display:flex;"><span>          <span style="color:#66d9ef">env</span> {
+</span></span><span style="display:flex;"><span>            name  <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;AZURE_OPENAI_API_KEY&#34;</span>
+</span></span><span style="display:flex;"><span>            value <span style="color:#f92672">=</span> <span style="color:#66d9ef">var</span>.<span style="color:#66d9ef">AZURE_API_KEY</span>
+</span></span><span style="display:flex;"><span>          }
+</span></span><span style="display:flex;"><span>          <span style="color:#66d9ef">env</span> {
+</span></span><span style="display:flex;"><span>            name  <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;AZURE_API_BASE&#34;</span>
+</span></span><span style="display:flex;"><span>            value <span style="color:#f92672">=</span> <span style="color:#66d9ef">var</span>.<span style="color:#66d9ef">AZURE_API_BASE</span>
+</span></span><span style="display:flex;"><span>          }
+</span></span><span style="display:flex;"><span>          <span style="color:#66d9ef">env</span> {
+</span></span><span style="display:flex;"><span>            name  <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;AZURE_API_VERSION&#34;</span>
+</span></span><span style="display:flex;"><span>            value <span style="color:#f92672">=</span> <span style="color:#66d9ef">var</span>.<span style="color:#66d9ef">AZURE_API_VERSION</span>
+</span></span><span style="display:flex;"><span>          }<span style="color:#75715e">
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e">          
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e">          # Gemini API 설정
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>          <span style="color:#66d9ef">env</span> {
+</span></span><span style="display:flex;"><span>            name  <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;GEMINI_API_KEY&#34;</span>
+</span></span><span style="display:flex;"><span>            value <span style="color:#f92672">=</span> <span style="color:#66d9ef">var</span>.<span style="color:#66d9ef">GEMINI_API_KEY</span>
+</span></span><span style="display:flex;"><span>          }<span style="color:#75715e">
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e">          
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e">          # 데이터베이스 및 인증
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>          <span style="color:#66d9ef">env</span> {
+</span></span><span style="display:flex;"><span>            name  <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;DATABASE_URL&#34;</span>
+</span></span><span style="display:flex;"><span>            value <span style="color:#f92672">=</span> <span style="color:#66d9ef">var</span>.<span style="color:#66d9ef">database_url</span>
+</span></span><span style="display:flex;"><span>          }
+</span></span><span style="display:flex;"><span>          <span style="color:#66d9ef">env</span> {
+</span></span><span style="display:flex;"><span>            name  <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;LITELLM_MASTER_KEY&#34;</span>
+</span></span><span style="display:flex;"><span>            value <span style="color:#f92672">=</span> <span style="color:#66d9ef">var</span>.<span style="color:#66d9ef">litellm_master_key</span>
+</span></span><span style="display:flex;"><span>          }
+</span></span><span style="display:flex;"><span>          <span style="color:#66d9ef">env</span> {
+</span></span><span style="display:flex;"><span>            name  <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;LITELLM_SALT_KEY&#34;</span>
+</span></span><span style="display:flex;"><span>            value <span style="color:#f92672">=</span> <span style="color:#66d9ef">var</span>.<span style="color:#66d9ef">litellm_salt_key</span>
+</span></span><span style="display:flex;"><span>          }
+</span></span><span style="display:flex;"><span>          
+</span></span><span style="display:flex;"><span>          <span style="color:#66d9ef">port</span> {
+</span></span><span style="display:flex;"><span>            container_port <span style="color:#f92672">=</span> <span style="color:#66d9ef">var</span>.<span style="color:#66d9ef">litellm_api_port</span><span style="color:#75715e">      # 4000
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>          }
+</span></span><span style="display:flex;"><span>          <span style="color:#66d9ef">port</span> {
+</span></span><span style="display:flex;"><span>            container_port <span style="color:#f92672">=</span> <span style="color:#66d9ef">var</span>.<span style="color:#66d9ef">litellm_metrics_port</span><span style="color:#75715e">  # 8000
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>          }
+</span></span><span style="display:flex;"><span>        }
+</span></span><span style="display:flex;"><span>      }
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>  }
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><h3 id="7-2-litellm-서비스-loadbalancer">7-2. LiteLLM 서비스 (LoadBalancer)<a hidden class="anchor" aria-hidden="true" href="#7-2-litellm-서비스-loadbalancer">#</a></h3>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-hcl" data-lang="hcl"><span style="display:flex;"><span><span style="color:#66d9ef">resource</span> <span style="color:#e6db74">&#34;kubernetes_service&#34; &#34;litellm_service&#34;</span> {
+</span></span><span style="display:flex;"><span>  provider   <span style="color:#f92672">=</span> <span style="color:#66d9ef">kubernetes</span>.<span style="color:#66d9ef">eks</span>
+</span></span><span style="display:flex;"><span>  depends_on <span style="color:#f92672">=</span> [<span style="color:#66d9ef">aws_eks_node_group</span>.<span style="color:#66d9ef">nodes</span>]
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>  <span style="color:#66d9ef">metadata</span> {
+</span></span><span style="display:flex;"><span>    name      <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;litellm-service&#34;</span>
+</span></span><span style="display:flex;"><span>    namespace <span style="color:#f92672">=</span> <span style="color:#66d9ef">var</span>.<span style="color:#66d9ef">namespace</span>
+</span></span><span style="display:flex;"><span>    annotations <span style="color:#f92672">=</span> {
+</span></span><span style="display:flex;"><span>      &#34;service.beta.kubernetes.io/aws-load-balancer-type&#34;   <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;nlb&#34;</span>
+</span></span><span style="display:flex;"><span>      &#34;service.beta.kubernetes.io/aws-load-balancer-scheme&#34; <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;internet-facing&#34;</span>
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>  }
+</span></span><span style="display:flex;"><span>  
+</span></span><span style="display:flex;"><span>  <span style="color:#66d9ef">spec</span> {
+</span></span><span style="display:flex;"><span>    selector <span style="color:#f92672">=</span> {
+</span></span><span style="display:flex;"><span>      app <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;litellm&#34;</span>
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">port</span> {
+</span></span><span style="display:flex;"><span>      name        <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;api&#34;</span>
+</span></span><span style="display:flex;"><span>      protocol    <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;TCP&#34;</span>
+</span></span><span style="display:flex;"><span>      port        <span style="color:#f92672">=</span> <span style="color:#66d9ef">var</span>.<span style="color:#66d9ef">litellm_api_port</span>
+</span></span><span style="display:flex;"><span>      target_port <span style="color:#f92672">=</span> <span style="color:#66d9ef">var</span>.<span style="color:#66d9ef">litellm_api_port</span>
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">port</span> {
+</span></span><span style="display:flex;"><span>      name        <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;metrics&#34;</span>
+</span></span><span style="display:flex;"><span>      protocol    <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;TCP&#34;</span>
+</span></span><span style="display:flex;"><span>      port        <span style="color:#f92672">=</span> <span style="color:#66d9ef">var</span>.<span style="color:#66d9ef">litellm_metrics_port</span>
+</span></span><span style="display:flex;"><span>      target_port <span style="color:#f92672">=</span> <span style="color:#66d9ef">var</span>.<span style="color:#66d9ef">litellm_metrics_port</span>
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>    type <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;LoadBalancer&#34;</span>
+</span></span><span style="display:flex;"><span>  }
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><p><strong>🔍 설명</strong>:</p>
+<ul>
+<li>멀티 LLM 프록시 (Azure OpenAI, Gemini 지원)</li>
+<li>NLB(Network Load Balancer) 사용으로 낮은 지연시간</li>
+<li>API와 메트릭 포트 분리</li>
+</ul>
+<hr>
+<h2 id="-step-8-openwebui-구성">🌐 Step 8: OpenWebUI 구성<a hidden class="anchor" aria-hidden="true" href="#-step-8-openwebui-구성">#</a></h2>
+<h3 id="8-1-openwebui-배포">8-1. OpenWebUI 배포<a hidden class="anchor" aria-hidden="true" href="#8-1-openwebui-배포">#</a></h3>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-hcl" data-lang="hcl"><span style="display:flex;"><span><span style="color:#66d9ef">resource</span> <span style="color:#e6db74">&#34;kubernetes_deployment&#34; &#34;openwebui_deployment&#34;</span> {
+</span></span><span style="display:flex;"><span>  provider   <span style="color:#f92672">=</span> <span style="color:#66d9ef">kubernetes</span>.<span style="color:#66d9ef">eks</span>
+</span></span><span style="display:flex;"><span>  depends_on <span style="color:#f92672">=</span> [<span style="color:#66d9ef">aws_eks_node_group</span>.<span style="color:#66d9ef">nodes</span>]
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>  <span style="color:#66d9ef">metadata</span> {
+</span></span><span style="display:flex;"><span>    name      <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;openwebui&#34;</span>
+</span></span><span style="display:flex;"><span>    namespace <span style="color:#f92672">=</span> <span style="color:#66d9ef">var</span>.<span style="color:#66d9ef">namespace</span>
+</span></span><span style="display:flex;"><span>    labels <span style="color:#f92672">=</span> {
+</span></span><span style="display:flex;"><span>      app <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;openwebui&#34;</span>
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>  }
+</span></span><span style="display:flex;"><span>  
+</span></span><span style="display:flex;"><span>  <span style="color:#66d9ef">spec</span> {
+</span></span><span style="display:flex;"><span>    replicas <span style="color:#f92672">=</span> <span style="color:#ae81ff">1</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">selector</span> {
+</span></span><span style="display:flex;"><span>      match_labels <span style="color:#f92672">=</span> {
+</span></span><span style="display:flex;"><span>        app <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;openwebui&#34;</span>
+</span></span><span style="display:flex;"><span>      }
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>    
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">template</span> {
+</span></span><span style="display:flex;"><span>      <span style="color:#66d9ef">metadata</span> {
+</span></span><span style="display:flex;"><span>        labels <span style="color:#f92672">=</span> {
+</span></span><span style="display:flex;"><span>          app <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;openwebui&#34;</span>
+</span></span><span style="display:flex;"><span>        }
+</span></span><span style="display:flex;"><span>      }
+</span></span><span style="display:flex;"><span>      
+</span></span><span style="display:flex;"><span>      <span style="color:#66d9ef">spec</span> {
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">container</span> {
+</span></span><span style="display:flex;"><span>          name  <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;openwebui&#34;</span>
+</span></span><span style="display:flex;"><span>          image <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;ghcr.io/open-webui/open-webui:main&#34;</span>
+</span></span><span style="display:flex;"><span>          command <span style="color:#f92672">=</span> [<span style="color:#e6db74">&#34;uvicorn&#34;, &#34;open_webui.main:app&#34;, &#34;--host&#34;, &#34;0.0.0.0&#34;, &#34;--port&#34;, &#34;3000&#34;</span>]
+</span></span><span style="display:flex;"><span>          
+</span></span><span style="display:flex;"><span>          <span style="color:#66d9ef">env</span> {
+</span></span><span style="display:flex;"><span>            name  <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;DATABASE_URL&#34;</span>
+</span></span><span style="display:flex;"><span>            value <span style="color:#f92672">=</span> <span style="color:#66d9ef">var</span>.<span style="color:#66d9ef">database_url</span>
+</span></span><span style="display:flex;"><span>          }
+</span></span><span style="display:flex;"><span>          <span style="color:#66d9ef">env</span> {
+</span></span><span style="display:flex;"><span>            name  <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;LITELLM_PROXY_BASE_URL&#34;</span>
+</span></span><span style="display:flex;"><span>            value <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;http://litellm-service:${var.litellm_api_port}&#34;</span>
+</span></span><span style="display:flex;"><span>          }
+</span></span><span style="display:flex;"><span>          
+</span></span><span style="display:flex;"><span>          <span style="color:#66d9ef">port</span> {
+</span></span><span style="display:flex;"><span>            container_port <span style="color:#f92672">=</span> <span style="color:#66d9ef">var</span>.<span style="color:#66d9ef">openwebui_port</span><span style="color:#75715e">  # 3000
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>          }
+</span></span><span style="display:flex;"><span>        }
+</span></span><span style="display:flex;"><span>      }
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>  }
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><h3 id="8-2-openwebui-서비스">8-2. OpenWebUI 서비스<a hidden class="anchor" aria-hidden="true" href="#8-2-openwebui-서비스">#</a></h3>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-hcl" data-lang="hcl"><span style="display:flex;"><span><span style="color:#66d9ef">resource</span> <span style="color:#e6db74">&#34;kubernetes_service&#34; &#34;openwebui_service&#34;</span> {
+</span></span><span style="display:flex;"><span>  provider <span style="color:#f92672">=</span> <span style="color:#66d9ef">kubernetes</span>.<span style="color:#66d9ef">eks</span>
+</span></span><span style="display:flex;"><span>  depends_on <span style="color:#f92672">=</span> [<span style="color:#66d9ef">aws_eks_node_group</span>.<span style="color:#66d9ef">nodes</span>]
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>  <span style="color:#66d9ef">metadata</span> {
+</span></span><span style="display:flex;"><span>    name      <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;openwebui-service&#34;</span>
+</span></span><span style="display:flex;"><span>    namespace <span style="color:#f92672">=</span> <span style="color:#66d9ef">var</span>.<span style="color:#66d9ef">namespace</span>
+</span></span><span style="display:flex;"><span>    annotations <span style="color:#f92672">=</span> {
+</span></span><span style="display:flex;"><span>      &#34;service.beta.kubernetes.io/aws-load-balancer-type&#34;   <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;classic&#34;</span>
+</span></span><span style="display:flex;"><span>      &#34;service.beta.kubernetes.io/aws-load-balancer-scheme&#34; <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;internet-facing&#34;</span>
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>  }
+</span></span><span style="display:flex;"><span>  
+</span></span><span style="display:flex;"><span>  <span style="color:#66d9ef">spec</span> {
+</span></span><span style="display:flex;"><span>    selector <span style="color:#f92672">=</span> {
+</span></span><span style="display:flex;"><span>      app <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;openwebui&#34;</span>
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">port</span> {
+</span></span><span style="display:flex;"><span>      protocol    <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;TCP&#34;</span>
+</span></span><span style="display:flex;"><span>      port        <span style="color:#f92672">=</span> <span style="color:#66d9ef">var</span>.<span style="color:#66d9ef">openwebui_port</span>
+</span></span><span style="display:flex;"><span>      target_port <span style="color:#f92672">=</span> <span style="color:#66d9ef">var</span>.<span style="color:#66d9ef">openwebui_port</span>
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>    type <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;LoadBalancer&#34;</span>
+</span></span><span style="display:flex;"><span>  }
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><hr>
+<h2 id="-step-9-모니터링-스택">📊 Step 9: 모니터링 스택<a hidden class="anchor" aria-hidden="true" href="#-step-9-모니터링-스택">#</a></h2>
+<h3 id="9-1-prometheus-배포">9-1. Prometheus 배포<a hidden class="anchor" aria-hidden="true" href="#9-1-prometheus-배포">#</a></h3>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-hcl" data-lang="hcl"><span style="display:flex;"><span><span style="color:#66d9ef">resource</span> <span style="color:#e6db74">&#34;kubernetes_deployment&#34; &#34;prometheus_deployment&#34;</span> {
+</span></span><span style="display:flex;"><span>  provider   <span style="color:#f92672">=</span> <span style="color:#66d9ef">kubernetes</span>.<span style="color:#66d9ef">eks</span>
+</span></span><span style="display:flex;"><span>  depends_on <span style="color:#f92672">=</span> [<span style="color:#66d9ef">aws_eks_node_group</span>.<span style="color:#66d9ef">nodes</span>]
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>  <span style="color:#66d9ef">metadata</span> {
+</span></span><span style="display:flex;"><span>    name      <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;prometheus&#34;</span>
+</span></span><span style="display:flex;"><span>    namespace <span style="color:#f92672">=</span> <span style="color:#66d9ef">var</span>.<span style="color:#66d9ef">namespace</span>
+</span></span><span style="display:flex;"><span>    labels <span style="color:#f92672">=</span> {
+</span></span><span style="display:flex;"><span>      app <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;prometheus&#34;</span>
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>  }
+</span></span><span style="display:flex;"><span>  
+</span></span><span style="display:flex;"><span>  <span style="color:#66d9ef">spec</span> {
+</span></span><span style="display:flex;"><span>    replicas <span style="color:#f92672">=</span> <span style="color:#ae81ff">1</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">selector</span> {
+</span></span><span style="display:flex;"><span>      match_labels <span style="color:#f92672">=</span> {
+</span></span><span style="display:flex;"><span>        app <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;prometheus&#34;</span>
+</span></span><span style="display:flex;"><span>      }
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>    
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">template</span> {
+</span></span><span style="display:flex;"><span>      <span style="color:#66d9ef">metadata</span> {
+</span></span><span style="display:flex;"><span>        labels <span style="color:#f92672">=</span> {
+</span></span><span style="display:flex;"><span>          app <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;prometheus&#34;</span>
+</span></span><span style="display:flex;"><span>        }
+</span></span><span style="display:flex;"><span>      }
+</span></span><span style="display:flex;"><span>      
+</span></span><span style="display:flex;"><span>      <span style="color:#66d9ef">spec</span> {
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">container</span> {
+</span></span><span style="display:flex;"><span>          name  <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;prometheus&#34;</span>
+</span></span><span style="display:flex;"><span>          image <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;prom/prometheus:latest&#34;</span>
+</span></span><span style="display:flex;"><span>          <span style="color:#66d9ef">port</span> {
+</span></span><span style="display:flex;"><span>            container_port <span style="color:#f92672">=</span> <span style="color:#66d9ef">var</span>.<span style="color:#66d9ef">prometheus_port</span><span style="color:#75715e">  # 9090
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>          }
+</span></span><span style="display:flex;"><span>        }
+</span></span><span style="display:flex;"><span>      }
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>  }
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><h3 id="9-2-grafana-배포">9-2. Grafana 배포<a hidden class="anchor" aria-hidden="true" href="#9-2-grafana-배포">#</a></h3>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-hcl" data-lang="hcl"><span style="display:flex;"><span><span style="color:#66d9ef">resource</span> <span style="color:#e6db74">&#34;kubernetes_deployment&#34; &#34;grafana_deployment&#34;</span> {
+</span></span><span style="display:flex;"><span>  provider   <span style="color:#f92672">=</span> <span style="color:#66d9ef">kubernetes</span>.<span style="color:#66d9ef">eks</span>
+</span></span><span style="display:flex;"><span>  depends_on <span style="color:#f92672">=</span> [<span style="color:#66d9ef">aws_eks_node_group</span>.<span style="color:#66d9ef">nodes</span>]
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>  <span style="color:#66d9ef">metadata</span> {
+</span></span><span style="display:flex;"><span>    name      <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;grafana&#34;</span>
+</span></span><span style="display:flex;"><span>    namespace <span style="color:#f92672">=</span> <span style="color:#66d9ef">var</span>.<span style="color:#66d9ef">namespace</span>
+</span></span><span style="display:flex;"><span>    labels <span style="color:#f92672">=</span> {
+</span></span><span style="display:flex;"><span>      app <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;grafana&#34;</span>
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>  }
+</span></span><span style="display:flex;"><span>  
+</span></span><span style="display:flex;"><span>  <span style="color:#66d9ef">spec</span> {
+</span></span><span style="display:flex;"><span>    replicas <span style="color:#f92672">=</span> <span style="color:#ae81ff">1</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">selector</span> {
+</span></span><span style="display:flex;"><span>      match_labels <span style="color:#f92672">=</span> {
+</span></span><span style="display:flex;"><span>        app <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;grafana&#34;</span>
+</span></span><span style="display:flex;"><span>      }
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>    
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">template</span> {
+</span></span><span style="display:flex;"><span>      <span style="color:#66d9ef">metadata</span> {
+</span></span><span style="display:flex;"><span>        labels <span style="color:#f92672">=</span> {
+</span></span><span style="display:flex;"><span>          app <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;grafana&#34;</span>
+</span></span><span style="display:flex;"><span>        }
+</span></span><span style="display:flex;"><span>      }
+</span></span><span style="display:flex;"><span>      
+</span></span><span style="display:flex;"><span>      <span style="color:#66d9ef">spec</span> {
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">container</span> {
+</span></span><span style="display:flex;"><span>          name  <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;grafana&#34;</span>
+</span></span><span style="display:flex;"><span>          image <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;grafana/grafana:latest&#34;</span>
+</span></span><span style="display:flex;"><span>          <span style="color:#66d9ef">port</span> {
+</span></span><span style="display:flex;"><span>            container_port <span style="color:#f92672">=</span> <span style="color:#66d9ef">var</span>.<span style="color:#66d9ef">grafana_port</span><span style="color:#75715e">  # 3001
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>          }
+</span></span><span style="display:flex;"><span>        }
+</span></span><span style="display:flex;"><span>      }
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>  }
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><hr>
+<h2 id="-step-10-변수-설정">📝 Step 10: 변수 설정<a hidden class="anchor" aria-hidden="true" href="#-step-10-변수-설정">#</a></h2>
+<h3 id="variablestf-주요-변수">variables.tf (주요 변수)<a hidden class="anchor" aria-hidden="true" href="#variablestf-주요-변수">#</a></h3>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-hcl" data-lang="hcl"><span style="display:flex;"><span><span style="color:#66d9ef">variable</span> <span style="color:#e6db74">&#34;aws_region&#34;</span> {
+</span></span><span style="display:flex;"><span>  description <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;AWS region to deploy resources&#34;</span>
+</span></span><span style="display:flex;"><span>  type        <span style="color:#f92672">=</span> <span style="color:#66d9ef">string</span>
+</span></span><span style="display:flex;"><span>  default     <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;ap-northeast-2&#34;</span>
+</span></span><span style="display:flex;"><span>}
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">variable</span> <span style="color:#e6db74">&#34;cluster_name&#34;</span> {
+</span></span><span style="display:flex;"><span>  description <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;Name of the EKS cluster&#34;</span>
+</span></span><span style="display:flex;"><span>  type        <span style="color:#f92672">=</span> <span style="color:#66d9ef">string</span>
+</span></span><span style="display:flex;"><span>  default     <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;llm-project-eks&#34;</span>
+</span></span><span style="display:flex;"><span>}
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">variable</span> <span style="color:#e6db74">&#34;instance_type&#34;</span> {
+</span></span><span style="display:flex;"><span>  description <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;EC2 instance type for EKS worker nodes&#34;</span>
+</span></span><span style="display:flex;"><span>  type        <span style="color:#f92672">=</span> <span style="color:#66d9ef">string</span>
+</span></span><span style="display:flex;"><span>  default     <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;t3.xlarge&#34;</span>
+</span></span><span style="display:flex;"><span>}
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">variable</span> <span style="color:#e6db74">&#34;node_group_desired_capacity&#34;</span> {
+</span></span><span style="display:flex;"><span>  description <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;Desired number of worker nodes&#34;</span>
+</span></span><span style="display:flex;"><span>  type        <span style="color:#f92672">=</span> <span style="color:#66d9ef">number</span>
+</span></span><span style="display:flex;"><span>  default     <span style="color:#f92672">=</span> <span style="color:#ae81ff">2</span>
+</span></span><span style="display:flex;"><span>}<span style="color:#75715e">
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e">
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"># API 키 변수들
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span><span style="color:#66d9ef">variable</span> <span style="color:#e6db74">&#34;GEMINI_API_KEY&#34;</span> {
+</span></span><span style="display:flex;"><span>  description <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;Gemini API key for LiteLLM&#34;</span>
+</span></span><span style="display:flex;"><span>  type        <span style="color:#f92672">=</span> <span style="color:#66d9ef">string</span>
+</span></span><span style="display:flex;"><span>  sensitive   <span style="color:#f92672">=</span> <span style="color:#66d9ef">true</span>
+</span></span><span style="display:flex;"><span>}
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">variable</span> <span style="color:#e6db74">&#34;AZURE_API_KEY&#34;</span> {
+</span></span><span style="display:flex;"><span>  description <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;Azure OpenAI API key&#34;</span>
+</span></span><span style="display:flex;"><span>  type        <span style="color:#f92672">=</span> <span style="color:#66d9ef">string</span>
+</span></span><span style="display:flex;"><span>  sensitive   <span style="color:#f92672">=</span> <span style="color:#66d9ef">true</span>
+</span></span><span style="display:flex;"><span>}<span style="color:#75715e">
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e">
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"># 데이터베이스 변수들
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span><span style="color:#66d9ef">variable</span> <span style="color:#e6db74">&#34;postgres_user&#34;</span> {
+</span></span><span style="display:flex;"><span>  description <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;PostgreSQL username&#34;</span>
+</span></span><span style="display:flex;"><span>  type        <span style="color:#f92672">=</span> <span style="color:#66d9ef">string</span>
+</span></span><span style="display:flex;"><span>  sensitive   <span style="color:#f92672">=</span> <span style="color:#66d9ef">true</span>
+</span></span><span style="display:flex;"><span>}
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">variable</span> <span style="color:#e6db74">&#34;postgres_password&#34;</span> {
+</span></span><span style="display:flex;"><span>  description <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;PostgreSQL password&#34;</span>
+</span></span><span style="display:flex;"><span>  type        <span style="color:#f92672">=</span> <span style="color:#66d9ef">string</span>
+</span></span><span style="display:flex;"><span>  sensitive   <span style="color:#f92672">=</span> <span style="color:#66d9ef">true</span>
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><h3 id="terraformtfvarsexample">terraform.tfvars.example<a hidden class="anchor" aria-hidden="true" href="#terraformtfvarsexample">#</a></h3>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-hcl" data-lang="hcl"><span style="display:flex;"><span><span style="color:#75715e"># AWS 설정
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>aws_region <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;ap-northeast-2&#34;</span>
+</span></span><span style="display:flex;"><span>cluster_name <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;llm-project-eks&#34;</span><span style="color:#75715e">
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e">
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"># 네트워크 설정 (실제 값으로 변경 필요)
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>vpc_id <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;vpc-0f11e0b7cb225055a&#34;</span>
+</span></span><span style="display:flex;"><span>private_subnet_ids <span style="color:#f92672">=</span> [<span style="color:#e6db74">&#34;subnet-020d530cbcaed0656&#34;, &#34;subnet-06bed7cfb33b120c1&#34;</span>]<span style="color:#75715e">
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e">
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"># 노드 그룹 설정
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>instance_type <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;t3.medium&#34;</span>
+</span></span><span style="display:flex;"><span>node_group_desired_capacity <span style="color:#f92672">=</span> <span style="color:#ae81ff">2</span>
+</span></span><span style="display:flex;"><span>node_group_min_capacity <span style="color:#f92672">=</span> <span style="color:#ae81ff">1</span>
+</span></span><span style="display:flex;"><span>node_group_max_capacity <span style="color:#f92672">=</span> <span style="color:#ae81ff">3</span><span style="color:#75715e">
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e">
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"># 애플리케이션 포트
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>litellm_api_port <span style="color:#f92672">=</span> <span style="color:#ae81ff">4000</span>
+</span></span><span style="display:flex;"><span>litellm_metrics_port <span style="color:#f92672">=</span> <span style="color:#ae81ff">8000</span>
+</span></span><span style="display:flex;"><span>openwebui_port <span style="color:#f92672">=</span> <span style="color:#ae81ff">3000</span>
+</span></span><span style="display:flex;"><span>prometheus_port <span style="color:#f92672">=</span> <span style="color:#ae81ff">9090</span>
+</span></span><span style="display:flex;"><span>grafana_port <span style="color:#f92672">=</span> <span style="color:#ae81ff">3001</span><span style="color:#75715e">
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e">
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"># 민감한 정보 (실제 값으로 변경 필수!)
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"># 이 값들은 환경 변수나 CI/CD 시크릿으로 관리
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>litellm_master_key <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;&lt;YOUR_MASTER_KEY&gt;&#34;</span>
+</span></span><span style="display:flex;"><span>litellm_salt_key <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;&lt;YOUR_SALT_KEY&gt;&#34;</span>
+</span></span><span style="display:flex;"><span>GEMINI_API_KEY <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;&lt;YOUR_GEMINI_KEY&gt;&#34;</span>
+</span></span><span style="display:flex;"><span>AZURE_API_KEY <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;&lt;YOUR_AZURE_KEY&gt;&#34;</span>
+</span></span><span style="display:flex;"><span>AZURE_API_BASE <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;https://your-resource.openai.azure.com/&#34;</span>
+</span></span><span style="display:flex;"><span>AZURE_API_VERSION <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;2023-07-01-preview&#34;</span><span style="color:#75715e">
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e">
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"># PostgreSQL 설정
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>postgres_user <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;openwebui_user&#34;</span>
+</span></span><span style="display:flex;"><span>postgres_password <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;&lt;SECURE_PASSWORD&gt;&#34;</span>
+</span></span><span style="display:flex;"><span>postgres_db <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;openwebui&#34;</span>
+</span></span><span style="display:flex;"><span>database_url <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;postgresql://openwebui_user:&lt;PASSWORD&gt;@postgres-service:5432/openwebui&#34;</span>
+</span></span></code></pre></div><hr>
+<h2 id="-배포-실행-가이드">🚀 배포 실행 가이드<a hidden class="anchor" aria-hidden="true" href="#-배포-실행-가이드">#</a></h2>
+<h3 id="1-사전-준비">1. 사전 준비<a hidden class="anchor" aria-hidden="true" href="#1-사전-준비">#</a></h3>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span><span style="color:#75715e"># AWS CLI 프로파일 설정</span>
+</span></span><span style="display:flex;"><span>aws configure --profile llm
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># 작업 디렉토리 이동</span>
+</span></span><span style="display:flex;"><span>cd terraform-related/AWS_terraform_grafana
+</span></span></code></pre></div><h3 id="2-변수-파일-준비">2. 변수 파일 준비<a hidden class="anchor" aria-hidden="true" href="#2-변수-파일-준비">#</a></h3>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span><span style="color:#75715e"># 예시 파일 복사</span>
+</span></span><span style="display:flex;"><span>cp tfvars.example terraform.tfvars
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># 실제 값으로 수정</span>
+</span></span><span style="display:flex;"><span>vim terraform.tfvars
+</span></span></code></pre></div><h3 id="3-terraform-실행">3. Terraform 실행<a hidden class="anchor" aria-hidden="true" href="#3-terraform-실행">#</a></h3>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span><span style="color:#75715e"># 초기화</span>
+</span></span><span style="display:flex;"><span>terraform init
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># 계획 확인</span>
+</span></span><span style="display:flex;"><span>terraform plan
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># 배포 실행</span>
+</span></span><span style="display:flex;"><span>terraform apply
+</span></span></code></pre></div><h3 id="4-kubectl-설정">4. kubectl 설정<a hidden class="anchor" aria-hidden="true" href="#4-kubectl-설정">#</a></h3>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span><span style="color:#75715e"># kubeconfig 업데이트</span>
+</span></span><span style="display:flex;"><span>aws eks update-kubeconfig --region ap-northeast-2 --name llm-project-eks --profile llm
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># 클러스터 확인</span>
+</span></span><span style="display:flex;"><span>kubectl get nodes
+</span></span><span style="display:flex;"><span>kubectl get pods -A
+</span></span></code></pre></div><h3 id="5-서비스-url-확인">5. 서비스 URL 확인<a hidden class="anchor" aria-hidden="true" href="#5-서비스-url-확인">#</a></h3>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span><span style="color:#75715e"># LoadBalancer URL 확인</span>
+</span></span><span style="display:flex;"><span>kubectl get svc -A | grep LoadBalancer
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># 각 서비스별 엔드포인트</span>
+</span></span><span style="display:flex;"><span>echo <span style="color:#e6db74">&#34;OpenWebUI: http://</span><span style="color:#66d9ef">$(</span>kubectl get svc openwebui-service -o jsonpath<span style="color:#f92672">=</span><span style="color:#e6db74">&#39;{.status.loadBalancer.ingress[0].hostname}&#39;</span><span style="color:#66d9ef">)</span><span style="color:#e6db74">:3000&#34;</span>
+</span></span><span style="display:flex;"><span>echo <span style="color:#e6db74">&#34;Grafana: http://</span><span style="color:#66d9ef">$(</span>kubectl get svc grafana-service -o jsonpath<span style="color:#f92672">=</span><span style="color:#e6db74">&#39;{.status.loadBalancer.ingress[0].hostname}&#39;</span><span style="color:#66d9ef">)</span><span style="color:#e6db74">:3001&#34;</span>
+</span></span><span style="display:flex;"><span>echo <span style="color:#e6db74">&#34;Prometheus: http://</span><span style="color:#66d9ef">$(</span>kubectl get svc prometheus-service -o jsonpath<span style="color:#f92672">=</span><span style="color:#e6db74">&#39;{.status.loadBalancer.ingress[0].hostname}&#39;</span><span style="color:#66d9ef">)</span><span style="color:#e6db74">:9090&#34;</span>
+</span></span></code></pre></div><hr>
+<h2 id="-비용-최적화-팁">💰 비용 최적화 팁<a hidden class="anchor" aria-hidden="true" href="#-비용-최적화-팁">#</a></h2>
+<h3 id="개발-환경-설정">개발 환경 설정<a hidden class="anchor" aria-hidden="true" href="#개발-환경-설정">#</a></h3>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-hcl" data-lang="hcl"><span style="display:flex;"><span><span style="color:#75715e"># terraform.tfvars에서 조정
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>instance_type <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;t3.small&#34;</span><span style="color:#75715e">              # 작은 인스턴스 사용
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>node_group_desired_capacity <span style="color:#f92672">=</span> <span style="color:#ae81ff">1</span><span style="color:#75715e">         # 최소 노드로 운영
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>node_group_min_capacity <span style="color:#f92672">=</span> <span style="color:#ae81ff">0</span><span style="color:#75715e">             # 야간 스케일다운 가능
+</span></span></span></code></pre></div><h3 id="리소스-정리">리소스 정리<a hidden class="anchor" aria-hidden="true" href="#리소스-정리">#</a></h3>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span><span style="color:#75715e"># 전체 리소스 삭제</span>
+</span></span><span style="display:flex;"><span>terraform destroy
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># 특정 리소스만 삭제</span>
+</span></span></code></pre></div>
+
+  </div>
+
+  <footer class="post-footer">
+    <ul class="post-tags">
+    </ul>
+<nav class="paginav">
+  <a class="prev" href="http://localhost:65390/backend/eks-%ED%81%B4%EB%9F%AC%EC%8A%A4%ED%84%B0-%EB%B0%B0%ED%8F%AC-%EA%B0%80%EC%9D%B4%EB%93%9C/">
+    <span class="title">« Prev</span>
+    <br>
+    <span></span>
+  </a>
+  <a class="next" href="http://localhost:65390/backend/%EB%B0%B0%ED%8F%AC-%EA%B2%80%EC%A6%9D-%EA%B0%80%EC%9D%B4%EB%93%9C/">
+    <span class="title">Next »</span>
+    <br>
+    <span></span>
+  </a>
+</nav>
+
+  </footer>
+</article>
+    </main>
+    
+<footer class="footer">
+        <span>&copy; 2025 <a href="http://localhost:65390/">8dobibim Tech Blog</a></span> · 
+
+    <span>
+        Powered by
+        <a href="https://gohugo.io/" rel="noopener noreferrer" target="_blank">Hugo</a> &
+        <a href="https://github.com/adityatelange/hugo-PaperMod/" rel="noopener" target="_blank">PaperMod</a>
+    </span>
+</footer>
+<a href="#top" aria-label="go to top" title="Go to Top (Alt + G)" class="top-link" id="top-link" accesskey="g">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 12 6" fill="currentColor">
+        <path d="M12 6H0l6-6z" />
+    </svg>
+</a>
+
+<script>
+    let menu = document.getElementById('menu')
+    if (menu) {
+        menu.scrollLeft = localStorage.getItem("menu-scroll-position");
+        menu.onscroll = function () {
+            localStorage.setItem("menu-scroll-position", menu.scrollLeft);
+        }
+    }
+
+    document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+        anchor.addEventListener("click", function (e) {
+            e.preventDefault();
+            var id = this.getAttribute("href").substr(1);
+            if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+                document.querySelector(`[id='${decodeURIComponent(id)}']`).scrollIntoView({
+                    behavior: "smooth"
+                });
+            } else {
+                document.querySelector(`[id='${decodeURIComponent(id)}']`).scrollIntoView();
+            }
+            if (id === "top") {
+                history.replaceState(null, null, " ");
+            } else {
+                history.pushState(null, null, `#${id}`);
+            }
+        });
+    });
+
+</script>
+<script>
+    var mybutton = document.getElementById("top-link");
+    window.onscroll = function () {
+        if (document.body.scrollTop > 800 || document.documentElement.scrollTop > 800) {
+            mybutton.style.visibility = "visible";
+            mybutton.style.opacity = "1";
+        } else {
+            mybutton.style.visibility = "hidden";
+            mybutton.style.opacity = "0";
+        }
+    };
+
+</script>
+<script>
+    document.getElementById("theme-toggle").addEventListener("click", () => {
+        if (document.body.className.includes("dark")) {
+            document.body.classList.remove('dark');
+            localStorage.setItem("pref-theme", 'light');
+        } else {
+            document.body.classList.add('dark');
+            localStorage.setItem("pref-theme", 'dark');
+        }
+    })
+
+</script>
+<script>
+    document.querySelectorAll('pre > code').forEach((codeblock) => {
+        const container = codeblock.parentNode.parentNode;
+
+        const copybutton = document.createElement('button');
+        copybutton.classList.add('copy-code');
+        copybutton.innerHTML = 'copy';
+
+        function copyingDone() {
+            copybutton.innerHTML = 'copied!';
+            setTimeout(() => {
+                copybutton.innerHTML = 'copy';
+            }, 2000);
+        }
+
+        copybutton.addEventListener('click', (cb) => {
+            if ('clipboard' in navigator) {
+                navigator.clipboard.writeText(codeblock.textContent);
+                copyingDone();
+                return;
+            }
+
+            const range = document.createRange();
+            range.selectNodeContents(codeblock);
+            const selection = window.getSelection();
+            selection.removeAllRanges();
+            selection.addRange(range);
+            try {
+                document.execCommand('copy');
+                copyingDone();
+            } catch (e) { };
+            selection.removeRange(range);
+        });
+
+        if (container.classList.contains("highlight")) {
+            container.appendChild(copybutton);
+        } else if (container.parentNode.firstChild == container) {
+            
+        } else if (codeblock.parentNode.parentNode.parentNode.parentNode.parentNode.nodeName == "TABLE") {
+            
+            codeblock.parentNode.parentNode.parentNode.parentNode.parentNode.appendChild(copybutton);
+        } else {
+            
+            codeblock.parentNode.appendChild(copybutton);
+        }
+    });
+</script>
+</body>
+
+</html>
