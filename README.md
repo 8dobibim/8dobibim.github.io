@@ -20,4 +20,4 @@
 
 - **정적 사이트 생성기**: [Hugo](https://gohugo.io/)
 - **테마**: [PaperMod](https://github.com/adityatelange/hugo-PaperMod)
-- **배포**: GitHub Pages (User Site 방식)
+- **배포**: GitHub Pages
